@@ -116,7 +116,16 @@ SecureTanza provides tailored, multi-stage interactive tours (powered by Driver.
 
 Users can relaunch their role walkthrough at any time from the **User Menu** or the **Documentation Hub** (`/docs`).
 
+### 3.2 Role-Tailored In-App User Guide (`/docs`)
+
+To streamline documentation and eliminate administrative clutter, SecureTanza's interactive documentation portal dynamically adapts its topic index, subsections, and guidance according to the active user's clearance tier:
+
+- **System Administrator:** Full access to all 10 documentation modules, including User Provisioning, Access & Security, Alert Rule Engines, and Batch Ingestion Schemas. Features an interactive **"View as" Role Preview Switcher** in the header allowing administrators to audit the documentation view from the perspective of Operational Officers or Privileged Analysts.
+- **Operational Officer:** Tactical law enforcement manual focused on GIS Mapping, Dual-Pane Map Comparison, Overview Dashboard, Blotter Dossiers, Analytics, PDF Reports, Batch Ingestion, and Account Preferences/Accessibility. Administrative user provisioning, database maintenance, and alert rule configuration are automatically hidden.
+- **Privileged User / Viewer:** Granular documentation filtered strictly by granted module clearances (`privileged_map_view`, `privileged_cases_view`, `privileged_analytics_view`). Blotter Ingestion, RBAC Administration, and ungranted modules are completely hidden, with troubleshooting customized to their allowed tools.
+
 ---
+
 
 ## 4. Interactive GIS Crime Map
 

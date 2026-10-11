@@ -80,10 +80,7 @@ export async function GET(request: NextRequest) {
 // POST /api/crimes - Create a new crime incident (with cache invalidation)
 export async function POST(request: NextRequest) {
   try {
-    // /api/crimes is in middleware.ts's publicApiRoutes allowlist (so the public
-    // map's GET reads work without login) — but that allowlist matches by prefix,
-    // which was also silently waiving auth on this write endpoint. Checked here
-    // explicitly, same as the sibling upload route.
+    // Verify administrative authorization for crime incident creation
     const session = await getSession();
     if (!session || (!session.permissions.includes('admin_operational_officer') && !session.permissions.includes('admin'))) {
       return NextResponse.json(

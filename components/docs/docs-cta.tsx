@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Lightbulb, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export interface DocsCtaAction {
   label: string;

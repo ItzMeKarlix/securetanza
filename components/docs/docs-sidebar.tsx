@@ -11,12 +11,14 @@ import {
   BookOpen,
 } from "lucide-react";
 import { DocsSectionItem, DocsSubSectionItem } from "./docs-types";
+import { UserRoleType, getRoleBadge } from "./docs-permissions";
 
 export interface DocsSidebarProps {
   sections: DocsSectionItem[];
   activeSection: string;
   activeSubSection?: string;
   onSelectSection: (sectionId: string, subSectionId?: string) => void;
+  role?: UserRoleType;
 }
 
 export function DocsSidebar({
@@ -24,61 +26,13 @@ export function DocsSidebar({
   activeSection,
   activeSubSection,
   onSelectSection,
+  role = "privileged_user",
 }: DocsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Flat two-level tree: Map of section expanded states (all expanded by default)
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    sections.forEach((sec) => {
-      initial[sec.id] = true;
-    });
-    return initial;
-  });
 
-  // Keep expanded state up to date when sections change or activeSection changes
-  useEffect(() => {
-    if (!activeSection) return;
-    setExpandedSections((prev) => ({
-      ...prev,
-      [activeSection]: true,
-    }));
-  }, [activeSection]);
-
-  // Toggle section expand/collapse
-  const toggleSection = useCallback((sectionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  }, []);
-
-  // Check if all expandable sections are currently expanded
-  const areAllExpanded = useMemo(() => {
-    const expandable = sections.filter((s) => s.subsections && s.subsections.length > 0);
-    if (expandable.length === 0) return true;
-    return expandable.every((s) => expandedSections[s.id]);
-  }, [sections, expandedSections]);
-
-  // Toggle expand all / collapse all
-  const handleToggleAll = useCallback(() => {
-    if (areAllExpanded) {
-      // Collapse all
-      const collapsed: Record<string, boolean> = {};
-      sections.forEach((s) => {
-        collapsed[s.id] = false;
-      });
-      setExpandedSections(collapsed);
-    } else {
-      // Expand all
-      const expanded: Record<string, boolean> = {};
-      sections.forEach((s) => {
-        expanded[s.id] = true;
-      });
-      setExpandedSections(expanded);
-    }
-  }, [areAllExpanded, sections]);
+  // User-toggled expansion state overrides
+  const [userToggleState, setUserToggleState] = useState<Record<string, boolean>>({});
 
   // Search filtering logic
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -98,21 +52,62 @@ export function DocsSidebar({
     });
   }, [sections, normalizedQuery]);
 
-  // Auto-expand all matching sections when searching
-  useEffect(() => {
-    if (normalizedQuery) {
-      const newExpanded: Record<string, boolean> = {};
-      filteredSections.forEach((sec) => {
-        newExpanded[sec.id] = true;
-      });
-      setExpandedSections((prev) => ({ ...prev, ...newExpanded }));
+  // Determine if a section is expanded
+  const isSectionExpanded = useCallback((sectionId: string) => {
+    // When actively searching, always auto-expand matching sections
+    if (normalizedQuery) return true;
+    // If the section is active, keep it expanded
+    if (activeSection === sectionId) return true;
+    // Respect explicit user collapse/expand action
+    if (userToggleState[sectionId] !== undefined) {
+      return userToggleState[sectionId];
     }
-  }, [normalizedQuery, filteredSections]);
+    // Default to expanded
+    return true;
+  }, [normalizedQuery, activeSection, userToggleState]);
+
+  // Toggle section expand/collapse
+  const toggleSection = useCallback((sectionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUserToggleState((prev) => {
+      const current = prev[sectionId] !== undefined ? prev[sectionId] : true;
+      return {
+        ...prev,
+        [sectionId]: !current,
+      };
+    });
+  }, []);
+
+  // Check if all expandable sections are currently expanded
+  const areAllExpanded = useMemo(() => {
+    const expandable = sections.filter((s) => s.subsections && s.subsections.length > 0);
+    if (expandable.length === 0) return true;
+    return expandable.every((s) => isSectionExpanded(s.id));
+  }, [sections, isSectionExpanded]);
+
+  // Toggle expand all / collapse all
+  const handleToggleAll = useCallback(() => {
+    if (areAllExpanded) {
+      // Collapse all
+      const collapsed: Record<string, boolean> = {};
+      sections.forEach((s) => {
+        collapsed[s.id] = false;
+      });
+      setUserToggleState(collapsed);
+    } else {
+      // Expand all
+      const expanded: Record<string, boolean> = {};
+      sections.forEach((s) => {
+        expanded[s.id] = true;
+      });
+      setUserToggleState(expanded);
+    }
+  }, [areAllExpanded, sections]);
 
   // Handle section row click
   const handleSectionClick = (sectionId: string) => {
     onSelectSection(sectionId);
-    setExpandedSections((prev) => ({
+    setUserToggleState((prev) => ({
       ...prev,
       [sectionId]: true,
     }));
@@ -122,6 +117,7 @@ export function DocsSidebar({
   const handleSubSectionClick = (sectionId: string, subSectionId: string) => {
     onSelectSection(sectionId, subSectionId);
   };
+
 
   return (
     <aside
@@ -171,6 +167,14 @@ export function DocsSidebar({
         </div>
       </div>
 
+      {/* Role Clearance Scope Banner */}
+      <div className="px-3.5 py-1.5 bg-slate-100/70 dark:bg-slate-800/40 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+        <span className="font-medium truncate">{getRoleBadge(role).shortLabel} Scope</span>
+        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300">
+          {sections.length} {sections.length === 1 ? "module" : "modules"}
+        </span>
+      </div>
+
       {/* Flat Two-Level Tree Navigation List */}
       <div
         role="tree"
@@ -198,7 +202,7 @@ export function DocsSidebar({
             const Icon = sec.icon;
             const isActive = activeSection === sec.id;
             const hasSubSections = Boolean(sec.subsections && sec.subsections.length > 0);
-            const isExpanded = Boolean(expandedSections[sec.id]);
+            const isExpanded = isSectionExpanded(sec.id);
 
             return (
               <div

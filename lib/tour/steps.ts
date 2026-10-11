@@ -22,120 +22,9 @@ export const TOUR_STAGE_KEY = "secureTanza:tour:stage";
 // this mount, rather than waiting for the "first visit ever" check.
 export const TOUR_PENDING_KEY = "secureTanza:tour:pendingStart";
 
-export type UserRoleType = "admin" | "operational_officer" | "privileged_user" | "public";
+export type UserRoleType = "admin" | "operational_officer" | "privileged_user";
 
 export const TOUR_ROLE_KEY = "secureTanza:tour:role";
-
-// ─────────────────────────────────────────────────────────────────────────
-// Public Visitor Steps (app/page.tsx & app/docs/page.tsx)
-// ─────────────────────────────────────────────────────────────────────────
-export const publicSystemSteps: DriveStep[] = [
-	{
-		element: '[data-tour="brand"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Welcome to Secure Tanza",
-			description:
-				"Explore Tanza's GIS crime mapping and analytics platform. Discover real-time municipal safety metrics, geographic threat levels, and historical crime trends.",
-			side: "bottom",
-			align: "start",
-		},
-	},
-	{
-		element: '[data-tour="public-actions"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Documentation & Officer Portal",
-			description:
-				"Access comprehensive documentation and user guides, or manage your authorized account session.",
-			side: "bottom",
-			align: "end",
-		},
-	},
-];
-
-export const publicMapSteps: DriveStep[] = [
-	{
-		element: '[data-tour="map-canvas"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Interactive Municipality Map",
-			description:
-				"Visualize geographic crime density across all 41 barangays of Tanza. Click on any barangay polygon to inspect local safety statistics and demographics.",
-			side: "top",
-			align: "center",
-		},
-	},
-	{
-		element: '[data-tour="map-filters"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Barangay & Crime Filters",
-			description:
-				"Filter map density by selecting your specific barangay or isolating statutory crime categories such as Theft, Robbery, or Physical Injury.",
-			side: "bottom",
-			align: "start",
-		},
-	},
-	{
-		element: '[data-tour="map-legend"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Crime Type Legend",
-			description:
-				"Each offense category is color-coded with its recorded incident count. Click a crime type to isolate it on the map and reveal the barangay-by-barangay breakdown.",
-			side: "left",
-			align: "start",
-		},
-	},
-	{
-		element: '[data-tour="real-time-clock"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Timeline & Historical Scrubber",
-			description:
-				"Click the clock button to reveal the temporal filter drawer. Scrub through quarterly or monthly crime records and play automated time animations.",
-			side: "top",
-			align: "start",
-		},
-	},
-];
-
-export const publicDocsSteps: DriveStep[] = [
-	{
-		element: '[data-tour="docs-sidebar"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Public User Manual",
-			description:
-				"Browse structured platform guides explaining map navigation, threat level classifications, and municipal security metrics.",
-			side: "right",
-			align: "start",
-		},
-	},
-	{
-		element: '[data-tour="docs-search"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Topic Search",
-			description:
-				"Search crime intelligence topics, definitions, and operational information instantly.",
-			side: "bottom",
-			align: "start",
-		},
-	},
-	{
-		element: '[data-tour="docs-tour-btn"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Walkthrough Complete",
-			description:
-				"You've completed the guided walkthrough! You can relaunch this tour at any time from this button or the navigation bar.",
-			side: "bottom",
-			align: "end",
-		},
-	},
-];
 
 // ─────────────────────────────────────────────────────────────────────────
 // Operational Officer Steps (Tactical Workflows)
@@ -923,22 +812,6 @@ export function getTourStagesForRole(
 	role: UserRoleType,
 	permissions: string[] = []
 ): TourStage[] {
-	if (role === "public") {
-		return [
-			{
-				id: "system-map",
-				path: "/",
-				steps: [...publicSystemSteps, ...publicMapSteps],
-			},
-			{
-				id: "docs",
-				path: "/docs",
-				steps: publicDocsSteps,
-				readySelector: '[data-tour="docs-sidebar"]',
-			},
-		];
-	}
-
 	if (role === "operational_officer") {
 		return [
 			{

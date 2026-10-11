@@ -1,84 +1,113 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, Activity } from "lucide-react";
+import { ShieldCheck, Activity, User, Sliders } from "lucide-react";
 import { DocsCta } from "./docs-cta";
+import { UserRoleType, getUserRole } from "./docs-permissions";
+import { useAuth } from "@/context/AuthContext";
+import { isAdminUser } from "@/lib/auth-routes";
 
-export function DocsSettings() {
+interface DocsSettingsProps {
+  role?: UserRoleType;
+  permissions?: string[];
+}
+
+export function DocsSettings({ role, permissions: propPerms }: DocsSettingsProps) {
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const effectiveRole = role ?? userRole;
+
+  let effectivePerms = propPerms || user?.permissions || [];
+  if (role && role !== userRole) {
+    if (role === "admin") {
+      effectivePerms = ["admin_operational_officer", "admin"];
+    } else if (role === "operational_officer") {
+      effectivePerms = ["operational_officer", "privileged_map_view"];
+    } else {
+      effectivePerms = ["privileged_user", "privileged_map_view"];
+    }
+  }
+
+  const isAdmin = effectiveRole === "admin" || isAdminUser(effectivePerms);
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Settings & RBAC
+          {isAdmin ? "Settings & RBAC" : "Account Preferences & Settings"}
         </h1>
         <p className="text-base text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-          The System Settings module manages role-based access control (RBAC), user credentials, batch ingestion audit logs, and interface preferences.
+          {isAdmin
+            ? "The System Settings module manages role-based access control (RBAC), user credentials, batch ingestion audit logs, and interface preferences."
+            : "Manage your account credentials, security password, and configure customized interface and accessibility options."}
         </p>
       </div>
 
-      {/* RBAC Table */}
-      <section id="rbac-matrix" className="space-y-4 scroll-mt-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
-          Role Clearances & Permissions Matrix
-        </h2>
+      {/* RBAC Table (Admin Only) */}
+      {isAdmin && (
+        <section id="rbac-matrix" className="space-y-4 scroll-mt-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
+            Role Clearances & Permissions Matrix
+          </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
-                <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Permission / Feature</th>
-                <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Admin</th>
-                <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Operational Officer</th>
-                <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Privileged User</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Interactive Map & GIS Layers</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Executive Dashboard & Analytics</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-slate-500">Read-Only</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Case Blotter Dossiers & Flags</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">PDF Report Generation</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Export</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Export</td>
-                <td className="py-2 px-3 text-slate-500">Basic Export</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Batch Excel Ingestion</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
-                <td className="py-2 px-3 text-slate-400">Unauthorized</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">User Administration & RBAC</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Notification Alert Configuration</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Permission / Feature</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Admin</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Operational Officer</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Privileged User</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Interactive Map & GIS Layers</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Executive Dashboard & Analytics</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-slate-500">Read-Only</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Case Blotter Dossiers & Flags</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Access</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">PDF Report Generation</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Export</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Full Export</td>
+                  <td className="py-2 px-3 text-slate-500">Basic Export</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Batch Excel Ingestion</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
+                  <td className="py-2 px-3 text-slate-400">Unauthorized</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">User Administration & RBAC</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Notification Alert Configuration</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Config Tabs Breakdown */}
       <section id="config-sections" className="space-y-4 scroll-mt-6">
@@ -96,23 +125,27 @@ export function DocsSettings() {
             </p>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Access & Security (RBAC)
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-              Provision new accounts, assign officer badge or account numbers, and designate role levels (Admin, Officer, Privileged User).
-            </p>
-          </div>
+          {isAdmin && (
+            <>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Access & Security (RBAC)
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                  Provision new accounts, assign officer badge or account numbers, and designate role levels (Admin, Officer, Privileged User).
+                </p>
+              </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Audit Logs
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-              Inspect historical batch upload runs, ingested record counts, and schema validation traces for auditing purposes.
-            </p>
-          </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Audit Logs
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                  Inspect historical batch upload runs, ingested record counts, and schema validation traces for auditing purposes.
+                </p>
+              </div>
+            </>
+          )}
 
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -134,22 +167,43 @@ export function DocsSettings() {
 
       {/* Next Steps */}
       <DocsCta
-        title="Settings Actions"
-        suggestion="Review user clearances in Access & Security to ensure appropriate separation of roles, or inspect upload history in the Audit Logs."
-        actions={[
-          {
-            label: "Open Settings",
-            href: "/dashboard/config",
-            icon: ShieldCheck,
-            variant: "primary",
-          },
-          {
-            label: "Audit Logs",
-            href: "/dashboard/config",
-            icon: Activity,
-            variant: "secondary",
-          },
-        ]}
+        title={isAdmin ? "Settings Actions" : "Manage Your Account"}
+        suggestion={
+          isAdmin
+            ? "Review user clearances in Access & Security to ensure appropriate separation of roles, or inspect upload history in the Audit Logs."
+            : "Customize your theme and accessibility preferences or update your password."
+        }
+        actions={
+          isAdmin
+            ? [
+                {
+                  label: "Open Settings",
+                  href: "/dashboard/config",
+                  icon: ShieldCheck,
+                  variant: "primary",
+                },
+                {
+                  label: "Audit Logs",
+                  href: "/dashboard/config",
+                  icon: Activity,
+                  variant: "secondary",
+                },
+              ]
+            : [
+                {
+                  label: "Account Preferences",
+                  href: "/dashboard/config/preferences",
+                  icon: Sliders,
+                  variant: "primary",
+                },
+                {
+                  label: "My Profile",
+                  href: "/dashboard/config",
+                  icon: User,
+                  variant: "secondary",
+                },
+              ]
+        }
       />
     </div>
   );

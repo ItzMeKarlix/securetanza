@@ -29,7 +29,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     icon: BookOpen,
     tags: ["welcome", "overview", "system", "architecture", "tanza", "gis", "compare", "accessibility"],
     subsections: [
-      { id: "walkthroughs", title: "Interactive Walkthroughs", tags: ["tour", "roles", "officer", "analyst", "admin", "compare", "accessibility"] },
+      { id: "walkthroughs", title: "Interactive Walkthrough", tags: ["tour", "roles", "officer", "analyst", "admin", "compare", "accessibility"] },
       { id: "core-modules", title: "Core Modules", tags: ["gis", "compare", "dashboard", "analytics", "cases", "reports", "accessibility"] },
     ],
     component: DocsIntro,
@@ -38,6 +38,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "map",
     title: "GIS Crime Map",
     icon: Map,
+    requiredPermission: "privileged_map_view",
     tags: ["gis", "map", "barangay", "filters", "time", "playback", "threat", "legend", "export", "compare"],
     subsections: [
       { id: "threat-levels", title: "Barangay Threat Levels", tags: ["threat", "quartiles", "thresholds", "critical", "moderate", "low"] },
@@ -49,6 +50,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "dashboard",
     title: "Dashboard",
     icon: BarChart3,
+    requiredPermission: "privileged_map_view",
     tags: ["overview", "dashboard", "kpi", "trends", "distribution", "blotter"],
     subsections: [
       { id: "kpi-metrics", title: "Key Performance Indicators", tags: ["total crimes", "offense", "hotspot", "kpi"] },
@@ -60,6 +62,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "analytics",
     title: "Analytics",
     icon: TrendingUp,
+    requiredPermission: "privileged_analytics_view",
     tags: ["analytics", "radar", "peak", "hours", "modus", "location", "heatmap", "matrix", "safety"],
     subsections: [
       { id: "math-metrics", title: "Mathematical Metrics & Indicators", tags: ["resolution rate", "safety index", "formula"] },
@@ -71,6 +74,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "cases",
     title: "Case Blotter",
     icon: FolderOpen,
+    requiredPermission: "privileged_cases_view",
     tags: ["cases", "blotter", "investigation", "dossier", "heinous", "sensational", "ego", "suspect"],
     subsections: [
       { id: "clearance-status", title: "Clearance Classifications", tags: ["cleared", "investigation", "court", "closed"] },
@@ -82,6 +86,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "reports",
     title: "PDF Reports",
     icon: FileText,
+    requiredPermission: "privileged_analytics_view",
     tags: ["reports", "pdf", "export", "download", "executive", "summary", "print"],
     subsections: [
       { id: "report-sections", title: "Configurable Report Sections", tags: ["executive", "briefing", "matrix", "recommendations"] },
@@ -96,7 +101,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     tags: ["notifications", "alerts", "rules", "critical", "warning", "threshold", "heinous"],
     subsections: [
       { id: "severity-levels", title: "Alert Severity Levels", tags: ["critical", "warning", "info", "triggers"] },
-      { id: "rule-configuration", title: "Rule Configuration", tags: ["hourly", "threshold", "surge", "rules"] },
+      { id: "rule-configuration", title: "Rule Configuration", tags: ["hourly", "threshold", "surge", "rules"], adminOnly: true },
     ],
     component: DocsNotifications,
   },
@@ -106,7 +111,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     icon: ShieldCheck,
     tags: ["settings", "rbac", "permissions", "roles", "admin", "clearance", "audit", "security", "accessibility", "preferences"],
     subsections: [
-      { id: "rbac-matrix", title: "Permissions Matrix (RBAC)", tags: ["admin", "officer", "privileged", "clearance"] },
+      { id: "rbac-matrix", title: "Permissions Matrix (RBAC)", tags: ["admin", "officer", "privileged", "clearance"], adminOnly: true },
       { id: "config-sections", title: "Configuration Sections", tags: ["profile", "security", "audit logs", "preferences", "accessibility", "contrast", "motion"] },
     ],
     component: DocsSettings,
@@ -115,6 +120,7 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     id: "upload",
     title: "Data Ingestion",
     icon: Upload,
+    allowedRoles: ["admin", "operational_officer"],
     tags: ["upload", "excel", "xlsx", "schema", "columns", "import", "data", "pipeline"],
     subsections: [
       { id: "excel-schema", title: "Excel Column Schema", tags: ["headers", "xlsx", "format", "mandatory"] },
