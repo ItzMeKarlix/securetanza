@@ -55,6 +55,55 @@ function CaseLocationFrame({ lat, lon }: { lat: number; lon: number }) {
   );
 }
 
+/** Keeps the case view's two-column shape in place while another offense loads. */
+function CaseDetailsSkeleton({ dark }: { dark: boolean }) {
+  const block = dark ? "bg-white/[0.08]" : "bg-slate-200/80";
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4" role="status" aria-busy="true" aria-label="Loading case details">
+      <div className="min-h-full motion-safe:animate-pulse">
+        <div className={`space-y-3 border-b pb-5 ${dark ? "border-white/[0.06]" : "border-slate-100"}`}>
+          <div className={`h-2.5 w-24 rounded ${block}`} />
+          <div className={`h-7 w-2/3 max-w-md rounded ${block}`} />
+          <div className={`h-4 w-1/2 max-w-sm rounded ${block}`} />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className={`h-4 w-full rounded ${block}`} />
+            <div className={`h-4 w-4/5 rounded ${block}`} />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-6 pt-5 lg:grid-cols-[1.3fr_1fr] sm:gap-8">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className={`h-2.5 w-24 rounded ${block}`} />
+              <div className={`h-3.5 w-full rounded ${block}`} />
+              <div className={`h-3.5 w-11/12 rounded ${block}`} />
+              <div className={`h-3.5 w-3/4 rounded ${block}`} />
+            </div>
+            <div className={`space-y-3 border-t pt-4 ${dark ? "border-white/[0.06]" : "border-slate-100"}`}>
+              <div className={`h-3 w-28 rounded ${block}`} />
+              <div className="grid grid-cols-2 gap-4">
+                {Array.from({ length: 4 }, (_, index) => <div key={index} className={`h-10 rounded ${block}`} />)}
+              </div>
+            </div>
+            <div className={`space-y-3 border-t pt-4 ${dark ? "border-white/[0.06]" : "border-slate-100"}`}>
+              <div className={`h-3 w-36 rounded ${block}`} />
+              <div className="grid grid-cols-2 gap-4">
+                {Array.from({ length: 4 }, (_, index) => <div key={index} className={`h-10 rounded ${block}`} />)}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className={`h-48 rounded-lg ${block}`} />
+            <div className={`space-y-3 rounded-lg border p-4 ${dark ? "border-white/[0.06]" : "border-slate-100"}`}>
+              <div className={`h-3 w-28 rounded ${block}`} />
+              {Array.from({ length: 6 }, (_, index) => <div key={index} className={`h-3.5 w-full rounded ${block}`} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A labelled filter dropdown on Radix Select, so the open list is a rounded,
  * themed popover instead of the browser's square native menu.
@@ -133,6 +182,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
   const siblingRequests = useRef(new Set<string>());
   const listId = useId();
   const [selectedCase, setSelectedCase] = useState<CrimeIncident | null>(null);
+  const [modalGroupKey, setModalGroupKey] = useState<string | null>(null);
   const listRequests = useRef(createCaseRequestGuard());
   const detailRequests = useRef(createCaseRequestGuard());
   const selectionVersion = useRef(0);
@@ -320,6 +370,32 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
     if (opening) void loadSiblingOffenses(mergeCaseOffenses(group, siblingCases[group.key] || []));
   };
 
+  const openGroupDetails = useCallback((group: CaseGroup, offense = group.offenses[0] || group.representative) => {
+    setModalGroupKey(group.key);
+    chooseCase(offense);
+    setIsModalOpen(true);
+    if (!group.complete) void loadSiblingOffenses(group);
+  }, [chooseCase, loadSiblingOffenses]);
+
+  const openCaseDetails = useCallback((offense: CrimeIncident | null) => {
+    if (!offense) return;
+    const group = groups.find(candidate => candidate.offenses.some(item => item.id === offense.id));
+    if (group) openGroupDetails(mergeCaseOffenses(group, siblingCases[group.key] || []), offense);
+    else {
+      setModalGroupKey(null);
+      chooseCase(offense);
+      setIsModalOpen(true);
+    }
+  }, [chooseCase, groups, openGroupDetails, siblingCases]);
+
+  const modalGroup = modalGroupKey
+    ? (() => {
+        const group = groups.find(candidate => candidate.key === modalGroupKey);
+        return group ? mergeCaseOffenses(group, siblingCases[group.key] || []) : null;
+      })()
+    : null;
+  const modalOffenses = modalGroup?.offenses || (selectedCase ? [selectedCase] : []);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [crimeTypeFilter, dateRangeFilter, statusFilter, selectedFelonyStage, searchQuery, cases]);
@@ -339,8 +415,9 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
       }
       if (!active || !offense || selectionVersion.current !== selectionAtStart) return;
       handledCaseRef.current = targetCaseId;
-      chooseCase(offense);
-      setIsModalOpen(true);
+      const linkedGroup = link ? groups.find(group => group.key === link.groupKey) : null;
+      if (linkedGroup) openGroupDetails(mergeCaseOffenses(linkedGroup, siblingCases[linkedGroup.key] || []), offense);
+      else openCaseDetails(offense);
       const index = link ? filteredGroups.findIndex(group => group.key === link.groupKey) : filteredGroups.findIndex(group => group.representative.incidentId && group.representative.incidentId === offense?.incidentId);
       if (index >= 0) {
         const group = filteredGroups[index];
@@ -351,7 +428,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
     }
     void openLinkedCase();
     return () => { active = false; };
-  }, [targetCaseId, loading, filteredGroups, itemsPerPage, loadSiblingOffenses, chooseCase]);
+  }, [targetCaseId, loading, filteredGroups, groups, siblingCases, itemsPerPage, loadSiblingOffenses, chooseCase, openGroupDetails, openCaseDetails]);
 
   // Get unique values for filters
   const statuses = ["(All)", "Cleared", "Under Investigation", "Filed in Court", "Archived", "Pending"];
@@ -455,7 +532,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
     const bone = dark ? "bg-white/10" : "bg-slate-200";
     return (
       <div
-        className="w-full max-w-[1400px] mx-auto space-y-6 animate-pulse"
+        className="w-full max-w-[1400px] mx-auto space-y-6 motion-safe:animate-pulse"
         role="status"
         aria-busy="true"
         aria-label="Loading cases"
@@ -474,19 +551,18 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
             <dd className="mt-1.5 flex justify-end">
               <div className={`h-6 w-14 rounded ${bone}`} />
             </dd>
+            <dd className="mt-2 flex justify-end"><div className={`h-3 w-36 rounded ${bone}`} /></dd>
           </dl>
         </header>
 
         <section>
           <div className={`${surface} space-y-4`} style={{ padding: 18 }}>
-            <div className={`h-11 rounded-lg ${bone}`} />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {Array.from({ length: 2 }, (_, i) => (
-                <div key={i}>
-                  <div className={`mb-2 h-3 w-20 rounded ${bone}`} />
-                  <div className={`h-10 rounded-lg ${bone}`} />
-                </div>
-              ))}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <div className={`h-10 min-w-0 flex-1 rounded-lg ${bone}`} />
+              <div className="grid grid-cols-2 gap-3 md:flex md:shrink-0">
+                <div className={`h-10 w-full rounded-lg md:w-[210px] ${bone}`} />
+                <div className={`h-10 w-full rounded-lg md:w-[210px] ${bone}`} />
+              </div>
             </div>
           </div>
         </section>
@@ -501,7 +577,11 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
               </div>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className={`grid items-center gap-4 border-b ${hairline}`} style={{ gridTemplateColumns: columns, padding: "14px 22px" }}>
-                  {[1, 2, 3].map((j) => (
+                  <div key="blotter" className="space-y-1.5">
+                    <div className={`h-3.5 w-3/4 rounded ${bone}`} />
+                    {i % 3 === 0 && <div className={`h-2.5 w-1/2 rounded ${bone}`} />}
+                  </div>
+                  {[1, 2].map((j) => (
                     <div key={j} className={`h-3.5 rounded ${bone}`} style={{ width: `${55 + ((i * j * 11) % 40)}%` }} />
                   ))}
                   <div className={`h-6 w-24 rounded-full ${bone}`} />
@@ -510,16 +590,26 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
             </div>
 
             <div className={`${surface} space-y-5`} style={{ padding: 22 }}>
-              <div>
-                <div className={`h-5 w-3/4 rounded ${bone}`} />
-                <div className={`mt-2 h-3 w-1/2 rounded ${bone}`} />
+              <div className="space-y-2">
+                <div className={`h-3 w-1/4 rounded ${bone}`} />
+                <div className={`h-6 w-3/4 rounded ${bone}`} />
+                <div className={`h-3 w-2/3 rounded ${bone}`} />
+                <div className={`h-4 w-1/2 rounded ${bone}`} />
               </div>
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i}>
-                  <div className={`mb-2 h-3 w-20 rounded ${bone}`} />
-                  <div className={`h-4 rounded ${bone}`} style={{ width: `${60 + i * 8}%` }} />
-                </div>
-              ))}
+              <div className={`grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 ${hairline}`}>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i}>
+                    <div className={`mb-2 h-2.5 w-3/4 rounded ${bone}`} />
+                    <div className={`h-3.5 rounded ${bone}`} style={{ width: `${60 + (i % 3) * 8}%` }} />
+                  </div>
+                ))}
+              </div>
+              <div className={`space-y-3 border-t pt-4 ${hairline}`}>
+                <div className={`h-3 w-24 rounded ${bone}`} />
+                <div className={`h-3.5 w-full rounded ${bone}`} />
+                <div className={`h-3.5 w-5/6 rounded ${bone}`} />
+                <div className={`h-3.5 w-2/3 rounded ${bone}`} />
+              </div>
               <div className={`h-40 rounded-lg ${bone}`} />
             </div>
           </div>
@@ -636,13 +726,16 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                       const expanded = expandedGroups.has(group.key);
                       const childrenId = `${listId}-offenses-${encodeURIComponent(group.key)}`;
                       const matchingIds = new Set(group.matchingOffenses.map(offense => offense.id));
-                      const selectParent = () => chooseCase(group.offenses.find(offense => offense.id === selectedCase?.id) || matchingGroup.matchingOffenses[0] || crime);
+                      // Clicking the blotter row returns the quick view to its first
+                      // matching offense, even if the modal had another offense active.
+                      const selectParent = () => chooseCase(matchingGroup.matchingOffenses[0] || crime);
                       return (
                         <React.Fragment key={group.key}>
                           <div
-                            onDoubleClick={() => { selectParent(); setIsModalOpen(true); }}
+                            onClick={selectParent}
+                            onDoubleClick={() => openGroupDetails(group)}
                             title="Double-click this row to open full case details"
-                            className={`grid items-center gap-4 border-b text-[0.82rem] transition-colors ${hairline} ${
+                            className={`grid cursor-pointer items-center gap-4 border-b text-[0.82rem] transition-colors ${hairline} ${
                               selected
                                 ? dark ? "bg-sky-400/[0.08] shadow-[inset_3px_0_0_#38bdf8]" : "bg-sky-50 shadow-[inset_3px_0_0_#0369a1]"
                                 : dark ? "hover:bg-white/[0.03]" : "hover:bg-slate-50"
@@ -656,7 +749,8 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                                   aria-label={`${expanded ? "Collapse" : "Expand"} offenses for blotter ${getCaseId(crime)}`}
                                   aria-expanded={expanded}
                                   aria-controls={childrenId}
-                                  onClick={() => toggleGroup(group)}
+                                  onClick={event => { event.stopPropagation(); toggleGroup(group); }}
+                                  onDoubleClick={event => event.stopPropagation()}
                                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${mutedText}`}
                                 >
                                   <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />
@@ -664,10 +758,8 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                               )}
                               <button
                                 type="button"
-                                onClick={selectParent}
-                                onDoubleClick={() => { selectParent(); setIsModalOpen(true); }}
                                 onKeyDown={event => {
-                                  if (event.key === "Enter" && selected) { event.preventDefault(); setIsModalOpen(true); }
+                                  if (event.key === "Enter" && selected) { event.preventDefault(); openGroupDetails(group); }
                                 }}
                                 aria-pressed={selected}
                                 title="Select blotter; double-click to open full details"
@@ -696,9 +788,9 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                                       type="button"
                                       key={offense.id}
                                       onClick={() => chooseCase(offense)}
-                                      onDoubleClick={() => { chooseCase(offense); setIsModalOpen(true); }}
+                                      onDoubleClick={() => openGroupDetails(group, offense)}
                                       onKeyDown={event => {
-                                        if (event.key === "Enter" && selectedCase?.id === offense.id) { event.preventDefault(); setIsModalOpen(true); }
+                                        if (event.key === "Enter" && selectedCase?.id === offense.id) { event.preventDefault(); openGroupDetails(group, offense); }
                                       }}
                                       aria-pressed={selectedCase?.id === offense.id}
                                       className={`grid w-full grid-cols-[1.7fr_0.8fr_1fr] items-center gap-4 px-[22px] py-3 pl-[54px] text-left text-[0.82rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${selectedCase?.id === offense.id ? "bg-sky-500/10" : dark ? "hover:bg-white/5" : "hover:bg-slate-100"}`}
@@ -832,7 +924,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                 // Pinned to the top of the card so it's always in reach.
                 const expand = (
                   <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => openCaseDetails(c)}
                     title="Open the full case record (or double-click a row)"
                     aria-label="Open full case details"
                     // Black on white in both themes, so it stands out from the card without color.
@@ -938,18 +1030,106 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
       {selectedCase && (
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent
-            className={`flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-4 sm:max-w-4xl sm:p-6 lg:max-w-5xl ${
+            className={`flex h-[min(82dvh,760px)] max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-4 sm:max-w-4xl sm:p-6 lg:max-w-5xl ${
               dark ? "bg-[#1e293b] border-white/[0.06]" : "bg-white border-slate-200"
             }`}
           >
+            {(modalOffenses.length > 1 || modalGroup?.hasMultipleOffenses) && (
+              <div className={`shrink-0 border-b pb-3 ${hairline}`}>
+                {(() => {
+                  const selectedIndex = Math.max(0, modalOffenses.findIndex(offense => offense.id === selectedCase?.id));
+                  const currentOffense = modalOffenses[selectedIndex];
+                  const currentName = currentOffense?.crimeType || extractCrimeType(currentOffense?.incidentType || "");
+                  return (
+                    <div className="flex w-full min-w-0 max-w-[440px] items-center gap-1.5">
+                      <button
+                        type="button"
+                        aria-label="Previous offense"
+                        disabled={selectedIndex === 0}
+                        onClick={() => currentOffense && chooseCase(modalOffenses[selectedIndex - 1])}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${dark ? "border-white/[0.08] text-slate-300 hover:bg-white/[0.05]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <Select
+                        value={currentOffense?.id}
+                        onValueChange={id => {
+                          const offense = modalOffenses.find(item => item.id === id);
+                          if (offense) chooseCase(offense);
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label="Choose offense in this blotter"
+                          className={`h-9 min-w-0 flex-1 rounded-lg px-2.5 text-left text-[13px] ${dark ? "border-white/10 bg-[#0f172a] text-slate-100 hover:bg-[#0f172a]" : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"}`}
+                        >
+                          <SelectValue>
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className={`shrink-0 text-[0.62rem] font-bold uppercase tracking-wide ${mutedText}`}>{selectedIndex + 1} of {modalOffenses.length}</span>
+                              <span className="truncate text-[13px] font-semibold">{currentName}</span>
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent
+                          position="popper"
+                          className={`max-h-[min(50vh,360px)] rounded-xl border p-1 shadow-lg ${dark ? "border-white/10 bg-[#1e293b] text-slate-100" : "border-slate-200 bg-white text-slate-900"}`}
+                        >
+                          {modalOffenses.map((offense, index) => {
+                            const name = offense.crimeType || extractCrimeType(offense.incidentType);
+                            const stage = offense.stageOfFelony || "Unknown stage";
+                            return (
+                              <SelectItem
+                                key={offense.id}
+                                value={offense.id}
+                                textValue={`Offense ${index + 1}: ${name}, ${stage}`}
+                                className={`rounded-lg py-2 focus-visible:outline-none! ${dark ? "focus:bg-white/10 focus:text-white data-[state=checked]:bg-sky-400/15 data-[state=checked]:text-sky-300" : "focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-sky-50 data-[state=checked]:text-sky-700"}`}
+                              >
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold">{name}</span>
+                                  <span className="mt-0.5 block truncate text-xs opacity-70">Offense {index + 1} · {stage}</span>
+                                </span>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <button
+                        type="button"
+                        aria-label="Next offense"
+                        disabled={selectedIndex >= modalOffenses.length - 1}
+                        onClick={() => currentOffense && chooseCase(modalOffenses[selectedIndex + 1])}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${dark ? "border-white/[0.08] text-slate-300 hover:bg-white/[0.05]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })()}
+                {modalGroup && !modalGroup.complete && (
+                  <div className={`mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs ${mutedText}`} role="status" aria-live="polite">
+                    <span>
+                      {!modalGroup.representative.incidentId
+                        ? "The complete offense list is unavailable for this legacy blotter."
+                        : loadingGroups.has(modalGroup.key)
+                          ? `Loading offenses · ${modalOffenses.length} of ${modalGroup.offenseCount} found`
+                          : `${modalOffenses.length} of ${modalGroup.offenseCount} offenses loaded`}
+                    </span>
+                    {modalGroup.representative.incidentId && !loadingGroups.has(modalGroup.key) && (
+                      <button type="button" onClick={() => void loadSiblingOffenses(modalGroup)} className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400">
+                        Load remaining offenses
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {!hydratedCase ? (
-              <DialogHeader>
-                <DialogTitle>{detailError ? "Case details unavailable" : "Loading full case record…"}</DialogTitle>
-                <div className={`space-y-3 pt-3 text-sm ${mutedText}`} role="status" aria-busy={!detailError}>
-                  <p>{detailError || "Retrieving the complete recorded details."}</p>
-                  {detailError && <button type="button" onClick={() => setDetailRetry(previous => previous + 1)} className="font-semibold text-sky-600 dark:text-sky-400">Retry loading details</button>}
+              detailError ? (
+                <div className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center text-sm ${mutedText}`} role="alert">
+                  <p>Case details unavailable</p>
+                  <p>{detailError}</p>
+                  <button type="button" onClick={() => setDetailRetry(previous => previous + 1)} className="font-semibold text-sky-600 dark:text-sky-400">Retry loading details</button>
                 </div>
-              </DialogHeader>
+              ) : <CaseDetailsSkeleton dark={dark} />
             ) : (() => {
               const c = hydratedCase;
               const hasMap = Boolean(c.latitude && c.longitude);
