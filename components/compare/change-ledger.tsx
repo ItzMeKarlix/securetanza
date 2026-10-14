@@ -19,6 +19,10 @@ interface ChangeLedgerProps {
   rows: LedgerRow[];
   thresholds: ThreatThresholds | null;
   hovered: string | null;
+  highlightedLevel: ThreatLevel | null;
+  selectedThreatLevel: ThreatLevel | null;
+  onThreatLevelHover: (level: ThreatLevel | null) => void;
+  onThreatLevelSelect: (level: ThreatLevel) => void;
   onHover: (key: string | null) => void;
   onFocus: (key: string) => void;
   className?: string;
@@ -86,6 +90,10 @@ export default function ChangeLedger({
   rows,
   thresholds,
   hovered,
+  highlightedLevel,
+  selectedThreatLevel,
+  onThreatLevelHover,
+  onThreatLevelSelect,
   onHover,
   onFocus,
   className = "",
@@ -178,21 +186,38 @@ export default function ChangeLedger({
       <div data-tour="compare-ledger-scale" className="border-b border-slate-200 px-5 py-4 dark:border-white/[0.06]">
         <p className={SECTION}>One scale on both maps</p>
         <ol className="mt-3 grid grid-cols-5 gap-2">
-          {(thresholds ? bands(thresholds) : bands({ low: 0, moderate: 0, high: 0, critical: 0 })).map((band) => (
-            <li key={band.level} className="min-w-0">
-              <span
-                aria-hidden="true"
-                className={`block h-1.5 rounded-full ${thresholds ? "" : "animate-pulse bg-slate-200 dark:bg-white/10"}`}
-                style={thresholds ? { backgroundColor: threatColors[band.level] } : undefined}
-              />
-              <span className="mt-1.5 block truncate text-[12px] font-semibold text-slate-800 dark:text-slate-100">
-                {band.label}
-              </span>
-              <span className="block text-[12px] tabular-nums text-slate-500 dark:text-slate-400">
-                {thresholds ? band.range : "…"}
-              </span>
-            </li>
-          ))}
+          {(thresholds ? bands(thresholds) : bands({ low: 0, moderate: 0, high: 0, critical: 0 })).map((band) => {
+            const isSelected = selectedThreatLevel === band.level;
+            const isHighlighted = highlightedLevel === band.level;
+            return (
+              <li key={band.level} className="min-w-0">
+                <button
+                  type="button"
+                  disabled={!thresholds}
+                  aria-pressed={isSelected}
+                  aria-label={`${isSelected ? "Clear" : "Highlight"} ${band.label} threat level on both maps`}
+                  onMouseEnter={() => onThreatLevelHover(band.level)}
+                  onMouseLeave={() => onThreatLevelHover(null)}
+                  onFocus={() => onThreatLevelHover(band.level)}
+                  onBlur={() => onThreatLevelHover(null)}
+                  onClick={() => onThreatLevelSelect(band.level)}
+                  className={`w-full min-w-0 rounded-md p-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 disabled:cursor-default ${isHighlighted ? "bg-slate-100 dark:bg-white/[0.08]" : "hover:bg-slate-50 dark:hover:bg-white/[0.04]"} ${isSelected ? "ring-1 ring-slate-300 dark:ring-white/20" : ""}`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`block h-1.5 rounded-full ${thresholds ? "" : "animate-pulse bg-slate-200 dark:bg-white/10"}`}
+                    style={thresholds ? { backgroundColor: threatColors[band.level] } : undefined}
+                  />
+                  <span className="mt-1.5 block truncate text-[12px] font-semibold text-slate-800 dark:text-slate-100">
+                    {band.label}
+                  </span>
+                  <span className="block text-[12px] tabular-nums text-slate-500 dark:text-slate-400">
+                    {thresholds ? band.range : "…"}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       </div>
 
@@ -300,7 +325,7 @@ export default function ChangeLedger({
         </ul>
 
         <p className="border-t border-slate-200 px-5 py-3 text-[12px] leading-relaxed text-slate-500 dark:border-white/[0.06] dark:text-slate-400">
-          Point at a barangay to light it on both maps. Choose a row to zoom both maps to it.
+          Hover or click a scale band to highlight that threat level on both maps. Point at a barangay to light it; choose a row to zoom to it.
         </p>
       </div>
     </aside>

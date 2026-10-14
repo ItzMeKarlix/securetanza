@@ -640,6 +640,8 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                       return (
                         <React.Fragment key={group.key}>
                           <div
+                            onDoubleClick={() => { selectParent(); setIsModalOpen(true); }}
+                            title="Double-click this row to open full case details"
                             className={`grid items-center gap-4 border-b text-[0.82rem] transition-colors ${hairline} ${
                               selected
                                 ? dark ? "bg-sky-400/[0.08] shadow-[inset_3px_0_0_#38bdf8]" : "bg-sky-50 shadow-[inset_3px_0_0_#0369a1]"
@@ -811,9 +813,14 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                 const facts = [
                   { label: "Blotter No.", value: c.blotterNo },
                   { label: "Type of place", value: c.typeOfPlace },
+                  { label: "Offense classification", value: c.offenseType },
+                  { label: "Legal section", value: c.section },
+                  { label: "Stage of felony", value: c.stageOfFelony },
                   { label: "Suspects", value: c.suspectCount },
                   { label: "Victims", value: c.victimCount },
                   { label: "Investigator", value: c.investigator },
+                  { label: "Lead investigator", value: c.headInves },
+                  { label: "Group affiliation", value: c.grpAffiliation },
                 ].filter((f) => f.value !== undefined && f.value !== null && f.value !== "");
                 const previews = [
                   { label: "Description", text: c.offense },
@@ -856,6 +863,11 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                             <Calendar className="h-3.5 w-3.5" />
                             {formatDate(c.dateCommitted)} · {formatTime(c.timeCommitted)}
                           </span>
+                          {c.dateReported && (
+                            <span className={`text-xs ${mutedText}`}>
+                              Reported {formatDate(c.dateReported)}{c.timeReported ? ` · ${formatTime(c.timeReported)}` : ""}
+                            </span>
+                          )}
                         </div>
                         <p className={`mt-2 flex items-start gap-1.5 text-[0.82rem] ${body}`}>
                           <MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${mutedText}`} />
@@ -926,7 +938,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
       {selectedCase && (
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent
-            className={`sm:max-w-4xl lg:max-w-5xl max-h-[85vh] overflow-y-auto p-6 sm:p-8 ${
+            className={`flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-4 sm:max-w-4xl sm:p-6 lg:max-w-5xl ${
               dark ? "bg-[#1e293b] border-white/[0.06]" : "bg-white border-slate-200"
             }`}
           >
@@ -1051,7 +1063,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                     </div>
                   </DialogHeader>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8 pt-6">
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6 pt-4 sm:gap-8 sm:pt-6">
                     {/* What happened, and who's involved */}
                     <div className="space-y-5">
                       {narrative.length > 0 && (

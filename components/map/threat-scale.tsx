@@ -14,8 +14,39 @@ import { OVERLAY_SURFACE } from "@/lib/map-overlay";
  */
 export default function ThreatScale() {
   const { threatColors } = useDataColors();
-  const { hoveredThreatLevel, setHoveredThreatLevel } = useMapContext();
+  const {
+    mapRef,
+    hoveredThreatLevel,
+    setHoveredThreatLevel,
+    previewThreatLevel,
+    setPreviewThreatLevel,
+  } = useMapContext();
   const { thresholds, loading } = useThreatLevels();
+  const scaleRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!hoveredThreatLevel) return;
+    const clearOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPreviewThreatLevel(null);
+        setHoveredThreatLevel(null);
+      }
+    };
+    const clearOutsideMap = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (scaleRef.current?.contains(target)) return;
+      if (mapRef.current?.getContainer().contains(target)) return;
+      setPreviewThreatLevel(null);
+      setHoveredThreatLevel(null);
+    };
+    document.addEventListener("keydown", clearOnEscape);
+    document.addEventListener("pointerdown", clearOutsideMap);
+    return () => {
+      document.removeEventListener("keydown", clearOnEscape);
+      document.removeEventListener("pointerdown", clearOutsideMap);
+    };
+  }, [hoveredThreatLevel, mapRef, setHoveredThreatLevel, setPreviewThreatLevel]);
 
   const steps = [
     { key: "secure", label: "Secure", range: "0" },
@@ -29,6 +60,7 @@ export default function ThreatScale() {
 
   return (
     <div
+      ref={scaleRef}
       data-tour="map-threat-scale"
       role="group"
       aria-label="Threat level scale"
@@ -38,15 +70,20 @@ export default function ThreatScale() {
 
       <div className="flex items-center gap-0.5">
         {steps.map((step) => {
-          const active = hoveredThreatLevel === step.key;
-          const dimmed = hoveredThreatLevel !== null && !active;
+          const selected = hoveredThreatLevel === step.key;
+          const active = (previewThreatLevel ?? hoveredThreatLevel) === step.key;
+          const dimmed = (previewThreatLevel ?? hoveredThreatLevel) !== null && !active;
           return (
             <button
               key={step.key}
-              onClick={() => setHoveredThreatLevel(active ? null : step.key)}
-              aria-pressed={active}
+              onMouseEnter={() => setPreviewThreatLevel(step.key)}
+              onMouseLeave={() => setPreviewThreatLevel(null)}
+              onFocus={() => setPreviewThreatLevel(step.key)}
+              onBlur={() => setPreviewThreatLevel(null)}
+              onClick={() => setHoveredThreatLevel(selected ? null : step.key)}
+              aria-pressed={selected}
               aria-label={step.label}
-              title={`${step.label} — ${step.range} incidents. Click to highlight on the map.`}
+              title={`${step.label} — ${step.range} incidents. Hover to preview; click to keep highlighted.`}
               disabled={loading}
               className={`group flex h-6 w-6 cursor-pointer items-center justify-center outline-none focus-visible:outline-none! ${
                 dimmed ? "opacity-35" : "opacity-100"

@@ -5,7 +5,7 @@ import { useMapStatistics } from "./useMapStatistics";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "@/hooks/useTimeRangeData";
 import { getCrimeGroup } from "@/lib/crime-groups";
-import { colorfulCrimeColor, type DataColorTheme, type DataColorPalette } from "@/lib/data-colors";
+import { categoryColorForTheme, colorfulCrimeColor, type DataColorTheme, type DataColorPalette } from "@/lib/data-colors";
 
 export interface CrimeTypeStats {
   type: string;
@@ -20,19 +20,19 @@ export interface CrimeTypesData {
 
 // Define colors for different crime types
 export const CRIME_TYPE_COLORS: Record<string, string> = {
-  "Theft": "#EF4444", // red-500
-  "Robbery": "#DC2626", // red-600
-  "Physical Injury": "#F97316", // orange-500
-  "Alarm and Scandal": "#F59E0B", // amber-500
-  "Carnapping": "#EAB308", // yellow-500
-  "Drugs": "#8B5CF6", // violet-500
-  "Buy Bust": "#8B5CF6", // violet-500 (drug operation)
-  "Homicide": "#EC4899", // pink-500
-  "Rape": "#BE185D", // pink-700
-  "Murder": "#991B1B", // red-900
-  "Shooting": "#991B1B", // red-900
-  "Illegal Gambling": "#F59E0B", // amber-500
-  "Other": "#6B7280", // gray-500
+  "Theft": "#DC2626",
+  "Robbery": "#7C3AED",
+  "Physical Injury": "#EA580C",
+  "Alarm and Scandal": "#0891B2",
+  "Carnapping": "#CA8A04",
+  "Drugs": "#9333EA",
+  "Buy Bust": "#C026D3",
+  "Homicide": "#DB2777",
+  "Rape": "#4F46E5",
+  "Murder": "#B91C1C",
+  "Shooting": "#2563EB",
+  "Illegal Gambling": "#0F766E",
+  "Other": "#64748B",
 };
 
 // Helper function to extract crime type from incident type
@@ -65,7 +65,9 @@ export function getCrimeTypeColor(type: string, palette: DataColorPalette = "ori
     }
   }
   
-  return CRIME_TYPE_COLORS["Other"];
+  // Keep new or locally defined categories visually distinct instead of
+  // collapsing every unrecognized label to the same gray swatch.
+  return categoryColorForTheme(crimeType || type, theme);
 }
 
 export function useCrimeTypes(): CrimeTypesData {

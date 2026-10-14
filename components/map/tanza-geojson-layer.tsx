@@ -31,6 +31,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     hotspotMonth,
     hotspotYear,
     hoveredThreatLevel,
+    previewThreatLevel,
     hoveredBarangay,
     setHoveredBarangay,
     timeFilterDate,
@@ -49,7 +50,6 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   // hoveredThreatLevel case — too heavy to also do on every casual mouse
   // pass over the map).
   const layerRegistryRef = React.useRef<Map<string, { layer: L.Path; feature: Feature<Geometry, { adm4_en?: string }> }>>(new Map());
-  const previousHoverKeyRef = React.useRef<string | null>(null);
 
   // Tracks whichever polygon's sticky tooltip is currently open. Each layer's
   // bindTooltip only knows how to open/close *its own* tooltip on its own
@@ -176,8 +176,9 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       (selectedBarangay.toLowerCase().trim() === name?.toLowerCase().trim() ||
        selectedBarangay.toLowerCase().trim().endsWith(name?.toLowerCase().trim()))
     );
-    const isFocusMatch = hoveredThreatLevel
-      ? level === hoveredThreatLevel
+    const activeThreatLevel = previewThreatLevel ?? hoveredThreatLevel;
+    const isFocusMatch = activeThreatLevel
+      ? level === activeThreatLevel
       : true;
 
     const isHotspot =
@@ -222,15 +223,27 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     // Normal state (no time filter)
     return {
       color:
-        isSelected || (hoveredThreatLevel && isFocusMatch) ? highlightBorder : color,
-      weight: isSelected || (hoveredThreatLevel && isFocusMatch) ? 5 : 2.5,
-      opacity: isSelected || (hoveredThreatLevel && isFocusMatch) ? 0.9 : 0.7,
+        isSelected || (activeThreatLevel && isFocusMatch) ? highlightBorder : color,
+      weight: isSelected ? 5 : activeThreatLevel && isFocusMatch ? 4 : activeThreatLevel ? 1.5 : 2.5,
+      opacity: isSelected ? 0.9 : activeThreatLevel ? (isFocusMatch ? 1 : 0.35) : 0.7,
       fillColor: color,
-      fillOpacity:
-        isSelected || (hoveredThreatLevel && isFocusMatch) ? 0.35 : 0.45,
-      dashArray: isSelected || (hoveredThreatLevel && isFocusMatch) ? "" : "",
+      fillOpacity: isSelected ? 0.35 : activeThreatLevel ? (isFocusMatch ? 0.75 : 0.18) : 0.45,
+      dashArray: isSelected || (activeThreatLevel && isFocusMatch) ? "" : "",
     };
   };
+
+  // Keep the callback passed to React Leaflet stable. Hover styles are applied
+  // directly to Leaflet paths; a new style callback on every render makes
+  // React Leaflet reapply the base styles and erase that hover treatment.
+  const styleFeatureRef = React.useRef(styleFeature);
+  styleFeatureRef.current = styleFeature;
+  const getPathStyle = React.useCallback(
+    (feature?: Feature<Geometry, { adm4_en?: string }>) => ({
+      ...styleFeatureRef.current(feature),
+      className: "barangay-hover-transition",
+    }),
+    []
+  );
 
   const onEachFeature = (feature: Feature<Geometry, { adm4_en?: string }>, layer: L.Layer) => {
     if (!(layer instanceof L.Path)) return;
@@ -305,31 +318,43 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   // looks like, regardless of who reported it.
   React.useEffect(() => {
     const nextKey = hoveredBarangay ? hoveredBarangay.toLowerCase().trim() : null;
-    const prevKey = previousHoverKeyRef.current;
+    // Match compare's hover treatment: dim the surrounding shapes so the
+    // selected barangay's mapped fill and crisp boundary stand out. Reapply
+    // each feature's normal style first so leaving the hover restores the map.
+    for (const [key, entry] of layerRegistryRef.current) {
+      const baseStyle = styleFeature(entry.feature);
+      if (nextKey && key !== nextKey) {
+        entry.layer.setStyle({
+          ...baseStyle,
+          opacity: (baseStyle.opacity ?? 1) * 0.45,
+          fillOpacity: (baseStyle.fillOpacity ?? 0) * 0.45,
+        });
+        continue;
+      }
 
-    if (prevKey && prevKey !== nextKey) {
-      const prevEntry = layerRegistryRef.current.get(prevKey);
-      if (prevEntry) {
-        prevEntry.layer.setStyle(styleFeature(prevEntry.feature));
+      entry.layer.setStyle(baseStyle);
+      if (nextKey && key === nextKey) {
+        const name = entry.feature.properties.adm4_en ?? hoveredBarangay ?? "";
+        const level = getThreatLevel(name);
+        entry.layer.setStyle({
+          color: highlightBorder,
+          weight: 4,
+          opacity: 1,
+          fillColor: threatColors[level],
+          fillOpacity: 0.75,
+          dashArray: "",
+        });
+        entry.layer.bringToFront();
       }
     }
 
-    if (nextKey) {
-      const nextEntry = layerRegistryRef.current.get(nextKey);
-      if (nextEntry) {
-        nextEntry.layer.setStyle({ fillOpacity: 0.5, opacity: 1, weight: 6 });
-        nextEntry.layer.bringToFront();
-      }
-    }
-
-    previousHoverKeyRef.current = nextKey;
     // styleFeature is intentionally omitted: it's a new function identity every
     // render, so including it would fire this on every render instead of only
     // when the hover actually changes. It's still always the current render's
     // styleFeature via closure — any staleness self-corrects on the next data
     // change anyway, since that remounts the whole layer via the key below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredBarangay, palette, theme]);
+  }, [hoveredBarangay, previewThreatLevel, palette, theme, threatColors]);
 
   const timeRangeKey = `${timeRange.mode}-${timeRange.selections.map(s => `${s.year}_${s.quarter ?? ''}_${s.month ?? ''}_${s.halfYear ?? ''}_${s.day ? new Date(s.day).getTime() : ''}`).join(',')}`;
   const crimeCountsKey = Object.entries(crimeTypeCounts).map(([b, c]) => `${b}:${c}`).join('|');
@@ -346,7 +371,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       <GeoJSON
         key={`${palette}-${theme}-${selectedBarangay}-${hoveredThreatLevel}-${hotspotMonth}-${hotspotYear}-${loading}-${crimeTypeLoading}-${isTimeFilterActive}-${timeFilterDate?.getTime()}-${timeFilterHour}-${selectedCrimeType}-${selectedFelonyStage}-${timeRangeKey}-${crimeCountsKey}-${baseCountsKey}-${thresholds.low}-${thresholds.moderate}-${thresholds.high}-${thresholds.critical}`}
         data={data}
-        style={styleFeature}
+        style={getPathStyle}
         onEachFeature={onEachFeature}
       />
     </Pane>

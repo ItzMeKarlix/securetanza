@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Crosshair, Minus, Plus } from "lucide-react";
+import { Crosshair, Minus, PanelRightClose, PanelRightOpen, Plus } from "lucide-react";
 import MapHeader from "@/components/layout/map-header";
 import ComparePane from "@/components/compare/compare-pane";
 import ChangeLedger from "@/components/compare/change-ledger";
@@ -16,7 +16,7 @@ import {
 } from "@/components/compare/compare-data";
 import { MapProvider, useMapContext } from "@/context/MapContext";
 import { useAuth } from "@/context/AuthContext";
-import type { ThreatThresholds } from "@/lib/geo-threat";
+import type { ThreatLevel, ThreatThresholds } from "@/lib/geo-threat";
 import { OVERLAY_BUTTON } from "@/lib/map-overlay";
 import { hasMapAccess, getDefaultRouteForUser } from "@/lib/auth-routes";
 
@@ -26,12 +26,18 @@ interface CompareState {
   scale: ThreatThresholds | null;
 }
 
+const LEDGER_VISIBILITY_KEY = "securetanza-compare-ledger-visible";
+
 function CompareContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { geoJsonData } = useMapContext();
   const [link] = useState(() => new MapLink());
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hoveredThreatLevel, setHoveredThreatLevel] = useState<ThreatLevel | null>(null);
+  const [selectedThreatLevel, setSelectedThreatLevel] = useState<ThreatLevel | null>(null);
+  const [ledgerVisible, setLedgerVisible] = useState(true);
+  const [ledgerPreferenceLoaded, setLedgerPreferenceLoaded] = useState(false);
   const [{ reports, scale }, setCompare] = useState<CompareState>({ reports: {}, scale: null });
 
   useEffect(() => {
@@ -43,6 +49,33 @@ function CompareContent() {
       }
     }
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(LEDGER_VISIBILITY_KEY);
+      if (saved === "hidden") setLedgerVisible(false);
+      if (saved === "visible") setLedgerVisible(true);
+    } catch {
+      // Keep the default visible state when browser storage is unavailable.
+    } finally {
+      setLedgerPreferenceLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!ledgerPreferenceLoaded) return;
+    try {
+      window.localStorage.setItem(LEDGER_VISIBILITY_KEY, ledgerVisible ? "visible" : "hidden");
+    } catch {
+      // The toggle still works for this visit if browser storage is unavailable.
+    }
+  }, [ledgerVisible, ledgerPreferenceLoaded]);
+
+  useEffect(() => {
+    // Refit after the layout commits so Tanza remains centered in the resized panes.
+    const frame = window.requestAnimationFrame(() => link.fitHome());
+    return () => window.cancelAnimationFrame(frame);
+  }, [ledgerVisible, link]);
 
   const onReport = useCallback((side: Side, report: PaneReport) => {
     setCompare((prev) => {
@@ -69,6 +102,7 @@ function CompareContent() {
   );
 
   const hoveredName = hovered ? (rows.find((row) => row.key === hovered)?.name ?? null) : null;
+  const highlightedLevel = hoveredThreatLevel ?? selectedThreatLevel;
 
   const focusBarangay = useCallback(
     (key: string) => link.focus(features.find((f) => countKey(f.properties?.adm4_en ?? "") === key)?.geometry),
@@ -88,6 +122,7 @@ function CompareContent() {
   const paneProps = {
     thresholds: scale,
     hovered,
+    highlightedLevel,
     hoveredName,
     onHover: setHovered,
     onFocus: focusBarangay,
@@ -109,7 +144,7 @@ function CompareContent() {
         <h1 className="sr-only">Compare crime maps</h1>
 
         {/* A hairline split: the 1px gaps let the grid's own background draw the seams. */}
-        <div className="grid gap-px bg-slate-200 dark:bg-white/[0.08] lg:grid-cols-2 xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]">
+        <div className={`relative grid gap-px bg-slate-200 dark:bg-white/[0.08] lg:grid-cols-2 xl:h-full ${ledgerVisible ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]" : "xl:grid-cols-2"}`}>
           <ComparePane side="A" className="h-[52vh] lg:h-[64vh] xl:h-auto" {...paneProps} />
           <ComparePane side="B" className="h-[52vh] lg:h-[64vh] xl:h-auto" {...paneProps}>
             {/* The maps move together, so one set of controls drives both. */}
@@ -144,15 +179,32 @@ function CompareContent() {
             </div>
           </ComparePane>
 
-          <ChangeLedger
-            className="lg:col-span-2 xl:col-span-1 xl:min-h-0"
-            reports={reports}
-            rows={rows}
-            thresholds={scale}
-            hovered={hovered}
-            onHover={setHovered}
-            onFocus={focusBarangay}
-          />
+          {ledgerVisible && (
+            <ChangeLedger
+              className="lg:col-span-2 xl:col-span-1 xl:min-h-0"
+              reports={reports}
+              rows={rows}
+              thresholds={scale}
+              hovered={hovered}
+              highlightedLevel={highlightedLevel}
+              selectedThreatLevel={selectedThreatLevel}
+              onThreatLevelHover={setHoveredThreatLevel}
+              onThreatLevelSelect={(level) => setSelectedThreatLevel((current) => current === level ? null : level)}
+              onHover={setHovered}
+              onFocus={focusBarangay}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => setLedgerVisible((visible) => !visible)}
+            aria-label={ledgerVisible ? "Hide comparison sidebar" : "Show comparison sidebar"}
+            aria-expanded={ledgerVisible}
+            title={ledgerVisible ? "Hide comparison sidebar" : "Show comparison sidebar"}
+            className="absolute right-3 top-3 z-[60] flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white/95 text-slate-700 shadow-md backdrop-blur transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-white/15 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {ledgerVisible ? <PanelRightClose aria-hidden="true" className="h-4 w-4" /> : <PanelRightOpen aria-hidden="true" className="h-4 w-4" />}
+          </button>
         </div>
       </main>
     </div>

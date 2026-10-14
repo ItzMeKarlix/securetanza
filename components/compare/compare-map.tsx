@@ -6,7 +6,7 @@ import type { Feature } from "geojson";
 import L from "leaflet";
 import { TANZA_CENTER, DEFAULT_ZOOM, MAP_ATTR, TILE_URL } from "@/constants/map-constants";
 import { useDataColors } from "@/hooks/useDataColors";
-import { threatLevelOf, type ThreatThresholds } from "@/lib/geo-threat";
+import { threatLevelOf, type ThreatLevel, type ThreatThresholds } from "@/lib/geo-threat";
 import MapMaskLayer from "@/components/map/tanza-mask-layer";
 import { countKey, type Side } from "./compare-data";
 import type { MapLink } from "./map-link";
@@ -20,6 +20,7 @@ interface CompareMapProps {
   /** The scale both maps share. Null until both sides have been counted once: the shapes stay neutral until then. */
   thresholds: ThreatThresholds | null;
   hovered: string | null;
+  highlightedLevel: ThreatLevel | null;
   onHover: (key: string | null) => void;
   onFocus: (key: string) => void;
   link: MapLink;
@@ -43,6 +44,7 @@ export default function CompareMap({
   counts,
   thresholds,
   hovered,
+  highlightedLevel,
   onHover,
   onFocus,
   link,
@@ -60,31 +62,39 @@ export default function CompareMap({
       (feature?: Feature): L.PathOptions => {
         const key = countKey(String(feature?.properties?.adm4_en ?? ""));
         if (!thresholds) {
-          return { color: NEUTRAL, weight: 1.5, opacity: 0.6, fillColor: NEUTRAL, fillOpacity: 0.12, dashArray: "4 4" };
+          return { color: NEUTRAL, weight: 1.5, opacity: 0.6, fillColor: NEUTRAL, fillOpacity: 0.12, dashArray: "4 4", className: "barangay-hover-transition" };
         }
-        const color = threatColors[threatLevelOf(counts[key] ?? 0, thresholds)];
+        const level = threatLevelOf(counts[key] ?? 0, thresholds);
+        const color = threatColors[level];
         const isHovered = hovered === key;
-        const dimmed = hovered !== null && !isHovered;
+        const isLevelMatch = highlightedLevel === level;
+        const isHighlighted = isHovered || (!hovered && highlightedLevel !== null && isLevelMatch);
+        const dimmed = hovered !== null ? !isHovered : highlightedLevel !== null && !isLevelMatch;
         return {
-          color: isHovered ? "#ffffff" : color,
-          weight: isHovered ? 4 : 2,
-          opacity: dimmed ? 0.35 : isHovered ? 1 : 0.75,
+          color: isHighlighted ? "#ffffff" : color,
+          weight: isHovered ? 4 : isHighlighted ? 3 : 2,
+          opacity: dimmed ? 0.35 : isHighlighted ? 1 : 0.75,
           fillColor: color,
-          fillOpacity: isHovered ? 0.75 : dimmed ? 0.2 : 0.45,
+          fillOpacity: isHighlighted ? 0.75 : dimmed ? 0.2 : 0.45,
           dashArray: "",
+          className: "barangay-hover-transition",
         };
       },
-    [counts, thresholds, hovered, threatColors]
+    [counts, thresholds, hovered, highlightedLevel, threatColors]
   );
 
   // The highlighted shape is drawn over its neighbours, so its white edge isn't hidden under theirs.
   useEffect(() => {
-    if (!hovered) return;
+    if (!hovered && !highlightedLevel) return;
     layerRef.current?.eachLayer((layer) => {
       const feature = (layer as L.GeoJSON & { feature?: Feature }).feature;
-      if (countKey(String(feature?.properties?.adm4_en ?? "")) === hovered) (layer as L.Path).bringToFront();
+      const key = countKey(String(feature?.properties?.adm4_en ?? ""));
+      const matchesHover = key === hovered;
+      const matchesLevel = !hovered && thresholds !== null && highlightedLevel !== null &&
+        threatLevelOf(counts[key] ?? 0, thresholds) === highlightedLevel;
+      if (matchesHover || matchesLevel) (layer as L.Path).bringToFront();
     });
-  }, [hovered, style, palette, theme]);
+  }, [hovered, highlightedLevel, thresholds, counts, style, palette, theme]);
 
   return (
     <MapContainer

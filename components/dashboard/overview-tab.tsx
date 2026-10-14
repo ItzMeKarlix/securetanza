@@ -231,7 +231,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
 
   const mutedText = dark ? "text-slate-400" : "text-slate-500";
   const labelClass = `flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-[0.11em] ${mutedText}`;
-  const valueClass = `text-[1.3rem] font-bold leading-[1.15] break-words ${dark ? "text-white" : "text-slate-900"}`;
+  const valueClass = `text-[clamp(1.4rem,3.2vh,1.7rem)] font-bold leading-[1.1] break-words ${dark ? "text-white" : "text-slate-900"}`;
 
   return (
     <div className="w-full max-w-[1400px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -269,48 +269,50 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
           <div
             className={`flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x ${dark ? "divide-white/[0.06]" : "divide-slate-200"}`}
           >
-            <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
+            <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Unique Incidents
               </p>
               <p className={valueClass}>{stats.totalCrimes.toLocaleString()}</p>
-              <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
+              <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
                 {stats.multipleOffenseIncidents.toLocaleString()} with multiple offenses
               </p>
             </div>
 
-            <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
+            <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <BarChart3 className="h-3.5 w-3.5" />
                 Recorded Offenses
               </p>
               <p className={valueClass}>{stats.totalOffenses.toLocaleString()}</p>
-              <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
+              <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
                 Classified by offense and felony stage
               </p>
             </div>
 
-            <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
+            <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <BarChart3 className="h-3.5 w-3.5" />
                 Most Frequent Crime Type
               </p>
-              <p className={valueClass}>{mostFrequentCrime}</p>
-              <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
+              <p className={`${valueClass} line-clamp-2 min-h-[2.99rem]`} title={mostFrequentCrime}>
+                {mostFrequentCrime}
+              </p>
+              <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
                 {topType ? `${topType.count.toLocaleString()} offenses · ${topTypePercent}% of offenses` : "No data"}
               </p>
             </div>
 
             {/* Critical Area — General Dashboard Only */}
             {isGeneralDashboard && (
-              <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
+              <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
                 <p className={labelClass} style={{ marginBottom: 8 }}>
                   <MapPin className="h-3.5 w-3.5" />
                   Critical Area
                 </p>
                 <p className={valueClass}>{criticalArea}</p>
-                <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
+                <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
                   {criticalCount > 0 ? `${criticalCount.toLocaleString()} incidents · most in Tanza` : "Most incidents in Tanza"}
                 </p>
               </div>

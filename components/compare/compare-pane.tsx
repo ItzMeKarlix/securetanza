@@ -7,7 +7,7 @@ import { MapProvider, useMapContext } from "@/context/MapContext";
 import { usePeriod, PeriodPanel } from "@/components/layout/period-picker";
 import CrimeTypeOptions from "@/components/layout/crime-type-options";
 import { useDataColors } from "@/hooks/useDataColors";
-import { threatLevelOf, type ThreatThresholds } from "@/lib/geo-threat";
+import { threatLevelOf, type ThreatLevel, type ThreatThresholds } from "@/lib/geo-threat";
 import { OVERLAY_SURFACE } from "@/lib/map-overlay";
 import { openingPeriod, type PaneReport, type Side } from "./compare-data";
 import { usePaneCounts } from "./use-pane-counts";
@@ -22,6 +22,7 @@ interface ComparePaneProps {
   side: Side;
   thresholds: ThreatThresholds | null;
   hovered: string | null;
+  highlightedLevel: ThreatLevel | null;
   /** Display name of the hovered barangay, from whichever map or ledger row it was pointed at. */
   hoveredName: string | null;
   onHover: (key: string | null) => void;
@@ -60,6 +61,7 @@ function PaneBody({
   side,
   thresholds,
   hovered,
+  highlightedLevel,
   hoveredName,
   onHover,
   onFocus,
@@ -133,6 +135,7 @@ function PaneBody({
             counts={counts}
             thresholds={status === "error" ? null : thresholds}
             hovered={hovered}
+            highlightedLevel={highlightedLevel}
             onHover={onHover}
             onFocus={onFocus}
             link={link}

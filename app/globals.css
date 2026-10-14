@@ -16,6 +16,22 @@
   outline: none !important;
 }
 
+.leaflet-interactive.barangay-hover-transition {
+  transition:
+    fill 180ms ease,
+    fill-opacity 180ms ease,
+    stroke 180ms ease,
+    stroke-opacity 180ms ease,
+    stroke-width 180ms ease,
+    opacity 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-interactive.barangay-hover-transition {
+    transition: none;
+  }
+}
+
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
   margin: 0;

@@ -43,6 +43,8 @@ const prefersReducedMotion = () =>
 export class MapLink {
   private maps = new Map<Side, LeafletMap>();
   private following = false;
+  private coordinatedMove = false;
+  private coordinatedMoveId = 0;
   private home: Bounds | null = null;
 
   /** The whole municipality, from the barangay boundaries. */
@@ -61,7 +63,7 @@ export class MapLink {
 
     const follow = () => {
       // Moving the partner fires its own move event; without this guard the two would echo forever.
-      if (this.following) return;
+      if (this.following || this.coordinatedMove) return;
       const other = this.partnerOf(side);
       if (!other) return;
       this.following = true;
@@ -70,7 +72,16 @@ export class MapLink {
     };
     map.on("move", follow);
 
+    // The compare sidebar can be hidden, which resizes both map panes without
+    // resizing the browser window. Leaflet otherwise keeps the old tile
+    // viewport and leaves empty strips until the next window resize.
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize({ pan: false, debounceMoveend: true });
+    });
+    resizeObserver.observe(map.getContainer());
+
     return () => {
+      resizeObserver.disconnect();
       map.off("move", follow);
       if (this.maps.get(side) === map) this.maps.delete(side);
     };
@@ -86,6 +97,9 @@ export class MapLink {
 
   /** Back to the whole municipality on both maps. */
   fitHome() {
+    for (const map of this.maps.values()) {
+      map.invalidateSize({ pan: false, debounceMoveend: true });
+    }
     if (this.home) this.flyTo(this.home, HOME_PADDING);
   }
 
@@ -98,9 +112,43 @@ export class MapLink {
   private flyTo(bounds: LatLngBoundsExpression, options: FitBoundsOptions) {
     const map = this.lead();
     if (!map) return;
-    // flyToBounds moves frame by frame, and every frame's move event carries the partner along.
-    if (prefersReducedMotion()) map.fitBounds(bounds, { ...options, animate: false });
-    else map.flyToBounds(bounds, { ...options, duration: 0.6 });
+    const maps = Array.from(this.maps.values());
+    if (prefersReducedMotion()) {
+      // Apply both view changes in the same turn without follow events echoing.
+      this.following = true;
+      maps.forEach((linkedMap) => linkedMap.fitBounds(bounds, { ...options, animate: false }));
+      this.following = false;
+      return;
+    }
+
+    if (maps.length > 1) {
+      // Start both animations together. Suppress their move listeners until
+      // both finish so neither map is repeatedly reset to the other's frame.
+      this.coordinatedMove = true;
+      // A previous fit or user pan may still be emitting moveend. Stop both
+      // first so those stale events cannot finish this new coordinated move.
+      maps.forEach((linkedMap) => linkedMap.stop());
+      const moveId = ++this.coordinatedMoveId;
+      this.coordinatedMove = true;
+      let remaining = maps.length;
+      const finish = () => {
+        if (moveId !== this.coordinatedMoveId) return;
+        remaining -= 1;
+        if (remaining === 0) this.coordinatedMove = false;
+      };
+      maps.forEach((linkedMap) => {
+        linkedMap.once("moveend", finish);
+        linkedMap.flyToBounds(bounds, { ...options, duration: 0.6 });
+      });
+      // A map already at the target may not emit moveend; don't leave the
+      // synchronization guard enabled if only its partner actually moves.
+      window.setTimeout(() => {
+        if (moveId === this.coordinatedMoveId) this.coordinatedMove = false;
+      }, 900);
+      return;
+    }
+
+    map.flyToBounds(bounds, { ...options, duration: 0.6 });
   }
 
   private lead() {

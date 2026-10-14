@@ -52,6 +52,7 @@ interface MapContextType {
   hotspotMonth: string;
   hotspotYear: string;
   hoveredThreatLevel: string | null;
+  previewThreatLevel: string | null;
   mapRef: React.MutableRefObject<L.Map | null>;
   initialBounds: L.LatLngBounds | null;
   timeFilterDate: Date | null;
@@ -77,6 +78,7 @@ interface MapContextType {
   setHotspotMode: (value: boolean) => void;
   setHotspotDate: (month: string, year: string) => void;
   setHoveredThreatLevel: (level: string | null) => void;
+  setPreviewThreatLevel: (level: string | null) => void;
   setInitialBounds: (bounds: L.LatLngBounds | null) => void;
   setTimeFilter: (
     date: Date | null,
@@ -122,6 +124,7 @@ export function MapProvider({
   const [hoveredThreatLevel, setHoveredThreatLevel] = useState<string | null>(
     null,
   );
+  const [previewThreatLevel, setPreviewThreatLevel] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [timeFilterDate, setTimeFilterDate] = useState<Date | null>(null);
   const [timeFilterHour, setTimeFilterHour] = useState<number | null>(null);
@@ -339,6 +342,7 @@ export function MapProvider({
     hotspotYear,
     hotspotBarangay,
     hoveredThreatLevel,
+    previewThreatLevel,
     timeFilterDate,
     timeFilterHour,
     timeFilterHourCrimeCount,
@@ -359,6 +363,7 @@ export function MapProvider({
     setHotspotMode,
     setHotspotDate,
     setHoveredThreatLevel,
+    setPreviewThreatLevel,
     setInitialBounds,
     setTimeFilter,
     setIsTimeFilterActive,
