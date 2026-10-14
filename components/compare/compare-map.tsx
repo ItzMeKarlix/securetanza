@@ -5,7 +5,7 @@ import { GeoJSON, MapContainer, Pane, TileLayer, useMap } from "react-leaflet";
 import type { Feature } from "geojson";
 import L from "leaflet";
 import { TANZA_CENTER, DEFAULT_ZOOM, MAP_ATTR, TILE_URL } from "@/constants/map-constants";
-import { THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useDataColors } from "@/hooks/useDataColors";
 import { threatLevelOf, type ThreatThresholds } from "@/lib/geo-threat";
 import MapMaskLayer from "@/components/map/tanza-mask-layer";
 import { countKey, type Side } from "./compare-data";
@@ -47,6 +47,7 @@ export default function CompareMap({
   onFocus,
   link,
 }: CompareMapProps) {
+  const { palette, theme, threatColors } = useDataColors();
   const layerRef = useRef<L.GeoJSON | null>(null);
   // onEachFeature binds once per shape, so it reads the current handlers through a ref.
   const handlers = useRef({ onHover, onFocus });
@@ -61,7 +62,7 @@ export default function CompareMap({
         if (!thresholds) {
           return { color: NEUTRAL, weight: 1.5, opacity: 0.6, fillColor: NEUTRAL, fillOpacity: 0.12, dashArray: "4 4" };
         }
-        const color = THREAT_COLORS[threatLevelOf(counts[key] ?? 0, thresholds)];
+        const color = threatColors[threatLevelOf(counts[key] ?? 0, thresholds)];
         const isHovered = hovered === key;
         const dimmed = hovered !== null && !isHovered;
         return {
@@ -73,7 +74,7 @@ export default function CompareMap({
           dashArray: "",
         };
       },
-    [counts, thresholds, hovered]
+    [counts, thresholds, hovered, threatColors]
   );
 
   // The highlighted shape is drawn over its neighbours, so its white edge isn't hidden under theirs.
@@ -83,7 +84,7 @@ export default function CompareMap({
       const feature = (layer as L.GeoJSON & { feature?: Feature }).feature;
       if (countKey(String(feature?.properties?.adm4_en ?? "")) === hovered) (layer as L.Path).bringToFront();
     });
-  }, [hovered, style]);
+  }, [hovered, style, palette, theme]);
 
   return (
     <MapContainer
@@ -102,6 +103,7 @@ export default function CompareMap({
       <MapMaskLayer geoJsonData={geoJsonData} maskOpacity={0.4} />
       <Pane name="barangay-pane" style={{ zIndex: 450 }}>
         <GeoJSON
+          key={`${palette}-${theme}`}
           ref={layerRef}
           data={geoJsonData}
           style={style}

@@ -54,13 +54,13 @@ function OverviewContent() {
 			{/* Dashboard Sub-header with Barangay Selector */}
 			<div
 				data-tour="barangay-selector"
-				className={`flex items-center gap-4 px-6 py-3 border-b shrink-0 ${
+				className={`flex flex-wrap items-center gap-2 px-4 py-3 border-b shrink-0 lg:flex-nowrap sm:gap-4 sm:px-6 ${
 					theme === "dark" ? "bg-[#0f172a]/80 border-white/[0.04]" : "bg-white/60 border-slate-200/60"
 				}`}>
 				<DashboardBarangaySelector currentBarangay={barangayName} />
 				<DashboardCrimeTypeSelector />
-				<div className={`h-5 w-px ${theme === "dark" ? "bg-white/10" : "bg-slate-200"}`} />
-				<span className={`text-sm font-medium ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}>
+				<div className={`hidden h-5 w-px sm:block ${theme === "dark" ? "bg-white/10" : "bg-slate-200"}`} />
+				<span className={`hidden text-sm font-medium sm:inline ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}>
 					{barangayName === "General Dashboard"
 						? "Viewing all crime incidents across Tanza, Cavite"
 						: `Viewing crime data for Brgy. ${barangayName}`}

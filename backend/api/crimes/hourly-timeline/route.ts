@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
       year: searchParams.get('year'),
       incidentType: searchParams.get('incidentType'),
       barangay: searchParams.get('barangay'),
+      offenseCategory: searchParams.get('offenseCategory'),
+      stageOfFelony: searchParams.get('stageOfFelony'),
     });
 
     return NextResponse.json({

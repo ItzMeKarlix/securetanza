@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useDataColors } from "@/hooks/useDataColors";
 import type { ThreatLevel, ThreatThresholds } from "@/lib/geo-threat";
 import {
   deltaTone,
@@ -90,6 +90,7 @@ export default function ChangeLedger({
   onFocus,
   className = "",
 }: ChangeLedgerProps) {
+  const { threatColors } = useDataColors();
   const [sort, setSort] = useState<Sort>("rises");
   const listRef = useRef<HTMLUListElement>(null);
   const pointerInList = useRef(false);
@@ -182,7 +183,7 @@ export default function ChangeLedger({
               <span
                 aria-hidden="true"
                 className={`block h-1.5 rounded-full ${thresholds ? "" : "animate-pulse bg-slate-200 dark:bg-white/10"}`}
-                style={thresholds ? { backgroundColor: THREAT_COLORS[band.level] } : undefined}
+                style={thresholds ? { backgroundColor: threatColors[band.level] } : undefined}
               />
               <span className="mt-1.5 block truncate text-[12px] font-semibold text-slate-800 dark:text-slate-100">
                 {band.label}

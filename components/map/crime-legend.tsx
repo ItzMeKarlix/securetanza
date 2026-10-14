@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useCrimeTypes, getCrimeTypeColor, extractCrimeType } from "@/hooks/useCrimeTypes";
+import { useCrimeTypes, extractCrimeType } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useMapContext } from "@/context/MapContext";
 import CrimeTypeBreakdown from "@/components/map/crime-type-breakdown";
 import { OVERLAY_SURFACE, OVERLAY_LABEL } from "@/lib/map-overlay";
@@ -21,6 +22,7 @@ function formatNumber(num: number): string {
 const CARD = `${OVERLAY_SURFACE} overflow-hidden`;
 
 export default function CrimeLegend() {
+	const { crimeColor } = useDataColors();
 	const { stats, total, loading } = useCrimeTypes();
 	const { selectedCrimeType, setSelectedCrimeType } = useMapContext();
 
@@ -54,7 +56,7 @@ export default function CrimeLegend() {
 					) : (
 						<span className="shrink-0 text-[11.5px] font-bold tabular-nums text-slate-700 dark:text-slate-200">
 							{loading ? "—" : formatNumber(total)}
-							<span className="ml-1 font-semibold text-slate-400 dark:text-slate-500">total</span>
+							<span className="ml-1 font-semibold text-slate-400 dark:text-slate-500">offenses</span>
 						</span>
 					)}
 				</div>
@@ -72,14 +74,14 @@ export default function CrimeLegend() {
 					</div>
 				) : stats.length === 0 ? (
 					<div className="shrink-0 px-3 py-3">
-						<p className="text-[11.5px] text-slate-500 dark:text-slate-400">No incidents in the selected period.</p>
+						<p className="text-[11.5px] text-slate-500 dark:text-slate-400">No recorded offenses in the selected period.</p>
 					</div>
 				) : (
 					<div className="custom-scrollbar flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.04]">
 						{stats.map((item) => {
 							const isActive = selectedCrimeType === item.type;
 							const isDimmed = Boolean(selectedCrimeType) && !isActive;
-							const color = getCrimeTypeColor(item.type);
+							const color = crimeColor(item.type);
 							const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
 							const displayName = extractCrimeType(item.type); // Remove prefix for display
 
@@ -88,7 +90,7 @@ export default function CrimeLegend() {
 									key={item.type}
 									onClick={() => handleToggle(item.type)}
 									aria-pressed={isActive}
-									title={`${displayName} — ${item.count} incidents (${percentage}%)`}
+									title={`${displayName} — ${item.count} offenses (${percentage}%)`}
 									className={`group relative flex w-full items-center gap-2.5 h-[34px] pl-3 pr-3 text-left transition-all duration-200 cursor-pointer ${
 										isActive
 											? "bg-sky-50 dark:bg-sky-400/10"

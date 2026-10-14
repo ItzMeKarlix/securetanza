@@ -3,8 +3,9 @@
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// Load .env file
-config({ path: ".env" });
+// Match Next.js: local configuration takes precedence over the base file.
+// Keep explicitly provided deployment environment variables unchanged.
+config({ path: [".env.local", ".env"] });
 
 export default defineConfig({
   schema: "backend/prisma/schema.prisma",

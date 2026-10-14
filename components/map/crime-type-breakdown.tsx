@@ -3,7 +3,8 @@
 import React from "react";
 import { X } from "lucide-react";
 import { useCrimeTypeByBarangay } from "@/hooks/useCrimeTypeByBarangay";
-import { extractCrimeType, getCrimeTypeColor } from "@/hooks/useCrimeTypes";
+import { extractCrimeType } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useMapContext } from "@/context/MapContext";
 import { OVERLAY_SURFACE, OVERLAY_LABEL } from "@/lib/map-overlay";
 
@@ -26,26 +27,27 @@ interface CrimeTypeBreakdownProps {
 /**
  * Barangay breakdown for the crime type selected in the map legend.
  *
- * Reuses the same barangay counts the choropleth is painted from, so the panel
- * always agrees with the shading on the map for the active temporal filter.
+ * Counts matching offense rows; map shading counts their unique incidents.
+ * Both use the same category, stage, and temporal scope.
  */
 export default function CrimeTypeBreakdown({ crimeType, onClose }: CrimeTypeBreakdownProps) {
-	const { crimeTypeCounts, loading, hasLoaded } = useCrimeTypeByBarangay();
+	const { crimeColor } = useDataColors();
+	const { crimeTypeOffenseCounts, loading, hasLoaded } = useCrimeTypeByBarangay();
 	const { hoveredBarangay, setHoveredBarangay } = useMapContext();
 
 	// Treat "not settled yet" as loading so the panel never flashes an empty state
 	// between the click and the first response.
 	const isPending = loading || !hasLoaded;
 
-	const color = getCrimeTypeColor(crimeType);
+	const color = crimeColor(crimeType);
 	const displayName = extractCrimeType(crimeType);
 
 	const rows = React.useMemo(
 		() =>
-			Object.entries(crimeTypeCounts)
+			Object.entries(crimeTypeOffenseCounts)
 				.filter(([, count]) => count > 0)
 				.sort((a, b) => b[1] - a[1]),
-		[crimeTypeCounts],
+		[crimeTypeOffenseCounts],
 	);
 
 	// Whatever exit path takes this panel away mid-hover — the close button,
@@ -100,7 +102,7 @@ export default function CrimeTypeBreakdown({ crimeType, onClose }: CrimeTypeBrea
 						{isPending ? "—" : formatNumber(total)}
 					</p>
 					<p className={`mt-1.5 ${OVERLAY_LABEL} !text-[0.62rem]`}>
-						Incidents
+						Offenses
 					</p>
 				</div>
 			</div>

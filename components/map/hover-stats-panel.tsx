@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useMapContext } from "@/context/MapContext";
 import { useCrimeHoverStats } from "@/hooks/useCrimeHoverStats";
 import { useThreatLevels, getThreatLevelFromCount } from "@/hooks/useThreatLevels";
@@ -23,9 +24,10 @@ const CRIME_TYPE_COLORS = {
 };
 
 export default function HoverStatsPanel() {
+	const { palette, crimeColor, threatColors } = useDataColors();
 	const { hoveredBarangay } = useMapContext();
 	const { stats, loading } = useCrimeHoverStats(hoveredBarangay);
-	const { barangayCrimeCounts } = useThreatLevels();
+	const { thresholds } = useThreatLevels();
 
 	if (!hoveredBarangay || loading) return null;
 
@@ -47,16 +49,8 @@ export default function HoverStatsPanel() {
 		);
 	}
 
-	const totalCrimes = stats.crimesByType.reduce((sum, crime) => sum + crime.count, 0);
-
-	// Use fixed threat level calculation for consistency
-	const actualCrimeCount = barangayCrimeCounts[hoveredBarangay] || totalCrimes;
-	const threatLevel = getThreatLevelFromCount(actualCrimeCount, {
-		low: 2,
-		moderate: 5,
-		high: 10,
-		critical: 15,
-	});
+	const totalOffenses = stats.totalOffenses;
+	const threatLevel = getThreatLevelFromCount(stats.totalIncidents, thresholds);
 	const riskLevel = threatLevel.charAt(0).toUpperCase() + threatLevel.slice(1);
 	const riskColor =
 		threatLevel === "critical"
@@ -88,24 +82,26 @@ export default function HoverStatsPanel() {
 					<div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5">
 						<div className="flex items-center gap-2 mb-1">
 							<Activity className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
-							<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total</span>
+							<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Incidents</span>
 						</div>
-						<p className="text-lg font-black text-slate-900 dark:text-white">{totalCrimes}</p>
+						<p className="text-lg font-black text-slate-900 dark:text-white">{stats.totalIncidents}</p>
 					</div>
 					<div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5">
 						<div className="flex items-center gap-2 mb-1">
 							<Shield className="h-3 w-3 text-slate-500 dark:text-slate-400" />
 							<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Risk</span>
 						</div>
-						<p className={`text-lg font-black ${riskColor}`}>{riskLevel}</p>
+						<p className={`text-lg font-black ${riskColor}`} style={palette === "colorful" ? { color: threatColors[threatLevel] } : undefined}>{riskLevel}</p>
 					</div>
 				</div>
+
+				<p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{totalOffenses} offenses · One incident may include multiple offenses.</p>
 
 				{/* Crime Types */}
 				<div className="space-y-3">
 					<div className="flex items-center gap-2 mb-3">
 						<AlertTriangle className="h-3 w-3 text-slate-500" />
-						<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crime Distribution</span>
+						<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Offense Distribution</span>
 					</div>
 
 					<div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -114,8 +110,8 @@ export default function HoverStatsPanel() {
 							.sort((a, b) => b.count - a.count)
 							.slice(0, 8) // Show top 8 crime types
 							.map((crime) => {
-								const percentage = totalCrimes > 0 ? Math.round((crime.count / totalCrimes) * 100) : 0;
-								const color = CRIME_TYPE_COLORS[crime.type as keyof typeof CRIME_TYPE_COLORS] || CRIME_TYPE_COLORS.Other;
+								const percentage = totalOffenses > 0 ? Math.round((crime.count / totalOffenses) * 100) : 0;
+								const color = palette === "original" ? CRIME_TYPE_COLORS[crime.type as keyof typeof CRIME_TYPE_COLORS] || CRIME_TYPE_COLORS.Other : crimeColor(crime.type);
 
 								return (
 									<div

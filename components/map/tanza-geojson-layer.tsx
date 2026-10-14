@@ -3,16 +3,18 @@
 import React from "react";
 import { GeoJSON, Pane } from "react-leaflet";
 import L from "leaflet";
+import type { Feature, GeoJsonObject, Geometry } from "geojson";
 import { useMapContext } from "@/context/MapContext";
-import { useThreatLevels, getThreatLevelFromCount, THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useThreatLevels, getThreatLevelFromCount } from "@/hooks/useThreatLevels";
 import { useCrimeTypeByBarangay } from "@/hooks/useCrimeTypeByBarangay";
+import { useCrimeHoverStats } from "@/hooks/useCrimeHoverStats";
+import { useDataColors } from "@/hooks/useDataColors";
 import {
-  getHistoricalIncidents,
   getHotspotSectorForDate,
 } from "@/constants/dummy";
 
 interface BarangayLayerProps {
-  data: any;
+  data: GeoJsonObject;
   selectedBarangay: string | null;
   onClickBarangay?: (name: string) => void;
 }
@@ -22,6 +24,8 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   selectedBarangay,
   onClickBarangay,
 }) => {
+  const { palette, theme, threatColors } = useDataColors();
+  const highlightBorder = "#ffffff";
   const {
     hotspotMode,
     hotspotMonth,
@@ -33,7 +37,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     timeFilterHour,
     isTimeFilterActive,
     selectedCrimeType,
-    selectedYear,
+    selectedFelonyStage,
     timeRange,
   } = useMapContext();
 
@@ -44,7 +48,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   // layer (which the key below already does for the rarer, discrete
   // hoveredThreatLevel case — too heavy to also do on every casual mouse
   // pass over the map).
-  const layerRegistryRef = React.useRef<Map<string, { layer: L.Path; feature: any }>>(new Map());
+  const layerRegistryRef = React.useRef<Map<string, { layer: L.Path; feature: Feature<Geometry, { adm4_en?: string }> }>>(new Map());
   const previousHoverKeyRef = React.useRef<string | null>(null);
 
   // Tracks whichever polygon's sticky tooltip is currently open. Each layer's
@@ -59,6 +63,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   
   const { barangayCrimeCounts, filteredBarangayCrimeCounts, thresholds, loading } = useThreatLevels();
   const { crimeTypeCounts, loading: crimeTypeLoading } = useCrimeTypeByBarangay();
+  const { stats: hoverStats } = useCrimeHoverStats(hoveredBarangay);
 
   // Debug logging - only log once when time filter state changes
   React.useEffect(() => {
@@ -72,7 +77,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       
       // Log which barangays will be highlighted
       const barangaysWithCrimes = Object.entries(filteredBarangayCrimeCounts)
-        .filter(([_, count]) => count > 0)
+        .filter(([, count]) => count > 0)
         .map(([name, count]) => `${name}: ${count}`);
       
       if (barangaysWithCrimes.length > 0) {
@@ -129,8 +134,8 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   // the moment `loading` flips between renders.
   const skipRender = loading && Object.keys(barangayCrimeCounts).length === 0;
 
-  const styleFeature = (feature: any) => {
-    const name = feature.properties?.adm4_en;
+  const styleFeature = (feature?: Feature<Geometry, { adm4_en?: string }>) => {
+    const name = feature?.properties?.adm4_en ?? "";
     const hasActiveCrimes = hasFilteredCrimes(name);
     
     // When time filter is active, handle styling differently
@@ -138,11 +143,11 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       if (hasActiveCrimes) {
         // Only get threat level and color for barangays WITH crimes
         const level = getThreatLevel(name);
-        const color = THREAT_COLORS[level];
+        const color = threatColors[level];
         
         // Highlight barangays with crimes at this time with their threat level color
         return {
-          color: "#ffffff",
+          color: highlightBorder,
           weight: 3,
           opacity: 0.9,
           fillColor: color,
@@ -164,7 +169,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     
     // Normal mode (no time filter) - get threat level for all barangays
     const level = getThreatLevel(name);
-    const color = THREAT_COLORS[level];
+    const color = threatColors[level];
 
     const isSelected = Boolean(
       selectedBarangay &&
@@ -181,10 +186,10 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
 
     if (isHotspot) {
       return {
-        color: "#ffffff",
+        color: highlightBorder,
         weight: 5,
         opacity: 0.3,
-        fillColor: "#ef4444",
+        fillColor: threatColors.critical,
         fillOpacity: 0.85,
       };
     }
@@ -194,7 +199,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       if (hasActiveCrimes) {
         // Highlight barangays with this crime type
         return {
-          color: "#ffffff",
+          color: highlightBorder,
           weight: 3,
           opacity: 0.9,
           fillColor: color,
@@ -204,10 +209,10 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
       } else {
         // Show barangays without this crime type in blue (secure color)
         return {
-          color: "#0ea5e9",
+          color: threatColors.secure,
           weight: 1.5,
           opacity: 0.5,
-          fillColor: "#0ea5e9",
+          fillColor: threatColors.secure,
           fillOpacity: 0.45,
           dashArray: "2",
         };
@@ -217,7 +222,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     // Normal state (no time filter)
     return {
       color:
-        isSelected || (hoveredThreatLevel && isFocusMatch) ? "#ffffff" : color,
+        isSelected || (hoveredThreatLevel && isFocusMatch) ? highlightBorder : color,
       weight: isSelected || (hoveredThreatLevel && isFocusMatch) ? 5 : 2.5,
       opacity: isSelected || (hoveredThreatLevel && isFocusMatch) ? 0.9 : 0.7,
       fillColor: color,
@@ -227,9 +232,9 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     };
   };
 
-  const onEachFeature = (feature: any, layer: L.Layer) => {
+  const onEachFeature = (feature: Feature<Geometry, { adm4_en?: string }>, layer: L.Layer) => {
     if (!(layer instanceof L.Path)) return;
-    const name = feature.properties?.adm4_en;
+    const name = feature?.properties?.adm4_en ?? "";
 
     if (name) {
       layerRegistryRef.current.set(name.toLowerCase().trim(), { layer, feature });
@@ -259,41 +264,40 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     });
 
     if (name) {
-      const normalizedName = name.toUpperCase();
-      const crimeCount = barangayCrimeCounts[normalizedName] || barangayCrimeCounts[name] || 0;
-      const filteredCount = filteredBarangayCrimeCounts[normalizedName] || filteredBarangayCrimeCounts[name] || 0;
-      const crimeTypeCount = crimeTypeCounts[normalizedName] || crimeTypeCounts[name] || 0;
-      const threatLevel = getThreatLevel(name);
-      
-      let displayCount = crimeCount;
-      let countLabel = `${crimeCount} total crimes`;
-      
-      if (selectedCrimeType) {
-        displayCount = crimeTypeCount;
-        countLabel = `${crimeTypeCount} ${selectedCrimeType} crimes`;
-      } else if (isTimeFilterActive) {
-        displayCount = filteredCount;
-        countLabel = `${filteredCount} crimes at this time`;
-      }
-      
-      layer.bindTooltip(
-        `<div class="map-tip">
-          <p class="map-tip__label">Barangay</p>
-          <p class="map-tip__name">${name}</p>
-          <div class="map-tip__row">
-            <span class="map-tip__dot" style="background:${THREAT_COLORS[threatLevel]}"></span>
-            <span>${threatLevel} (${countLabel})</span>
-          </div>
-        </div>`,
-        {
-          sticky: true,
-          className: "custom-tooltip-revert",
-          direction: "top",
-          opacity: 1,
-        },
-      );
+      layer.bindTooltip(getTooltipContent(name), {
+        sticky: true,
+        className: "custom-tooltip-revert",
+        direction: "top",
+        opacity: 1,
+      });
     }
   };
+
+  function getTooltipContent(name: string) {
+    const normalizedName = name.toUpperCase();
+    const count = barangayCrimeCounts[normalizedName] ?? barangayCrimeCounts[name] ?? 0;
+    const level = getThreatLevel(name);
+    const matchingHover = hoverStats && hoveredBarangay?.toUpperCase() === normalizedName;
+    const countLabel = matchingHover
+      ? `${hoverStats.totalIncidents} incidents · ${hoverStats.totalOffenses} offenses`
+      : `${count} incidents · offenses loading…`;
+    return `<div class="map-tip">
+      <p class="map-tip__label">Barangay</p>
+      <p class="map-tip__name">${name}</p>
+      <div class="map-tip__row">
+        <span class="map-tip__dot" style="background:${threatColors[level]}"></span>
+        <span>${level} (${countLabel})</span>
+      </div>
+    </div>`;
+  }
+
+  React.useEffect(() => {
+    if (!hoveredBarangay) return;
+    const entry = layerRegistryRef.current.get(hoveredBarangay.toLowerCase().trim());
+    if (entry) entry.layer.setTooltipContent(getTooltipContent(entry.feature.properties.adm4_en ?? hoveredBarangay));
+    // Data and counts control tooltip contents; the function is recreated each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredBarangay, hoverStats, barangayCrimeCounts, thresholds, threatColors, palette, theme]);
 
   // Applies/clears the hover highlight from wherever hoveredBarangay was set —
   // a direct map hover (via onEachFeature above) or an external one, like a
@@ -325,7 +329,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     // styleFeature via closure — any staleness self-corrects on the next data
     // change anyway, since that remounts the whole layer via the key below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredBarangay]);
+  }, [hoveredBarangay, palette, theme]);
 
   const timeRangeKey = `${timeRange.mode}-${timeRange.selections.map(s => `${s.year}_${s.quarter ?? ''}_${s.month ?? ''}_${s.halfYear ?? ''}_${s.day ? new Date(s.day).getTime() : ''}`).join(',')}`;
   const crimeCountsKey = Object.entries(crimeTypeCounts).map(([b, c]) => `${b}:${c}`).join('|');
@@ -340,7 +344,7 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
   return (
     <Pane name="barangay-pane" style={{ zIndex: 450 }}>
       <GeoJSON
-        key={`${selectedBarangay}-${hoveredThreatLevel}-${hotspotMonth}-${hotspotYear}-${loading}-${crimeTypeLoading}-${isTimeFilterActive}-${timeFilterDate?.getTime()}-${timeFilterHour}-${selectedCrimeType}-${timeRangeKey}-${crimeCountsKey}-${baseCountsKey}-${thresholds.low}-${thresholds.moderate}-${thresholds.high}-${thresholds.critical}`}
+        key={`${palette}-${theme}-${selectedBarangay}-${hoveredThreatLevel}-${hotspotMonth}-${hotspotYear}-${loading}-${crimeTypeLoading}-${isTimeFilterActive}-${timeFilterDate?.getTime()}-${timeFilterHour}-${selectedCrimeType}-${selectedFelonyStage}-${timeRangeKey}-${crimeCountsKey}-${baseCountsKey}-${thresholds.low}-${thresholds.moderate}-${thresholds.high}-${thresholds.critical}`}
         data={data}
         style={styleFeature}
         onEachFeature={onEachFeature}

@@ -1,0 +1,36 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "components/dashboard/incidents-tab.tsx"
+        ],
+        "createdAt": "2026-10-12T11:15:13.726Z",
+        "reason": "Agent review: select options use sky text on checked sky backgrounds and slate text on neutral slate backgrounds; the detector conflates mutually exclusive state variants."
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "components/layout/unified-filter-bar.tsx"
+        ],
+        "createdAt": "2026-10-12T22:09:41.314Z",
+        "reason": "Agent verified line 377: neutral slate text has no colored background; hover:bg-red-50 is paired with hover:text-red-600 and dark hover is paired with red-400. The detector combines mutually exclusive states."
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "components/dashboard/dashboard-crime-type-selector.tsx",
+          "components/layout/crime-type-filter.tsx"
+        ],
+        "createdAt": "2026-10-13T02:52:19.971Z",
+        "reason": "Agent reviewed clear controls: slate foreground applies on neutral slate/white backgrounds; red hover backgrounds are paired with red hover foregrounds. The detector conflates default and hover states. Existing default colors are explicitly preserved by the user request."
+      }
+    ]
+  }
+}

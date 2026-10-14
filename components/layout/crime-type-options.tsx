@@ -1,10 +1,16 @@
 "use client";
 
+import FelonyStageSelector from "@/components/dashboard/felony-stage-selector";
 import { Check } from "lucide-react";
 import { useMapContext } from "@/context/MapContext";
-import { useCrimeTypes, getCrimeTypeColor } from "@/hooks/useCrimeTypes";
+import { useCrimeTypes } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 import { CRIME_GROUPS } from "@/lib/crime-groups";
-import { OVERLAY_LABEL, OVERLAY_ITEM, OVERLAY_ITEM_ACTIVE } from "@/lib/map-overlay";
+import {
+  OVERLAY_LABEL,
+  OVERLAY_ITEM,
+  OVERLAY_ITEM_ACTIVE,
+} from "@/lib/map-overlay";
 
 /**
  * The crime type picker's body — "All", the preset groups, then every incident
@@ -13,6 +19,7 @@ import { OVERLAY_LABEL, OVERLAY_ITEM, OVERLAY_ITEM_ACTIVE } from "@/lib/map-over
  * view get the same list. `onPick` closes whatever dropdown holds it.
  */
 export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
+  const { crimeColor: getCrimeTypeColor } = useDataColors();
   const { selectedCrimeType, setSelectedCrimeType } = useMapContext();
   const { stats: crimeStats, loading: crimeLoading } = useCrimeTypes();
 
@@ -24,7 +31,7 @@ export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
   return (
     <>
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-white/[0.06]">
-        <span className={OVERLAY_LABEL}>Incident Classification</span>
+        <span className={OVERLAY_LABEL}>Offense classification</span>
         {selectedCrimeType && (
           <button
             onClick={() => setSelectedCrimeType(null)}
@@ -35,16 +42,21 @@ export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
         )}
       </div>
 
+      <div className="px-4 py-3">
+        <FelonyStageSelector onPick={onPick} />
+      </div>
       <div className="overflow-y-auto overscroll-contain max-h-[300px] p-1 dropdown-scroll">
         <button
           onClick={() => pick(null)}
           className={`flex items-center justify-between w-full text-left px-3 py-2.5 text-[13px] ${
-            !selectedCrimeType ? OVERLAY_ITEM_ACTIVE : `${OVERLAY_ITEM} font-medium`
+            !selectedCrimeType
+              ? OVERLAY_ITEM_ACTIVE
+              : `${OVERLAY_ITEM} font-medium`
           }`}
         >
           <div className="flex items-center gap-2.5">
             <div className="w-2.5 h-2.5 rounded-full bg-slate-400/50" />
-            <span>All Crime Types</span>
+            <span>All Offenses</span>
           </div>
           {!selectedCrimeType && <Check className="h-3.5 w-3.5" />}
         </button>
@@ -62,7 +74,10 @@ export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
               }`}
             >
               <div className="flex items-center gap-2.5 truncate pr-2">
-                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+                <div
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: getCrimeTypeColor(group.label) }}
+                />
                 <span className="truncate">{group.label}</span>
               </div>
               {isSelected && <Check className="h-3.5 w-3.5" />}
@@ -72,9 +87,13 @@ export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
         <div className="my-1 h-px bg-slate-100 dark:bg-white/[0.06]" />
 
         {crimeLoading ? (
-          <div className="p-4 text-[13px] text-slate-400 text-center">Loading crime types...</div>
+          <div className="p-4 text-[13px] text-slate-400 text-center">
+            Loading offenses...
+          </div>
         ) : crimeStats.length === 0 ? (
-          <div className="p-4 text-[13px] text-slate-400 text-center">No crime types recorded</div>
+          <div className="p-4 text-[13px] text-slate-400 text-center">
+            No offenses recorded
+          </div>
         ) : (
           crimeStats.map((item) => {
             const isSelected = selectedCrimeType === item.type;
@@ -83,7 +102,9 @@ export default function CrimeTypeOptions({ onPick }: { onPick: () => void }) {
                 key={item.type}
                 onClick={() => pick(item.type)}
                 className={`flex items-center justify-between w-full text-left px-3 py-2.5 text-[13px] ${
-                  isSelected ? OVERLAY_ITEM_ACTIVE : `${OVERLAY_ITEM} font-medium`
+                  isSelected
+                    ? OVERLAY_ITEM_ACTIVE
+                    : `${OVERLAY_ITEM} font-medium`
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate pr-2">

@@ -1,54 +1,55 @@
 "use client";
 
 import React from "react";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useMapContext } from "@/context/MapContext";
-import { useThreatLevels, THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useThreatLevels } from "@/hooks/useThreatLevels";
 
-// Helper function to format numbers in standard notation
-function formatNumber(num: number): string {
-	if (num >= 1000000) {
-		return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-	}
-	if (num >= 1000) {
-		return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-	}
-	return num.toString();
+/** Pick readable text for colorful swatches, while retaining original badge styling. */
+function badgeTextColor(hex: string) {
+  const channels = [1, 3, 5].map(offset => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+  const linear = channels.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  const darkContrast = (luminance + 0.05) / (0.008815 + 0.05);
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  return darkContrast >= whiteContrast ? "#0f172a" : "#ffffff";
 }
 
 export default function MapLegend() {
+  const { palette, threatColors } = useDataColors();
 	const { hoveredThreatLevel, setHoveredThreatLevel } = useMapContext();
-	const { stats, thresholds, loading } = useThreatLevels();
+	const { thresholds, loading } = useThreatLevels();
 
 	// Generate dynamic range labels based on thresholds
 	const LEGEND_ITEMS = [
 		{
 			label: "CRITICAL",
 			key: "critical",
-			color: THREAT_COLORS.critical,
+			color: threatColors.critical,
 			range: `${thresholds.high + 1}+`,
 		},
 		{
 			label: "HIGH",
 			key: "high",
-			color: THREAT_COLORS.high,
+			color: threatColors.high,
 			range: `${thresholds.moderate + 1}-${thresholds.high}`,
 		},
 		{
 			label: "MODERATE",
 			key: "moderate",
-			color: THREAT_COLORS.moderate,
+			color: threatColors.moderate,
 			range: `${thresholds.low + 1}-${thresholds.moderate}`,
 		},
 		{
 			label: "LOW",
 			key: "low",
-			color: THREAT_COLORS.low,
+			color: threatColors.low,
 			range: `1-${thresholds.low}`,
 		},
 		{
 			label: "SECURE",
 			key: "secure",
-			color: THREAT_COLORS.secure,
+			color: threatColors.secure,
 			range: "0",
 		},
 	];
@@ -95,6 +96,7 @@ export default function MapLegend() {
 							}`}
 							style={{
 								backgroundColor: item.color,
+								color: palette === "colorful" ? badgeTextColor(item.color) : undefined,
 								boxShadow: isActive ? `0 0 12px ${item.color}80` : "none",
 							}}>
 							{item.range}

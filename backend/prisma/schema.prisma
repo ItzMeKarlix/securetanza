@@ -12,6 +12,17 @@ datasource db {
 
 model CrimeIncident {
   id              String   @id @default(cuid())
+  // This existing record table is the explicit incident ↔ offense association.
+  incidentId         String @map("incident_id")
+  incident           Incident @relation(fields: [incidentId], references: [id])
+  offenseDefinitionId String @map("offense_definition_id")
+  offenseDefinition  OffenseDefinition @relation(fields: [offenseDefinitionId], references: [id])
+  importKey          String? @unique @map("import_key")
+  crimeType          String @map("crime_type")
+  felonyStage        String @default("UNKNOWN") @map("felony_stage")
+  sourceFile         String? @map("source_file")
+  sourceSheet        String? @map("source_sheet")
+  sourceRow          Int? @map("source_row")
   
   // Blotter Information
   blotterNo       String?  @map("blotter_no")                 // Blotter number
@@ -97,12 +108,38 @@ model CrimeIncident {
   @@index([barangay])
   @@index([dateCommitted])
   @@index([incidentType])
+  @@index([incidentId])
+  @@index([offenseDefinitionId])
+  @@index([crimeType, felonyStage])
   @@index([region, province, municipal])
   @@index([latitude, longitude])
   @@index([blotterNo])
   @@index([caseStatus])
   @@index([heinous])
   @@index([sensational])
+}
+
+model Incident {
+  id                  String @id @default(cuid())
+  key                 String @unique
+  blotterNo           String? @map("blotter_no")
+  station             String?
+  hasMultipleOffenses  Boolean @default(false) @map("has_multiple_offenses")
+  offenseCount        Int @default(0) @map("offense_count")
+  offenses            CrimeIncident[]
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("incidents")
+}
+
+model OffenseDefinition {
+  id        String @id @default(cuid())
+  code      String @unique
+  label     String
+  records   CrimeIncident[]
+
+  @@map("offense_definitions")
 }
 
 model Barangay {

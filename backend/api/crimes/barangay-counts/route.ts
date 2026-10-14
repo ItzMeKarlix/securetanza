@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
       year,
       incidentType,
       barangay,
+      offenseCategory: searchParams.get('offenseCategory'),
+      stageOfFelony: searchParams.get('stageOfFelony'),
     });
 
     return NextResponse.json({

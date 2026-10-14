@@ -19,6 +19,16 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type CrimeIncident = $Result.DefaultSelection<Prisma.$CrimeIncidentPayload>
 /**
+ * Model Incident
+ * 
+ */
+export type Incident = $Result.DefaultSelection<Prisma.$IncidentPayload>
+/**
+ * Model OffenseDefinition
+ * 
+ */
+export type OffenseDefinition = $Result.DefaultSelection<Prisma.$OffenseDefinitionPayload>
+/**
  * Model Barangay
  * 
  */
@@ -154,7 +164,7 @@ export class PrismaClient<
    * Read more in our [docs](https://pris.ly/d/client).
    */
 
-  constructor(optionsArg ?: Prisma.PrismaClientConstructorArgs<ClientOptions>);
+  constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
   $on<V extends U>(eventType: V, callback: (event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent) => void): PrismaClient;
 
   /**
@@ -227,7 +237,7 @@ export class PrismaClient<
    * 
    * Read more in our [docs](https://www.prisma.io/docs/orm/prisma-client/queries/transactions).
    */
-  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
+  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => $Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<R>
 
@@ -244,6 +254,26 @@ export class PrismaClient<
     * ```
     */
   get crimeIncident(): Prisma.CrimeIncidentDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.incident`: Exposes CRUD operations for the **Incident** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Incidents
+    * const incidents = await prisma.incident.findMany()
+    * ```
+    */
+  get incident(): Prisma.IncidentDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.offenseDefinition`: Exposes CRUD operations for the **OffenseDefinition** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OffenseDefinitions
+    * const offenseDefinitions = await prisma.offenseDefinition.findMany()
+    * ```
+    */
+  get offenseDefinition(): Prisma.OffenseDefinitionDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.barangay`: Exposes CRUD operations for the **Barangay** model.
@@ -384,8 +414,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 7.10.0
-   * Query Engine version: 0edf323efd1d98336f3f0a68684b56f689b900d3
+   * Prisma Client JS version: 7.7.0
+   * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
    */
   export type PrismaVersion = {
     client: string
@@ -520,19 +550,6 @@ export namespace Prisma {
   };
 
   /**
-   * Resolved type of the argument passed to the `PrismaClient` constructor.
-   *
-   * When called without a narrower options type (the common case), this resolves
-   * to `PrismaClientOptions` directly, which produces a clear TypeScript error
-   * message (`not assignable to parameter of type 'PrismaClientOptions'`) when
-   * the argument is missing or incomplete. When the user supplies a narrower
-   * options type (e.g. via a literal), it falls back to `Subset` to keep
-   * filtering out unknown properties.
-   */
-  export type PrismaClientConstructorArgs<Options extends PrismaClientOptions> =
-    [PrismaClientOptions] extends [Options] ? PrismaClientOptions : Subset<Options, PrismaClientOptions>;
-
-  /**
    * SelectSubset
    * @desc From `T` pick properties that exist in `U`. Simple version of Intersection.
    * Additionally, it validates, if both select and include are present. If the case, it errors.
@@ -564,7 +581,7 @@ export namespace Prisma {
   type XOR<T, U> =
     T extends object ?
     U extends object ?
-      ((Without<T, U> & U) | (Without<U, T> & T)) & object
+      (Without<T, U> & U) | (Without<U, T> & T)
     : U : T
 
 
@@ -782,6 +799,8 @@ export namespace Prisma {
 
   export const ModelName: {
     CrimeIncident: 'CrimeIncident',
+    Incident: 'Incident',
+    OffenseDefinition: 'OffenseDefinition',
     Barangay: 'Barangay',
     AuditLog: 'AuditLog',
     Notification: 'Notification',
@@ -806,7 +825,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "crimeIncident" | "barangay" | "auditLog" | "notification" | "notificationRule" | "user" | "backup" | "exportSchedule" | "permission" | "userPermission"
+      modelProps: "crimeIncident" | "incident" | "offenseDefinition" | "barangay" | "auditLog" | "notification" | "notificationRule" | "user" | "backup" | "exportSchedule" | "permission" | "userPermission"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -881,6 +900,154 @@ export namespace Prisma {
           count: {
             args: Prisma.CrimeIncidentCountArgs<ExtArgs>
             result: $Utils.Optional<CrimeIncidentCountAggregateOutputType> | number
+          }
+        }
+      }
+      Incident: {
+        payload: Prisma.$IncidentPayload<ExtArgs>
+        fields: Prisma.IncidentFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.IncidentFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.IncidentFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          findFirst: {
+            args: Prisma.IncidentFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.IncidentFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          findMany: {
+            args: Prisma.IncidentFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>[]
+          }
+          create: {
+            args: Prisma.IncidentCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          createMany: {
+            args: Prisma.IncidentCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.IncidentCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>[]
+          }
+          delete: {
+            args: Prisma.IncidentDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          update: {
+            args: Prisma.IncidentUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          deleteMany: {
+            args: Prisma.IncidentDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.IncidentUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.IncidentUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>[]
+          }
+          upsert: {
+            args: Prisma.IncidentUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$IncidentPayload>
+          }
+          aggregate: {
+            args: Prisma.IncidentAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateIncident>
+          }
+          groupBy: {
+            args: Prisma.IncidentGroupByArgs<ExtArgs>
+            result: $Utils.Optional<IncidentGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.IncidentCountArgs<ExtArgs>
+            result: $Utils.Optional<IncidentCountAggregateOutputType> | number
+          }
+        }
+      }
+      OffenseDefinition: {
+        payload: Prisma.$OffenseDefinitionPayload<ExtArgs>
+        fields: Prisma.OffenseDefinitionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OffenseDefinitionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OffenseDefinitionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          findFirst: {
+            args: Prisma.OffenseDefinitionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OffenseDefinitionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          findMany: {
+            args: Prisma.OffenseDefinitionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>[]
+          }
+          create: {
+            args: Prisma.OffenseDefinitionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          createMany: {
+            args: Prisma.OffenseDefinitionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OffenseDefinitionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>[]
+          }
+          delete: {
+            args: Prisma.OffenseDefinitionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          update: {
+            args: Prisma.OffenseDefinitionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          deleteMany: {
+            args: Prisma.OffenseDefinitionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OffenseDefinitionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OffenseDefinitionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>[]
+          }
+          upsert: {
+            args: Prisma.OffenseDefinitionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OffenseDefinitionPayload>
+          }
+          aggregate: {
+            args: Prisma.OffenseDefinitionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOffenseDefinition>
+          }
+          groupBy: {
+            args: Prisma.OffenseDefinitionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OffenseDefinitionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OffenseDefinitionCountArgs<ExtArgs>
+            result: $Utils.Optional<OffenseDefinitionCountAggregateOutputType> | number
           }
         }
       }
@@ -1618,26 +1785,11 @@ export namespace Prisma {
       isolationLevel?: Prisma.TransactionIsolationLevel
     }
     /**
-     * A driver adapter that PrismaClient uses to connect to your database, such as the ones provided by `@prisma/adapter-pg`, `@prisma/adapter-libsql`, `@prisma/adapter-planetscale`, etc.
-     * 
-     * A driver adapter is **required** unless you connect to your database through Prisma Accelerate (in which case use `accelerateUrl` instead).
-     * 
-     * Learn more: https://pris.ly/d/driver-adapters
-     * 
-     * @example
-     * ```ts
-     * import { PrismaPg } from '@prisma/adapter-pg'
-     * import { PrismaClient } from './generated/prisma/client'
-     * 
-     * const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
-     * const prisma = new PrismaClient({ adapter })
-     * ```
+     * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
      */
     adapter?: runtime.SqlDriverAdapterFactory
     /**
-     * The Prisma Accelerate connection URL. Use this option to connect to your database through Prisma Accelerate instead of using a driver adapter to connect directly.
-     * 
-     * Learn more: https://pris.ly/d/accelerate
+     * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
      */
     accelerateUrl?: string
     /**
@@ -1674,6 +1826,8 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     crimeIncident?: CrimeIncidentOmit
+    incident?: IncidentOmit
+    offenseDefinition?: OffenseDefinitionOmit
     barangay?: BarangayOmit
     auditLog?: AuditLogOmit
     notification?: NotificationOmit
@@ -1756,6 +1910,68 @@ export namespace Prisma {
   /**
    * Count Types
    */
+
+
+  /**
+   * Count Type IncidentCountOutputType
+   */
+
+  export type IncidentCountOutputType = {
+    offenses: number
+  }
+
+  export type IncidentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    offenses?: boolean | IncidentCountOutputTypeCountOffensesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * IncidentCountOutputType without action
+   */
+  export type IncidentCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the IncidentCountOutputType
+     */
+    select?: IncidentCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * IncidentCountOutputType without action
+   */
+  export type IncidentCountOutputTypeCountOffensesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CrimeIncidentWhereInput
+  }
+
+
+  /**
+   * Count Type OffenseDefinitionCountOutputType
+   */
+
+  export type OffenseDefinitionCountOutputType = {
+    records: number
+  }
+
+  export type OffenseDefinitionCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    records?: boolean | OffenseDefinitionCountOutputTypeCountRecordsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OffenseDefinitionCountOutputType without action
+   */
+  export type OffenseDefinitionCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinitionCountOutputType
+     */
+    select?: OffenseDefinitionCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OffenseDefinitionCountOutputType without action
+   */
+  export type OffenseDefinitionCountOutputTypeCountRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CrimeIncidentWhereInput
+  }
 
 
   /**
@@ -1877,6 +2093,7 @@ export namespace Prisma {
   }
 
   export type CrimeIncidentAvgAggregateOutputType = {
+    sourceRow: number | null
     suspectCount: number | null
     victimCount: number | null
     latitude: number | null
@@ -1884,6 +2101,7 @@ export namespace Prisma {
   }
 
   export type CrimeIncidentSumAggregateOutputType = {
+    sourceRow: number | null
     suspectCount: number | null
     victimCount: number | null
     latitude: number | null
@@ -1892,6 +2110,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMinAggregateOutputType = {
     id: string | null
+    incidentId: string | null
+    offenseDefinitionId: string | null
+    importKey: string | null
+    crimeType: string | null
+    felonyStage: string | null
+    sourceFile: string | null
+    sourceSheet: string | null
+    sourceRow: number | null
     blotterNo: string | null
     dateEncoded: Date | null
     pro: string | null
@@ -1944,6 +2170,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMaxAggregateOutputType = {
     id: string | null
+    incidentId: string | null
+    offenseDefinitionId: string | null
+    importKey: string | null
+    crimeType: string | null
+    felonyStage: string | null
+    sourceFile: string | null
+    sourceSheet: string | null
+    sourceRow: number | null
     blotterNo: string | null
     dateEncoded: Date | null
     pro: string | null
@@ -1996,6 +2230,14 @@ export namespace Prisma {
 
   export type CrimeIncidentCountAggregateOutputType = {
     id: number
+    incidentId: number
+    offenseDefinitionId: number
+    importKey: number
+    crimeType: number
+    felonyStage: number
+    sourceFile: number
+    sourceSheet: number
+    sourceRow: number
     blotterNo: number
     dateEncoded: number
     pro: number
@@ -2049,6 +2291,7 @@ export namespace Prisma {
 
 
   export type CrimeIncidentAvgAggregateInputType = {
+    sourceRow?: true
     suspectCount?: true
     victimCount?: true
     latitude?: true
@@ -2056,6 +2299,7 @@ export namespace Prisma {
   }
 
   export type CrimeIncidentSumAggregateInputType = {
+    sourceRow?: true
     suspectCount?: true
     victimCount?: true
     latitude?: true
@@ -2064,6 +2308,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMinAggregateInputType = {
     id?: true
+    incidentId?: true
+    offenseDefinitionId?: true
+    importKey?: true
+    crimeType?: true
+    felonyStage?: true
+    sourceFile?: true
+    sourceSheet?: true
+    sourceRow?: true
     blotterNo?: true
     dateEncoded?: true
     pro?: true
@@ -2116,6 +2368,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMaxAggregateInputType = {
     id?: true
+    incidentId?: true
+    offenseDefinitionId?: true
+    importKey?: true
+    crimeType?: true
+    felonyStage?: true
+    sourceFile?: true
+    sourceSheet?: true
+    sourceRow?: true
     blotterNo?: true
     dateEncoded?: true
     pro?: true
@@ -2168,6 +2428,14 @@ export namespace Prisma {
 
   export type CrimeIncidentCountAggregateInputType = {
     id?: true
+    incidentId?: true
+    offenseDefinitionId?: true
+    importKey?: true
+    crimeType?: true
+    felonyStage?: true
+    sourceFile?: true
+    sourceSheet?: true
+    sourceRow?: true
     blotterNo?: true
     dateEncoded?: true
     pro?: true
@@ -2307,6 +2575,14 @@ export namespace Prisma {
 
   export type CrimeIncidentGroupByOutputType = {
     id: string
+    incidentId: string
+    offenseDefinitionId: string
+    importKey: string | null
+    crimeType: string
+    felonyStage: string
+    sourceFile: string | null
+    sourceSheet: string | null
+    sourceRow: number | null
     blotterNo: string | null
     dateEncoded: Date | null
     pro: string | null
@@ -2378,6 +2654,14 @@ export namespace Prisma {
 
   export type CrimeIncidentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    incidentId?: boolean
+    offenseDefinitionId?: boolean
+    importKey?: boolean
+    crimeType?: boolean
+    felonyStage?: boolean
+    sourceFile?: boolean
+    sourceSheet?: boolean
+    sourceRow?: boolean
     blotterNo?: boolean
     dateEncoded?: boolean
     pro?: boolean
@@ -2426,10 +2710,20 @@ export namespace Prisma {
     longitude?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["crimeIncident"]>
 
   export type CrimeIncidentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    incidentId?: boolean
+    offenseDefinitionId?: boolean
+    importKey?: boolean
+    crimeType?: boolean
+    felonyStage?: boolean
+    sourceFile?: boolean
+    sourceSheet?: boolean
+    sourceRow?: boolean
     blotterNo?: boolean
     dateEncoded?: boolean
     pro?: boolean
@@ -2478,10 +2772,20 @@ export namespace Prisma {
     longitude?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["crimeIncident"]>
 
   export type CrimeIncidentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    incidentId?: boolean
+    offenseDefinitionId?: boolean
+    importKey?: boolean
+    crimeType?: boolean
+    felonyStage?: boolean
+    sourceFile?: boolean
+    sourceSheet?: boolean
+    sourceRow?: boolean
     blotterNo?: boolean
     dateEncoded?: boolean
     pro?: boolean
@@ -2530,10 +2834,20 @@ export namespace Prisma {
     longitude?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["crimeIncident"]>
 
   export type CrimeIncidentSelectScalar = {
     id?: boolean
+    incidentId?: boolean
+    offenseDefinitionId?: boolean
+    importKey?: boolean
+    crimeType?: boolean
+    felonyStage?: boolean
+    sourceFile?: boolean
+    sourceSheet?: boolean
+    sourceRow?: boolean
     blotterNo?: boolean
     dateEncoded?: boolean
     pro?: boolean
@@ -2584,13 +2898,36 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type CrimeIncidentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "blotterNo" | "dateEncoded" | "pro" | "ppo" | "stn" | "pcp" | "region" | "province" | "municipal" | "barangay" | "street" | "typeOfPlace" | "dateReported" | "timeReported" | "dateCommitted" | "timeCommitted" | "incidentType" | "isCrime" | "modeReporting" | "stageOfFelony" | "offense" | "offenseType" | "section" | "modus" | "suspectMotive" | "suspectSubMotive" | "heinous" | "sensational" | "threatGrp" | "grpAffiliation" | "incidentTypeThreatGrp" | "mrs" | "suspectIsEGO" | "suspectEGOPosition" | "suspectEGOClass" | "suspectCount" | "suspectArrested" | "victimIsEGO" | "victimEGOPosition" | "victimEGOClass" | "victimCount" | "caseStatus" | "investigator" | "headInves" | "latitude" | "longitude" | "createdAt" | "updatedAt", ExtArgs["result"]["crimeIncident"]>
+  export type CrimeIncidentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "incidentId" | "offenseDefinitionId" | "importKey" | "crimeType" | "felonyStage" | "sourceFile" | "sourceSheet" | "sourceRow" | "blotterNo" | "dateEncoded" | "pro" | "ppo" | "stn" | "pcp" | "region" | "province" | "municipal" | "barangay" | "street" | "typeOfPlace" | "dateReported" | "timeReported" | "dateCommitted" | "timeCommitted" | "incidentType" | "isCrime" | "modeReporting" | "stageOfFelony" | "offense" | "offenseType" | "section" | "modus" | "suspectMotive" | "suspectSubMotive" | "heinous" | "sensational" | "threatGrp" | "grpAffiliation" | "incidentTypeThreatGrp" | "mrs" | "suspectIsEGO" | "suspectEGOPosition" | "suspectEGOClass" | "suspectCount" | "suspectArrested" | "victimIsEGO" | "victimEGOPosition" | "victimEGOClass" | "victimCount" | "caseStatus" | "investigator" | "headInves" | "latitude" | "longitude" | "createdAt" | "updatedAt", ExtArgs["result"]["crimeIncident"]>
+  export type CrimeIncidentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
+  }
+  export type CrimeIncidentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
+  }
+  export type CrimeIncidentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    incident?: boolean | IncidentDefaultArgs<ExtArgs>
+    offenseDefinition?: boolean | OffenseDefinitionDefaultArgs<ExtArgs>
+  }
 
   export type $CrimeIncidentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "CrimeIncident"
-    objects: {}
+    objects: {
+      incident: Prisma.$IncidentPayload<ExtArgs>
+      offenseDefinition: Prisma.$OffenseDefinitionPayload<ExtArgs>
+    }
     scalars: $Extensions.GetPayloadResult<{
       id: string
+      incidentId: string
+      offenseDefinitionId: string
+      importKey: string | null
+      crimeType: string
+      felonyStage: string
+      sourceFile: string | null
+      sourceSheet: string | null
+      sourceRow: number | null
       blotterNo: string | null
       dateEncoded: Date | null
       pro: string | null
@@ -3033,6 +3370,8 @@ export namespace Prisma {
    */
   export interface Prisma__CrimeIncidentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    incident<T extends IncidentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, IncidentDefaultArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    offenseDefinition<T extends OffenseDefinitionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OffenseDefinitionDefaultArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3063,6 +3402,14 @@ export namespace Prisma {
    */
   interface CrimeIncidentFieldRefs {
     readonly id: FieldRef<"CrimeIncident", 'String'>
+    readonly incidentId: FieldRef<"CrimeIncident", 'String'>
+    readonly offenseDefinitionId: FieldRef<"CrimeIncident", 'String'>
+    readonly importKey: FieldRef<"CrimeIncident", 'String'>
+    readonly crimeType: FieldRef<"CrimeIncident", 'String'>
+    readonly felonyStage: FieldRef<"CrimeIncident", 'String'>
+    readonly sourceFile: FieldRef<"CrimeIncident", 'String'>
+    readonly sourceSheet: FieldRef<"CrimeIncident", 'String'>
+    readonly sourceRow: FieldRef<"CrimeIncident", 'Int'>
     readonly blotterNo: FieldRef<"CrimeIncident", 'String'>
     readonly dateEncoded: FieldRef<"CrimeIncident", 'DateTime'>
     readonly pro: FieldRef<"CrimeIncident", 'String'>
@@ -3128,6 +3475,10 @@ export namespace Prisma {
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    /**
      * Filter, which CrimeIncident to fetch.
      */
     where: CrimeIncidentWhereUniqueInput
@@ -3146,6 +3497,10 @@ export namespace Prisma {
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    /**
      * Filter, which CrimeIncident to fetch.
      */
     where: CrimeIncidentWhereUniqueInput
@@ -3163,6 +3518,10 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
     /**
      * Filter, which CrimeIncident to fetch.
      */
@@ -3212,6 +3571,10 @@ export namespace Prisma {
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    /**
      * Filter, which CrimeIncident to fetch.
      */
     where?: CrimeIncidentWhereInput
@@ -3259,6 +3622,10 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
     /**
      * Filter, which CrimeIncidents to fetch.
      */
@@ -3308,6 +3675,10 @@ export namespace Prisma {
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    /**
      * The data needed to create a CrimeIncident.
      */
     data: XOR<CrimeIncidentCreateInput, CrimeIncidentUncheckedCreateInput>
@@ -3341,6 +3712,10 @@ export namespace Prisma {
      */
     data: CrimeIncidentCreateManyInput | CrimeIncidentCreateManyInput[]
     skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -3355,6 +3730,10 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
     /**
      * The data needed to update a CrimeIncident.
      */
@@ -3407,6 +3786,10 @@ export namespace Prisma {
      * Limit how many CrimeIncidents to update.
      */
     limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -3421,6 +3804,10 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
     /**
      * The filter to search for the CrimeIncident to update in case it exists.
      */
@@ -3447,6 +3834,10 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
     /**
      * Filter which CrimeIncident to delete.
      */
@@ -3479,6 +3870,2207 @@ export namespace Prisma {
      * Omit specific fields from the CrimeIncident
      */
     omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Incident
+   */
+
+  export type AggregateIncident = {
+    _count: IncidentCountAggregateOutputType | null
+    _avg: IncidentAvgAggregateOutputType | null
+    _sum: IncidentSumAggregateOutputType | null
+    _min: IncidentMinAggregateOutputType | null
+    _max: IncidentMaxAggregateOutputType | null
+  }
+
+  export type IncidentAvgAggregateOutputType = {
+    offenseCount: number | null
+  }
+
+  export type IncidentSumAggregateOutputType = {
+    offenseCount: number | null
+  }
+
+  export type IncidentMinAggregateOutputType = {
+    id: string | null
+    key: string | null
+    blotterNo: string | null
+    station: string | null
+    hasMultipleOffenses: boolean | null
+    offenseCount: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type IncidentMaxAggregateOutputType = {
+    id: string | null
+    key: string | null
+    blotterNo: string | null
+    station: string | null
+    hasMultipleOffenses: boolean | null
+    offenseCount: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type IncidentCountAggregateOutputType = {
+    id: number
+    key: number
+    blotterNo: number
+    station: number
+    hasMultipleOffenses: number
+    offenseCount: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type IncidentAvgAggregateInputType = {
+    offenseCount?: true
+  }
+
+  export type IncidentSumAggregateInputType = {
+    offenseCount?: true
+  }
+
+  export type IncidentMinAggregateInputType = {
+    id?: true
+    key?: true
+    blotterNo?: true
+    station?: true
+    hasMultipleOffenses?: true
+    offenseCount?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type IncidentMaxAggregateInputType = {
+    id?: true
+    key?: true
+    blotterNo?: true
+    station?: true
+    hasMultipleOffenses?: true
+    offenseCount?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type IncidentCountAggregateInputType = {
+    id?: true
+    key?: true
+    blotterNo?: true
+    station?: true
+    hasMultipleOffenses?: true
+    offenseCount?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type IncidentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Incident to aggregate.
+     */
+    where?: IncidentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Incidents to fetch.
+     */
+    orderBy?: IncidentOrderByWithRelationInput | IncidentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: IncidentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Incidents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Incidents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Incidents
+    **/
+    _count?: true | IncidentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: IncidentAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: IncidentSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: IncidentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: IncidentMaxAggregateInputType
+  }
+
+  export type GetIncidentAggregateType<T extends IncidentAggregateArgs> = {
+        [P in keyof T & keyof AggregateIncident]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateIncident[P]>
+      : GetScalarType<T[P], AggregateIncident[P]>
+  }
+
+
+
+
+  export type IncidentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: IncidentWhereInput
+    orderBy?: IncidentOrderByWithAggregationInput | IncidentOrderByWithAggregationInput[]
+    by: IncidentScalarFieldEnum[] | IncidentScalarFieldEnum
+    having?: IncidentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: IncidentCountAggregateInputType | true
+    _avg?: IncidentAvgAggregateInputType
+    _sum?: IncidentSumAggregateInputType
+    _min?: IncidentMinAggregateInputType
+    _max?: IncidentMaxAggregateInputType
+  }
+
+  export type IncidentGroupByOutputType = {
+    id: string
+    key: string
+    blotterNo: string | null
+    station: string | null
+    hasMultipleOffenses: boolean
+    offenseCount: number
+    createdAt: Date
+    updatedAt: Date
+    _count: IncidentCountAggregateOutputType | null
+    _avg: IncidentAvgAggregateOutputType | null
+    _sum: IncidentSumAggregateOutputType | null
+    _min: IncidentMinAggregateOutputType | null
+    _max: IncidentMaxAggregateOutputType | null
+  }
+
+  type GetIncidentGroupByPayload<T extends IncidentGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<IncidentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof IncidentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], IncidentGroupByOutputType[P]>
+            : GetScalarType<T[P], IncidentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type IncidentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    key?: boolean
+    blotterNo?: boolean
+    station?: boolean
+    hasMultipleOffenses?: boolean
+    offenseCount?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    offenses?: boolean | Incident$offensesArgs<ExtArgs>
+    _count?: boolean | IncidentCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["incident"]>
+
+  export type IncidentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    key?: boolean
+    blotterNo?: boolean
+    station?: boolean
+    hasMultipleOffenses?: boolean
+    offenseCount?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["incident"]>
+
+  export type IncidentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    key?: boolean
+    blotterNo?: boolean
+    station?: boolean
+    hasMultipleOffenses?: boolean
+    offenseCount?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["incident"]>
+
+  export type IncidentSelectScalar = {
+    id?: boolean
+    key?: boolean
+    blotterNo?: boolean
+    station?: boolean
+    hasMultipleOffenses?: boolean
+    offenseCount?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type IncidentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "key" | "blotterNo" | "station" | "hasMultipleOffenses" | "offenseCount" | "createdAt" | "updatedAt", ExtArgs["result"]["incident"]>
+  export type IncidentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    offenses?: boolean | Incident$offensesArgs<ExtArgs>
+    _count?: boolean | IncidentCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type IncidentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type IncidentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $IncidentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Incident"
+    objects: {
+      offenses: Prisma.$CrimeIncidentPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      key: string
+      blotterNo: string | null
+      station: string | null
+      hasMultipleOffenses: boolean
+      offenseCount: number
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["incident"]>
+    composites: {}
+  }
+
+  type IncidentGetPayload<S extends boolean | null | undefined | IncidentDefaultArgs> = $Result.GetResult<Prisma.$IncidentPayload, S>
+
+  type IncidentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<IncidentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: IncidentCountAggregateInputType | true
+    }
+
+  export interface IncidentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Incident'], meta: { name: 'Incident' } }
+    /**
+     * Find zero or one Incident that matches the filter.
+     * @param {IncidentFindUniqueArgs} args - Arguments to find a Incident
+     * @example
+     * // Get one Incident
+     * const incident = await prisma.incident.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends IncidentFindUniqueArgs>(args: SelectSubset<T, IncidentFindUniqueArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Incident that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {IncidentFindUniqueOrThrowArgs} args - Arguments to find a Incident
+     * @example
+     * // Get one Incident
+     * const incident = await prisma.incident.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends IncidentFindUniqueOrThrowArgs>(args: SelectSubset<T, IncidentFindUniqueOrThrowArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Incident that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentFindFirstArgs} args - Arguments to find a Incident
+     * @example
+     * // Get one Incident
+     * const incident = await prisma.incident.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends IncidentFindFirstArgs>(args?: SelectSubset<T, IncidentFindFirstArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Incident that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentFindFirstOrThrowArgs} args - Arguments to find a Incident
+     * @example
+     * // Get one Incident
+     * const incident = await prisma.incident.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends IncidentFindFirstOrThrowArgs>(args?: SelectSubset<T, IncidentFindFirstOrThrowArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Incidents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Incidents
+     * const incidents = await prisma.incident.findMany()
+     * 
+     * // Get first 10 Incidents
+     * const incidents = await prisma.incident.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const incidentWithIdOnly = await prisma.incident.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends IncidentFindManyArgs>(args?: SelectSubset<T, IncidentFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Incident.
+     * @param {IncidentCreateArgs} args - Arguments to create a Incident.
+     * @example
+     * // Create one Incident
+     * const Incident = await prisma.incident.create({
+     *   data: {
+     *     // ... data to create a Incident
+     *   }
+     * })
+     * 
+     */
+    create<T extends IncidentCreateArgs>(args: SelectSubset<T, IncidentCreateArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Incidents.
+     * @param {IncidentCreateManyArgs} args - Arguments to create many Incidents.
+     * @example
+     * // Create many Incidents
+     * const incident = await prisma.incident.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends IncidentCreateManyArgs>(args?: SelectSubset<T, IncidentCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Incidents and returns the data saved in the database.
+     * @param {IncidentCreateManyAndReturnArgs} args - Arguments to create many Incidents.
+     * @example
+     * // Create many Incidents
+     * const incident = await prisma.incident.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Incidents and only return the `id`
+     * const incidentWithIdOnly = await prisma.incident.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends IncidentCreateManyAndReturnArgs>(args?: SelectSubset<T, IncidentCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Incident.
+     * @param {IncidentDeleteArgs} args - Arguments to delete one Incident.
+     * @example
+     * // Delete one Incident
+     * const Incident = await prisma.incident.delete({
+     *   where: {
+     *     // ... filter to delete one Incident
+     *   }
+     * })
+     * 
+     */
+    delete<T extends IncidentDeleteArgs>(args: SelectSubset<T, IncidentDeleteArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Incident.
+     * @param {IncidentUpdateArgs} args - Arguments to update one Incident.
+     * @example
+     * // Update one Incident
+     * const incident = await prisma.incident.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends IncidentUpdateArgs>(args: SelectSubset<T, IncidentUpdateArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Incidents.
+     * @param {IncidentDeleteManyArgs} args - Arguments to filter Incidents to delete.
+     * @example
+     * // Delete a few Incidents
+     * const { count } = await prisma.incident.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends IncidentDeleteManyArgs>(args?: SelectSubset<T, IncidentDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Incidents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Incidents
+     * const incident = await prisma.incident.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends IncidentUpdateManyArgs>(args: SelectSubset<T, IncidentUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Incidents and returns the data updated in the database.
+     * @param {IncidentUpdateManyAndReturnArgs} args - Arguments to update many Incidents.
+     * @example
+     * // Update many Incidents
+     * const incident = await prisma.incident.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Incidents and only return the `id`
+     * const incidentWithIdOnly = await prisma.incident.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends IncidentUpdateManyAndReturnArgs>(args: SelectSubset<T, IncidentUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Incident.
+     * @param {IncidentUpsertArgs} args - Arguments to update or create a Incident.
+     * @example
+     * // Update or create a Incident
+     * const incident = await prisma.incident.upsert({
+     *   create: {
+     *     // ... data to create a Incident
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Incident we want to update
+     *   }
+     * })
+     */
+    upsert<T extends IncidentUpsertArgs>(args: SelectSubset<T, IncidentUpsertArgs<ExtArgs>>): Prisma__IncidentClient<$Result.GetResult<Prisma.$IncidentPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Incidents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentCountArgs} args - Arguments to filter Incidents to count.
+     * @example
+     * // Count the number of Incidents
+     * const count = await prisma.incident.count({
+     *   where: {
+     *     // ... the filter for the Incidents we want to count
+     *   }
+     * })
+    **/
+    count<T extends IncidentCountArgs>(
+      args?: Subset<T, IncidentCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], IncidentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Incident.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends IncidentAggregateArgs>(args: Subset<T, IncidentAggregateArgs>): Prisma.PrismaPromise<GetIncidentAggregateType<T>>
+
+    /**
+     * Group by Incident.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {IncidentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends IncidentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: IncidentGroupByArgs['orderBy'] }
+        : { orderBy?: IncidentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, IncidentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetIncidentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Incident model
+   */
+  readonly fields: IncidentFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Incident.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__IncidentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    offenses<T extends Incident$offensesArgs<ExtArgs> = {}>(args?: Subset<T, Incident$offensesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CrimeIncidentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Incident model
+   */
+  interface IncidentFieldRefs {
+    readonly id: FieldRef<"Incident", 'String'>
+    readonly key: FieldRef<"Incident", 'String'>
+    readonly blotterNo: FieldRef<"Incident", 'String'>
+    readonly station: FieldRef<"Incident", 'String'>
+    readonly hasMultipleOffenses: FieldRef<"Incident", 'Boolean'>
+    readonly offenseCount: FieldRef<"Incident", 'Int'>
+    readonly createdAt: FieldRef<"Incident", 'DateTime'>
+    readonly updatedAt: FieldRef<"Incident", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Incident findUnique
+   */
+  export type IncidentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter, which Incident to fetch.
+     */
+    where: IncidentWhereUniqueInput
+  }
+
+  /**
+   * Incident findUniqueOrThrow
+   */
+  export type IncidentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter, which Incident to fetch.
+     */
+    where: IncidentWhereUniqueInput
+  }
+
+  /**
+   * Incident findFirst
+   */
+  export type IncidentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter, which Incident to fetch.
+     */
+    where?: IncidentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Incidents to fetch.
+     */
+    orderBy?: IncidentOrderByWithRelationInput | IncidentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Incidents.
+     */
+    cursor?: IncidentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Incidents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Incidents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Incidents.
+     */
+    distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+  }
+
+  /**
+   * Incident findFirstOrThrow
+   */
+  export type IncidentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter, which Incident to fetch.
+     */
+    where?: IncidentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Incidents to fetch.
+     */
+    orderBy?: IncidentOrderByWithRelationInput | IncidentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Incidents.
+     */
+    cursor?: IncidentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Incidents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Incidents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Incidents.
+     */
+    distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+  }
+
+  /**
+   * Incident findMany
+   */
+  export type IncidentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter, which Incidents to fetch.
+     */
+    where?: IncidentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Incidents to fetch.
+     */
+    orderBy?: IncidentOrderByWithRelationInput | IncidentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Incidents.
+     */
+    cursor?: IncidentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Incidents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Incidents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Incidents.
+     */
+    distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+  }
+
+  /**
+   * Incident create
+   */
+  export type IncidentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Incident.
+     */
+    data: XOR<IncidentCreateInput, IncidentUncheckedCreateInput>
+  }
+
+  /**
+   * Incident createMany
+   */
+  export type IncidentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Incidents.
+     */
+    data: IncidentCreateManyInput | IncidentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Incident createManyAndReturn
+   */
+  export type IncidentCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * The data used to create many Incidents.
+     */
+    data: IncidentCreateManyInput | IncidentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Incident update
+   */
+  export type IncidentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Incident.
+     */
+    data: XOR<IncidentUpdateInput, IncidentUncheckedUpdateInput>
+    /**
+     * Choose, which Incident to update.
+     */
+    where: IncidentWhereUniqueInput
+  }
+
+  /**
+   * Incident updateMany
+   */
+  export type IncidentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Incidents.
+     */
+    data: XOR<IncidentUpdateManyMutationInput, IncidentUncheckedUpdateManyInput>
+    /**
+     * Filter which Incidents to update
+     */
+    where?: IncidentWhereInput
+    /**
+     * Limit how many Incidents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Incident updateManyAndReturn
+   */
+  export type IncidentUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * The data used to update Incidents.
+     */
+    data: XOR<IncidentUpdateManyMutationInput, IncidentUncheckedUpdateManyInput>
+    /**
+     * Filter which Incidents to update
+     */
+    where?: IncidentWhereInput
+    /**
+     * Limit how many Incidents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Incident upsert
+   */
+  export type IncidentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Incident to update in case it exists.
+     */
+    where: IncidentWhereUniqueInput
+    /**
+     * In case the Incident found by the `where` argument doesn't exist, create a new Incident with this data.
+     */
+    create: XOR<IncidentCreateInput, IncidentUncheckedCreateInput>
+    /**
+     * In case the Incident was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<IncidentUpdateInput, IncidentUncheckedUpdateInput>
+  }
+
+  /**
+   * Incident delete
+   */
+  export type IncidentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+    /**
+     * Filter which Incident to delete.
+     */
+    where: IncidentWhereUniqueInput
+  }
+
+  /**
+   * Incident deleteMany
+   */
+  export type IncidentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Incidents to delete
+     */
+    where?: IncidentWhereInput
+    /**
+     * Limit how many Incidents to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Incident.offenses
+   */
+  export type Incident$offensesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CrimeIncident
+     */
+    select?: CrimeIncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CrimeIncident
+     */
+    omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    where?: CrimeIncidentWhereInput
+    orderBy?: CrimeIncidentOrderByWithRelationInput | CrimeIncidentOrderByWithRelationInput[]
+    cursor?: CrimeIncidentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CrimeIncidentScalarFieldEnum | CrimeIncidentScalarFieldEnum[]
+  }
+
+  /**
+   * Incident without action
+   */
+  export type IncidentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Incident
+     */
+    select?: IncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Incident
+     */
+    omit?: IncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: IncidentInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model OffenseDefinition
+   */
+
+  export type AggregateOffenseDefinition = {
+    _count: OffenseDefinitionCountAggregateOutputType | null
+    _min: OffenseDefinitionMinAggregateOutputType | null
+    _max: OffenseDefinitionMaxAggregateOutputType | null
+  }
+
+  export type OffenseDefinitionMinAggregateOutputType = {
+    id: string | null
+    code: string | null
+    label: string | null
+  }
+
+  export type OffenseDefinitionMaxAggregateOutputType = {
+    id: string | null
+    code: string | null
+    label: string | null
+  }
+
+  export type OffenseDefinitionCountAggregateOutputType = {
+    id: number
+    code: number
+    label: number
+    _all: number
+  }
+
+
+  export type OffenseDefinitionMinAggregateInputType = {
+    id?: true
+    code?: true
+    label?: true
+  }
+
+  export type OffenseDefinitionMaxAggregateInputType = {
+    id?: true
+    code?: true
+    label?: true
+  }
+
+  export type OffenseDefinitionCountAggregateInputType = {
+    id?: true
+    code?: true
+    label?: true
+    _all?: true
+  }
+
+  export type OffenseDefinitionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OffenseDefinition to aggregate.
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OffenseDefinitions to fetch.
+     */
+    orderBy?: OffenseDefinitionOrderByWithRelationInput | OffenseDefinitionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OffenseDefinitionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OffenseDefinitions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OffenseDefinitions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OffenseDefinitions
+    **/
+    _count?: true | OffenseDefinitionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OffenseDefinitionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OffenseDefinitionMaxAggregateInputType
+  }
+
+  export type GetOffenseDefinitionAggregateType<T extends OffenseDefinitionAggregateArgs> = {
+        [P in keyof T & keyof AggregateOffenseDefinition]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOffenseDefinition[P]>
+      : GetScalarType<T[P], AggregateOffenseDefinition[P]>
+  }
+
+
+
+
+  export type OffenseDefinitionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OffenseDefinitionWhereInput
+    orderBy?: OffenseDefinitionOrderByWithAggregationInput | OffenseDefinitionOrderByWithAggregationInput[]
+    by: OffenseDefinitionScalarFieldEnum[] | OffenseDefinitionScalarFieldEnum
+    having?: OffenseDefinitionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OffenseDefinitionCountAggregateInputType | true
+    _min?: OffenseDefinitionMinAggregateInputType
+    _max?: OffenseDefinitionMaxAggregateInputType
+  }
+
+  export type OffenseDefinitionGroupByOutputType = {
+    id: string
+    code: string
+    label: string
+    _count: OffenseDefinitionCountAggregateOutputType | null
+    _min: OffenseDefinitionMinAggregateOutputType | null
+    _max: OffenseDefinitionMaxAggregateOutputType | null
+  }
+
+  type GetOffenseDefinitionGroupByPayload<T extends OffenseDefinitionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OffenseDefinitionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OffenseDefinitionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OffenseDefinitionGroupByOutputType[P]>
+            : GetScalarType<T[P], OffenseDefinitionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OffenseDefinitionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    label?: boolean
+    records?: boolean | OffenseDefinition$recordsArgs<ExtArgs>
+    _count?: boolean | OffenseDefinitionCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["offenseDefinition"]>
+
+  export type OffenseDefinitionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    label?: boolean
+  }, ExtArgs["result"]["offenseDefinition"]>
+
+  export type OffenseDefinitionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    label?: boolean
+  }, ExtArgs["result"]["offenseDefinition"]>
+
+  export type OffenseDefinitionSelectScalar = {
+    id?: boolean
+    code?: boolean
+    label?: boolean
+  }
+
+  export type OffenseDefinitionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "code" | "label", ExtArgs["result"]["offenseDefinition"]>
+  export type OffenseDefinitionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    records?: boolean | OffenseDefinition$recordsArgs<ExtArgs>
+    _count?: boolean | OffenseDefinitionCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type OffenseDefinitionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type OffenseDefinitionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $OffenseDefinitionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OffenseDefinition"
+    objects: {
+      records: Prisma.$CrimeIncidentPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      code: string
+      label: string
+    }, ExtArgs["result"]["offenseDefinition"]>
+    composites: {}
+  }
+
+  type OffenseDefinitionGetPayload<S extends boolean | null | undefined | OffenseDefinitionDefaultArgs> = $Result.GetResult<Prisma.$OffenseDefinitionPayload, S>
+
+  type OffenseDefinitionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OffenseDefinitionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OffenseDefinitionCountAggregateInputType | true
+    }
+
+  export interface OffenseDefinitionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OffenseDefinition'], meta: { name: 'OffenseDefinition' } }
+    /**
+     * Find zero or one OffenseDefinition that matches the filter.
+     * @param {OffenseDefinitionFindUniqueArgs} args - Arguments to find a OffenseDefinition
+     * @example
+     * // Get one OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OffenseDefinitionFindUniqueArgs>(args: SelectSubset<T, OffenseDefinitionFindUniqueArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OffenseDefinition that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OffenseDefinitionFindUniqueOrThrowArgs} args - Arguments to find a OffenseDefinition
+     * @example
+     * // Get one OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OffenseDefinitionFindUniqueOrThrowArgs>(args: SelectSubset<T, OffenseDefinitionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OffenseDefinition that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionFindFirstArgs} args - Arguments to find a OffenseDefinition
+     * @example
+     * // Get one OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OffenseDefinitionFindFirstArgs>(args?: SelectSubset<T, OffenseDefinitionFindFirstArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OffenseDefinition that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionFindFirstOrThrowArgs} args - Arguments to find a OffenseDefinition
+     * @example
+     * // Get one OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OffenseDefinitionFindFirstOrThrowArgs>(args?: SelectSubset<T, OffenseDefinitionFindFirstOrThrowArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OffenseDefinitions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OffenseDefinitions
+     * const offenseDefinitions = await prisma.offenseDefinition.findMany()
+     * 
+     * // Get first 10 OffenseDefinitions
+     * const offenseDefinitions = await prisma.offenseDefinition.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const offenseDefinitionWithIdOnly = await prisma.offenseDefinition.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OffenseDefinitionFindManyArgs>(args?: SelectSubset<T, OffenseDefinitionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OffenseDefinition.
+     * @param {OffenseDefinitionCreateArgs} args - Arguments to create a OffenseDefinition.
+     * @example
+     * // Create one OffenseDefinition
+     * const OffenseDefinition = await prisma.offenseDefinition.create({
+     *   data: {
+     *     // ... data to create a OffenseDefinition
+     *   }
+     * })
+     * 
+     */
+    create<T extends OffenseDefinitionCreateArgs>(args: SelectSubset<T, OffenseDefinitionCreateArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OffenseDefinitions.
+     * @param {OffenseDefinitionCreateManyArgs} args - Arguments to create many OffenseDefinitions.
+     * @example
+     * // Create many OffenseDefinitions
+     * const offenseDefinition = await prisma.offenseDefinition.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OffenseDefinitionCreateManyArgs>(args?: SelectSubset<T, OffenseDefinitionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OffenseDefinitions and returns the data saved in the database.
+     * @param {OffenseDefinitionCreateManyAndReturnArgs} args - Arguments to create many OffenseDefinitions.
+     * @example
+     * // Create many OffenseDefinitions
+     * const offenseDefinition = await prisma.offenseDefinition.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OffenseDefinitions and only return the `id`
+     * const offenseDefinitionWithIdOnly = await prisma.offenseDefinition.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OffenseDefinitionCreateManyAndReturnArgs>(args?: SelectSubset<T, OffenseDefinitionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OffenseDefinition.
+     * @param {OffenseDefinitionDeleteArgs} args - Arguments to delete one OffenseDefinition.
+     * @example
+     * // Delete one OffenseDefinition
+     * const OffenseDefinition = await prisma.offenseDefinition.delete({
+     *   where: {
+     *     // ... filter to delete one OffenseDefinition
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OffenseDefinitionDeleteArgs>(args: SelectSubset<T, OffenseDefinitionDeleteArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OffenseDefinition.
+     * @param {OffenseDefinitionUpdateArgs} args - Arguments to update one OffenseDefinition.
+     * @example
+     * // Update one OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OffenseDefinitionUpdateArgs>(args: SelectSubset<T, OffenseDefinitionUpdateArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OffenseDefinitions.
+     * @param {OffenseDefinitionDeleteManyArgs} args - Arguments to filter OffenseDefinitions to delete.
+     * @example
+     * // Delete a few OffenseDefinitions
+     * const { count } = await prisma.offenseDefinition.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OffenseDefinitionDeleteManyArgs>(args?: SelectSubset<T, OffenseDefinitionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OffenseDefinitions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OffenseDefinitions
+     * const offenseDefinition = await prisma.offenseDefinition.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OffenseDefinitionUpdateManyArgs>(args: SelectSubset<T, OffenseDefinitionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OffenseDefinitions and returns the data updated in the database.
+     * @param {OffenseDefinitionUpdateManyAndReturnArgs} args - Arguments to update many OffenseDefinitions.
+     * @example
+     * // Update many OffenseDefinitions
+     * const offenseDefinition = await prisma.offenseDefinition.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OffenseDefinitions and only return the `id`
+     * const offenseDefinitionWithIdOnly = await prisma.offenseDefinition.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OffenseDefinitionUpdateManyAndReturnArgs>(args: SelectSubset<T, OffenseDefinitionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OffenseDefinition.
+     * @param {OffenseDefinitionUpsertArgs} args - Arguments to update or create a OffenseDefinition.
+     * @example
+     * // Update or create a OffenseDefinition
+     * const offenseDefinition = await prisma.offenseDefinition.upsert({
+     *   create: {
+     *     // ... data to create a OffenseDefinition
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OffenseDefinition we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OffenseDefinitionUpsertArgs>(args: SelectSubset<T, OffenseDefinitionUpsertArgs<ExtArgs>>): Prisma__OffenseDefinitionClient<$Result.GetResult<Prisma.$OffenseDefinitionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OffenseDefinitions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionCountArgs} args - Arguments to filter OffenseDefinitions to count.
+     * @example
+     * // Count the number of OffenseDefinitions
+     * const count = await prisma.offenseDefinition.count({
+     *   where: {
+     *     // ... the filter for the OffenseDefinitions we want to count
+     *   }
+     * })
+    **/
+    count<T extends OffenseDefinitionCountArgs>(
+      args?: Subset<T, OffenseDefinitionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OffenseDefinitionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OffenseDefinition.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OffenseDefinitionAggregateArgs>(args: Subset<T, OffenseDefinitionAggregateArgs>): Prisma.PrismaPromise<GetOffenseDefinitionAggregateType<T>>
+
+    /**
+     * Group by OffenseDefinition.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OffenseDefinitionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OffenseDefinitionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OffenseDefinitionGroupByArgs['orderBy'] }
+        : { orderBy?: OffenseDefinitionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OffenseDefinitionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOffenseDefinitionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OffenseDefinition model
+   */
+  readonly fields: OffenseDefinitionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OffenseDefinition.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OffenseDefinitionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    records<T extends OffenseDefinition$recordsArgs<ExtArgs> = {}>(args?: Subset<T, OffenseDefinition$recordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CrimeIncidentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OffenseDefinition model
+   */
+  interface OffenseDefinitionFieldRefs {
+    readonly id: FieldRef<"OffenseDefinition", 'String'>
+    readonly code: FieldRef<"OffenseDefinition", 'String'>
+    readonly label: FieldRef<"OffenseDefinition", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OffenseDefinition findUnique
+   */
+  export type OffenseDefinitionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter, which OffenseDefinition to fetch.
+     */
+    where: OffenseDefinitionWhereUniqueInput
+  }
+
+  /**
+   * OffenseDefinition findUniqueOrThrow
+   */
+  export type OffenseDefinitionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter, which OffenseDefinition to fetch.
+     */
+    where: OffenseDefinitionWhereUniqueInput
+  }
+
+  /**
+   * OffenseDefinition findFirst
+   */
+  export type OffenseDefinitionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter, which OffenseDefinition to fetch.
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OffenseDefinitions to fetch.
+     */
+    orderBy?: OffenseDefinitionOrderByWithRelationInput | OffenseDefinitionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OffenseDefinitions.
+     */
+    cursor?: OffenseDefinitionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OffenseDefinitions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OffenseDefinitions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OffenseDefinitions.
+     */
+    distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+  }
+
+  /**
+   * OffenseDefinition findFirstOrThrow
+   */
+  export type OffenseDefinitionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter, which OffenseDefinition to fetch.
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OffenseDefinitions to fetch.
+     */
+    orderBy?: OffenseDefinitionOrderByWithRelationInput | OffenseDefinitionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OffenseDefinitions.
+     */
+    cursor?: OffenseDefinitionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OffenseDefinitions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OffenseDefinitions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OffenseDefinitions.
+     */
+    distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+  }
+
+  /**
+   * OffenseDefinition findMany
+   */
+  export type OffenseDefinitionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter, which OffenseDefinitions to fetch.
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OffenseDefinitions to fetch.
+     */
+    orderBy?: OffenseDefinitionOrderByWithRelationInput | OffenseDefinitionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OffenseDefinitions.
+     */
+    cursor?: OffenseDefinitionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OffenseDefinitions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OffenseDefinitions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OffenseDefinitions.
+     */
+    distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+  }
+
+  /**
+   * OffenseDefinition create
+   */
+  export type OffenseDefinitionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a OffenseDefinition.
+     */
+    data: XOR<OffenseDefinitionCreateInput, OffenseDefinitionUncheckedCreateInput>
+  }
+
+  /**
+   * OffenseDefinition createMany
+   */
+  export type OffenseDefinitionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OffenseDefinitions.
+     */
+    data: OffenseDefinitionCreateManyInput | OffenseDefinitionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OffenseDefinition createManyAndReturn
+   */
+  export type OffenseDefinitionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * The data used to create many OffenseDefinitions.
+     */
+    data: OffenseDefinitionCreateManyInput | OffenseDefinitionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OffenseDefinition update
+   */
+  export type OffenseDefinitionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a OffenseDefinition.
+     */
+    data: XOR<OffenseDefinitionUpdateInput, OffenseDefinitionUncheckedUpdateInput>
+    /**
+     * Choose, which OffenseDefinition to update.
+     */
+    where: OffenseDefinitionWhereUniqueInput
+  }
+
+  /**
+   * OffenseDefinition updateMany
+   */
+  export type OffenseDefinitionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OffenseDefinitions.
+     */
+    data: XOR<OffenseDefinitionUpdateManyMutationInput, OffenseDefinitionUncheckedUpdateManyInput>
+    /**
+     * Filter which OffenseDefinitions to update
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * Limit how many OffenseDefinitions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OffenseDefinition updateManyAndReturn
+   */
+  export type OffenseDefinitionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * The data used to update OffenseDefinitions.
+     */
+    data: XOR<OffenseDefinitionUpdateManyMutationInput, OffenseDefinitionUncheckedUpdateManyInput>
+    /**
+     * Filter which OffenseDefinitions to update
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * Limit how many OffenseDefinitions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OffenseDefinition upsert
+   */
+  export type OffenseDefinitionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the OffenseDefinition to update in case it exists.
+     */
+    where: OffenseDefinitionWhereUniqueInput
+    /**
+     * In case the OffenseDefinition found by the `where` argument doesn't exist, create a new OffenseDefinition with this data.
+     */
+    create: XOR<OffenseDefinitionCreateInput, OffenseDefinitionUncheckedCreateInput>
+    /**
+     * In case the OffenseDefinition was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OffenseDefinitionUpdateInput, OffenseDefinitionUncheckedUpdateInput>
+  }
+
+  /**
+   * OffenseDefinition delete
+   */
+  export type OffenseDefinitionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
+    /**
+     * Filter which OffenseDefinition to delete.
+     */
+    where: OffenseDefinitionWhereUniqueInput
+  }
+
+  /**
+   * OffenseDefinition deleteMany
+   */
+  export type OffenseDefinitionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OffenseDefinitions to delete
+     */
+    where?: OffenseDefinitionWhereInput
+    /**
+     * Limit how many OffenseDefinitions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OffenseDefinition.records
+   */
+  export type OffenseDefinition$recordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CrimeIncident
+     */
+    select?: CrimeIncidentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CrimeIncident
+     */
+    omit?: CrimeIncidentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CrimeIncidentInclude<ExtArgs> | null
+    where?: CrimeIncidentWhereInput
+    orderBy?: CrimeIncidentOrderByWithRelationInput | CrimeIncidentOrderByWithRelationInput[]
+    cursor?: CrimeIncidentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CrimeIncidentScalarFieldEnum | CrimeIncidentScalarFieldEnum[]
+  }
+
+  /**
+   * OffenseDefinition without action
+   */
+  export type OffenseDefinitionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OffenseDefinition
+     */
+    select?: OffenseDefinitionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OffenseDefinition
+     */
+    omit?: OffenseDefinitionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OffenseDefinitionInclude<ExtArgs> | null
   }
 
 
@@ -13801,6 +16393,14 @@ export namespace Prisma {
 
   export const CrimeIncidentScalarFieldEnum: {
     id: 'id',
+    incidentId: 'incidentId',
+    offenseDefinitionId: 'offenseDefinitionId',
+    importKey: 'importKey',
+    crimeType: 'crimeType',
+    felonyStage: 'felonyStage',
+    sourceFile: 'sourceFile',
+    sourceSheet: 'sourceSheet',
+    sourceRow: 'sourceRow',
     blotterNo: 'blotterNo',
     dateEncoded: 'dateEncoded',
     pro: 'pro',
@@ -13852,6 +16452,29 @@ export namespace Prisma {
   };
 
   export type CrimeIncidentScalarFieldEnum = (typeof CrimeIncidentScalarFieldEnum)[keyof typeof CrimeIncidentScalarFieldEnum]
+
+
+  export const IncidentScalarFieldEnum: {
+    id: 'id',
+    key: 'key',
+    blotterNo: 'blotterNo',
+    station: 'station',
+    hasMultipleOffenses: 'hasMultipleOffenses',
+    offenseCount: 'offenseCount',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type IncidentScalarFieldEnum = (typeof IncidentScalarFieldEnum)[keyof typeof IncidentScalarFieldEnum]
+
+
+  export const OffenseDefinitionScalarFieldEnum: {
+    id: 'id',
+    code: 'code',
+    label: 'label'
+  };
+
+  export type OffenseDefinitionScalarFieldEnum = (typeof OffenseDefinitionScalarFieldEnum)[keyof typeof OffenseDefinitionScalarFieldEnum]
 
 
   export const BarangayScalarFieldEnum: {
@@ -14063,6 +16686,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int[]'
+   */
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -14080,20 +16717,6 @@ export namespace Prisma {
    * Reference to a field of type 'Boolean'
    */
   export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int[]'
-   */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -14189,6 +16812,14 @@ export namespace Prisma {
     OR?: CrimeIncidentWhereInput[]
     NOT?: CrimeIncidentWhereInput | CrimeIncidentWhereInput[]
     id?: StringFilter<"CrimeIncident"> | string
+    incidentId?: StringFilter<"CrimeIncident"> | string
+    offenseDefinitionId?: StringFilter<"CrimeIncident"> | string
+    importKey?: StringNullableFilter<"CrimeIncident"> | string | null
+    crimeType?: StringFilter<"CrimeIncident"> | string
+    felonyStage?: StringFilter<"CrimeIncident"> | string
+    sourceFile?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceSheet?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceRow?: IntNullableFilter<"CrimeIncident"> | number | null
     blotterNo?: StringNullableFilter<"CrimeIncident"> | string | null
     dateEncoded?: DateTimeNullableFilter<"CrimeIncident"> | Date | string | null
     pro?: StringNullableFilter<"CrimeIncident"> | string | null
@@ -14237,10 +16868,20 @@ export namespace Prisma {
     longitude?: FloatNullableFilter<"CrimeIncident"> | number | null
     createdAt?: DateTimeFilter<"CrimeIncident"> | Date | string
     updatedAt?: DateTimeFilter<"CrimeIncident"> | Date | string
+    incident?: XOR<IncidentScalarRelationFilter, IncidentWhereInput>
+    offenseDefinition?: XOR<OffenseDefinitionScalarRelationFilter, OffenseDefinitionWhereInput>
   }
 
   export type CrimeIncidentOrderByWithRelationInput = {
     id?: SortOrder
+    incidentId?: SortOrder
+    offenseDefinitionId?: SortOrder
+    importKey?: SortOrderInput | SortOrder
+    crimeType?: SortOrder
+    felonyStage?: SortOrder
+    sourceFile?: SortOrderInput | SortOrder
+    sourceSheet?: SortOrderInput | SortOrder
+    sourceRow?: SortOrderInput | SortOrder
     blotterNo?: SortOrderInput | SortOrder
     dateEncoded?: SortOrderInput | SortOrder
     pro?: SortOrderInput | SortOrder
@@ -14289,13 +16930,23 @@ export namespace Prisma {
     longitude?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    incident?: IncidentOrderByWithRelationInput
+    offenseDefinition?: OffenseDefinitionOrderByWithRelationInput
   }
 
   export type CrimeIncidentWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    importKey?: string
     AND?: CrimeIncidentWhereInput | CrimeIncidentWhereInput[]
     OR?: CrimeIncidentWhereInput[]
     NOT?: CrimeIncidentWhereInput | CrimeIncidentWhereInput[]
+    incidentId?: StringFilter<"CrimeIncident"> | string
+    offenseDefinitionId?: StringFilter<"CrimeIncident"> | string
+    crimeType?: StringFilter<"CrimeIncident"> | string
+    felonyStage?: StringFilter<"CrimeIncident"> | string
+    sourceFile?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceSheet?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceRow?: IntNullableFilter<"CrimeIncident"> | number | null
     blotterNo?: StringNullableFilter<"CrimeIncident"> | string | null
     dateEncoded?: DateTimeNullableFilter<"CrimeIncident"> | Date | string | null
     pro?: StringNullableFilter<"CrimeIncident"> | string | null
@@ -14344,10 +16995,20 @@ export namespace Prisma {
     longitude?: FloatNullableFilter<"CrimeIncident"> | number | null
     createdAt?: DateTimeFilter<"CrimeIncident"> | Date | string
     updatedAt?: DateTimeFilter<"CrimeIncident"> | Date | string
-  }, "id">
+    incident?: XOR<IncidentScalarRelationFilter, IncidentWhereInput>
+    offenseDefinition?: XOR<OffenseDefinitionScalarRelationFilter, OffenseDefinitionWhereInput>
+  }, "id" | "importKey">
 
   export type CrimeIncidentOrderByWithAggregationInput = {
     id?: SortOrder
+    incidentId?: SortOrder
+    offenseDefinitionId?: SortOrder
+    importKey?: SortOrderInput | SortOrder
+    crimeType?: SortOrder
+    felonyStage?: SortOrder
+    sourceFile?: SortOrderInput | SortOrder
+    sourceSheet?: SortOrderInput | SortOrder
+    sourceRow?: SortOrderInput | SortOrder
     blotterNo?: SortOrderInput | SortOrder
     dateEncoded?: SortOrderInput | SortOrder
     pro?: SortOrderInput | SortOrder
@@ -14408,6 +17069,14 @@ export namespace Prisma {
     OR?: CrimeIncidentScalarWhereWithAggregatesInput[]
     NOT?: CrimeIncidentScalarWhereWithAggregatesInput | CrimeIncidentScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"CrimeIncident"> | string
+    incidentId?: StringWithAggregatesFilter<"CrimeIncident"> | string
+    offenseDefinitionId?: StringWithAggregatesFilter<"CrimeIncident"> | string
+    importKey?: StringNullableWithAggregatesFilter<"CrimeIncident"> | string | null
+    crimeType?: StringWithAggregatesFilter<"CrimeIncident"> | string
+    felonyStage?: StringWithAggregatesFilter<"CrimeIncident"> | string
+    sourceFile?: StringNullableWithAggregatesFilter<"CrimeIncident"> | string | null
+    sourceSheet?: StringNullableWithAggregatesFilter<"CrimeIncident"> | string | null
+    sourceRow?: IntNullableWithAggregatesFilter<"CrimeIncident"> | number | null
     blotterNo?: StringNullableWithAggregatesFilter<"CrimeIncident"> | string | null
     dateEncoded?: DateTimeNullableWithAggregatesFilter<"CrimeIncident"> | Date | string | null
     pro?: StringNullableWithAggregatesFilter<"CrimeIncident"> | string | null
@@ -14456,6 +17125,123 @@ export namespace Prisma {
     longitude?: FloatNullableWithAggregatesFilter<"CrimeIncident"> | number | null
     createdAt?: DateTimeWithAggregatesFilter<"CrimeIncident"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"CrimeIncident"> | Date | string
+  }
+
+  export type IncidentWhereInput = {
+    AND?: IncidentWhereInput | IncidentWhereInput[]
+    OR?: IncidentWhereInput[]
+    NOT?: IncidentWhereInput | IncidentWhereInput[]
+    id?: StringFilter<"Incident"> | string
+    key?: StringFilter<"Incident"> | string
+    blotterNo?: StringNullableFilter<"Incident"> | string | null
+    station?: StringNullableFilter<"Incident"> | string | null
+    hasMultipleOffenses?: BoolFilter<"Incident"> | boolean
+    offenseCount?: IntFilter<"Incident"> | number
+    createdAt?: DateTimeFilter<"Incident"> | Date | string
+    updatedAt?: DateTimeFilter<"Incident"> | Date | string
+    offenses?: CrimeIncidentListRelationFilter
+  }
+
+  export type IncidentOrderByWithRelationInput = {
+    id?: SortOrder
+    key?: SortOrder
+    blotterNo?: SortOrderInput | SortOrder
+    station?: SortOrderInput | SortOrder
+    hasMultipleOffenses?: SortOrder
+    offenseCount?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    offenses?: CrimeIncidentOrderByRelationAggregateInput
+  }
+
+  export type IncidentWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    key?: string
+    AND?: IncidentWhereInput | IncidentWhereInput[]
+    OR?: IncidentWhereInput[]
+    NOT?: IncidentWhereInput | IncidentWhereInput[]
+    blotterNo?: StringNullableFilter<"Incident"> | string | null
+    station?: StringNullableFilter<"Incident"> | string | null
+    hasMultipleOffenses?: BoolFilter<"Incident"> | boolean
+    offenseCount?: IntFilter<"Incident"> | number
+    createdAt?: DateTimeFilter<"Incident"> | Date | string
+    updatedAt?: DateTimeFilter<"Incident"> | Date | string
+    offenses?: CrimeIncidentListRelationFilter
+  }, "id" | "key">
+
+  export type IncidentOrderByWithAggregationInput = {
+    id?: SortOrder
+    key?: SortOrder
+    blotterNo?: SortOrderInput | SortOrder
+    station?: SortOrderInput | SortOrder
+    hasMultipleOffenses?: SortOrder
+    offenseCount?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: IncidentCountOrderByAggregateInput
+    _avg?: IncidentAvgOrderByAggregateInput
+    _max?: IncidentMaxOrderByAggregateInput
+    _min?: IncidentMinOrderByAggregateInput
+    _sum?: IncidentSumOrderByAggregateInput
+  }
+
+  export type IncidentScalarWhereWithAggregatesInput = {
+    AND?: IncidentScalarWhereWithAggregatesInput | IncidentScalarWhereWithAggregatesInput[]
+    OR?: IncidentScalarWhereWithAggregatesInput[]
+    NOT?: IncidentScalarWhereWithAggregatesInput | IncidentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Incident"> | string
+    key?: StringWithAggregatesFilter<"Incident"> | string
+    blotterNo?: StringNullableWithAggregatesFilter<"Incident"> | string | null
+    station?: StringNullableWithAggregatesFilter<"Incident"> | string | null
+    hasMultipleOffenses?: BoolWithAggregatesFilter<"Incident"> | boolean
+    offenseCount?: IntWithAggregatesFilter<"Incident"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"Incident"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Incident"> | Date | string
+  }
+
+  export type OffenseDefinitionWhereInput = {
+    AND?: OffenseDefinitionWhereInput | OffenseDefinitionWhereInput[]
+    OR?: OffenseDefinitionWhereInput[]
+    NOT?: OffenseDefinitionWhereInput | OffenseDefinitionWhereInput[]
+    id?: StringFilter<"OffenseDefinition"> | string
+    code?: StringFilter<"OffenseDefinition"> | string
+    label?: StringFilter<"OffenseDefinition"> | string
+    records?: CrimeIncidentListRelationFilter
+  }
+
+  export type OffenseDefinitionOrderByWithRelationInput = {
+    id?: SortOrder
+    code?: SortOrder
+    label?: SortOrder
+    records?: CrimeIncidentOrderByRelationAggregateInput
+  }
+
+  export type OffenseDefinitionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    code?: string
+    AND?: OffenseDefinitionWhereInput | OffenseDefinitionWhereInput[]
+    OR?: OffenseDefinitionWhereInput[]
+    NOT?: OffenseDefinitionWhereInput | OffenseDefinitionWhereInput[]
+    label?: StringFilter<"OffenseDefinition"> | string
+    records?: CrimeIncidentListRelationFilter
+  }, "id" | "code">
+
+  export type OffenseDefinitionOrderByWithAggregationInput = {
+    id?: SortOrder
+    code?: SortOrder
+    label?: SortOrder
+    _count?: OffenseDefinitionCountOrderByAggregateInput
+    _max?: OffenseDefinitionMaxOrderByAggregateInput
+    _min?: OffenseDefinitionMinOrderByAggregateInput
+  }
+
+  export type OffenseDefinitionScalarWhereWithAggregatesInput = {
+    AND?: OffenseDefinitionScalarWhereWithAggregatesInput | OffenseDefinitionScalarWhereWithAggregatesInput[]
+    OR?: OffenseDefinitionScalarWhereWithAggregatesInput[]
+    NOT?: OffenseDefinitionScalarWhereWithAggregatesInput | OffenseDefinitionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OffenseDefinition"> | string
+    code?: StringWithAggregatesFilter<"OffenseDefinition"> | string
+    label?: StringWithAggregatesFilter<"OffenseDefinition"> | string
   }
 
   export type BarangayWhereInput = {
@@ -15179,6 +17965,12 @@ export namespace Prisma {
 
   export type CrimeIncidentCreateInput = {
     id?: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
     blotterNo?: string | null
     dateEncoded?: Date | string | null
     pro?: string | null
@@ -15227,10 +18019,20 @@ export namespace Prisma {
     longitude?: number | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    incident: IncidentCreateNestedOneWithoutOffensesInput
+    offenseDefinition: OffenseDefinitionCreateNestedOneWithoutRecordsInput
   }
 
   export type CrimeIncidentUncheckedCreateInput = {
     id?: string
+    incidentId: string
+    offenseDefinitionId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
     blotterNo?: string | null
     dateEncoded?: Date | string | null
     pro?: string | null
@@ -15283,6 +18085,12 @@ export namespace Prisma {
 
   export type CrimeIncidentUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
     blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
     dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     pro?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15331,10 +18139,20 @@ export namespace Prisma {
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    incident?: IncidentUpdateOneRequiredWithoutOffensesNestedInput
+    offenseDefinition?: OffenseDefinitionUpdateOneRequiredWithoutRecordsNestedInput
   }
 
   export type CrimeIncidentUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    incidentId?: StringFieldUpdateOperationsInput | string
+    offenseDefinitionId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
     blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
     dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     pro?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15387,6 +18205,14 @@ export namespace Prisma {
 
   export type CrimeIncidentCreateManyInput = {
     id?: string
+    incidentId: string
+    offenseDefinitionId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
     blotterNo?: string | null
     dateEncoded?: Date | string | null
     pro?: string | null
@@ -15439,6 +18265,12 @@ export namespace Prisma {
 
   export type CrimeIncidentUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
     blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
     dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     pro?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15491,6 +18323,14 @@ export namespace Prisma {
 
   export type CrimeIncidentUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
+    incidentId?: StringFieldUpdateOperationsInput | string
+    offenseDefinitionId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
     blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
     dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     pro?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15539,6 +18379,133 @@ export namespace Prisma {
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IncidentCreateInput = {
+    id?: string
+    key: string
+    blotterNo?: string | null
+    station?: string | null
+    hasMultipleOffenses?: boolean
+    offenseCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    offenses?: CrimeIncidentCreateNestedManyWithoutIncidentInput
+  }
+
+  export type IncidentUncheckedCreateInput = {
+    id?: string
+    key: string
+    blotterNo?: string | null
+    station?: string | null
+    hasMultipleOffenses?: boolean
+    offenseCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    offenses?: CrimeIncidentUncheckedCreateNestedManyWithoutIncidentInput
+  }
+
+  export type IncidentUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    offenses?: CrimeIncidentUpdateManyWithoutIncidentNestedInput
+  }
+
+  export type IncidentUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    offenses?: CrimeIncidentUncheckedUpdateManyWithoutIncidentNestedInput
+  }
+
+  export type IncidentCreateManyInput = {
+    id?: string
+    key: string
+    blotterNo?: string | null
+    station?: string | null
+    hasMultipleOffenses?: boolean
+    offenseCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IncidentUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IncidentUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OffenseDefinitionCreateInput = {
+    id?: string
+    code: string
+    label: string
+    records?: CrimeIncidentCreateNestedManyWithoutOffenseDefinitionInput
+  }
+
+  export type OffenseDefinitionUncheckedCreateInput = {
+    id?: string
+    code: string
+    label: string
+    records?: CrimeIncidentUncheckedCreateNestedManyWithoutOffenseDefinitionInput
+  }
+
+  export type OffenseDefinitionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    records?: CrimeIncidentUpdateManyWithoutOffenseDefinitionNestedInput
+  }
+
+  export type OffenseDefinitionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+    records?: CrimeIncidentUncheckedUpdateManyWithoutOffenseDefinitionNestedInput
+  }
+
+  export type OffenseDefinitionCreateManyInput = {
+    id?: string
+    code: string
+    label: string
+  }
+
+  export type OffenseDefinitionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OffenseDefinitionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
   }
 
   export type BarangayCreateInput = {
@@ -16375,6 +19342,17 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type DateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -16402,17 +19380,6 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
-  export type IntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
   export type BoolNullableFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel> | null
     not?: NestedBoolNullableFilter<$PrismaModel> | boolean | null
@@ -16429,6 +19396,16 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
+  export type IncidentScalarRelationFilter = {
+    is?: IncidentWhereInput
+    isNot?: IncidentWhereInput
+  }
+
+  export type OffenseDefinitionScalarRelationFilter = {
+    is?: OffenseDefinitionWhereInput
+    isNot?: OffenseDefinitionWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -16436,6 +19413,14 @@ export namespace Prisma {
 
   export type CrimeIncidentCountOrderByAggregateInput = {
     id?: SortOrder
+    incidentId?: SortOrder
+    offenseDefinitionId?: SortOrder
+    importKey?: SortOrder
+    crimeType?: SortOrder
+    felonyStage?: SortOrder
+    sourceFile?: SortOrder
+    sourceSheet?: SortOrder
+    sourceRow?: SortOrder
     blotterNo?: SortOrder
     dateEncoded?: SortOrder
     pro?: SortOrder
@@ -16487,6 +19472,7 @@ export namespace Prisma {
   }
 
   export type CrimeIncidentAvgOrderByAggregateInput = {
+    sourceRow?: SortOrder
     suspectCount?: SortOrder
     victimCount?: SortOrder
     latitude?: SortOrder
@@ -16495,6 +19481,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMaxOrderByAggregateInput = {
     id?: SortOrder
+    incidentId?: SortOrder
+    offenseDefinitionId?: SortOrder
+    importKey?: SortOrder
+    crimeType?: SortOrder
+    felonyStage?: SortOrder
+    sourceFile?: SortOrder
+    sourceSheet?: SortOrder
+    sourceRow?: SortOrder
     blotterNo?: SortOrder
     dateEncoded?: SortOrder
     pro?: SortOrder
@@ -16547,6 +19541,14 @@ export namespace Prisma {
 
   export type CrimeIncidentMinOrderByAggregateInput = {
     id?: SortOrder
+    incidentId?: SortOrder
+    offenseDefinitionId?: SortOrder
+    importKey?: SortOrder
+    crimeType?: SortOrder
+    felonyStage?: SortOrder
+    sourceFile?: SortOrder
+    sourceSheet?: SortOrder
+    sourceRow?: SortOrder
     blotterNo?: SortOrder
     dateEncoded?: SortOrder
     pro?: SortOrder
@@ -16598,6 +19600,7 @@ export namespace Prisma {
   }
 
   export type CrimeIncidentSumOrderByAggregateInput = {
+    sourceRow?: SortOrder
     suspectCount?: SortOrder
     victimCount?: SortOrder
     latitude?: SortOrder
@@ -16640,6 +19643,22 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -16676,22 +19695,6 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
   export type BoolNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel> | null
     not?: NestedBoolNullableWithAggregatesFilter<$PrismaModel> | boolean | null
@@ -16714,6 +19717,102 @@ export namespace Prisma {
     _sum?: NestedFloatNullableFilter<$PrismaModel>
     _min?: NestedFloatNullableFilter<$PrismaModel>
     _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type CrimeIncidentListRelationFilter = {
+    every?: CrimeIncidentWhereInput
+    some?: CrimeIncidentWhereInput
+    none?: CrimeIncidentWhereInput
+  }
+
+  export type CrimeIncidentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type IncidentCountOrderByAggregateInput = {
+    id?: SortOrder
+    key?: SortOrder
+    blotterNo?: SortOrder
+    station?: SortOrder
+    hasMultipleOffenses?: SortOrder
+    offenseCount?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IncidentAvgOrderByAggregateInput = {
+    offenseCount?: SortOrder
+  }
+
+  export type IncidentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    key?: SortOrder
+    blotterNo?: SortOrder
+    station?: SortOrder
+    hasMultipleOffenses?: SortOrder
+    offenseCount?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IncidentMinOrderByAggregateInput = {
+    id?: SortOrder
+    key?: SortOrder
+    blotterNo?: SortOrder
+    station?: SortOrder
+    hasMultipleOffenses?: SortOrder
+    offenseCount?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type IncidentSumOrderByAggregateInput = {
+    offenseCount?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type OffenseDefinitionCountOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    label?: SortOrder
+  }
+
+  export type OffenseDefinitionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    label?: SortOrder
+  }
+
+  export type OffenseDefinitionMinOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    label?: SortOrder
   }
   export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -17076,17 +20175,6 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
-  }
-
   export type UserPermissionListRelationFilter = {
     every?: UserPermissionWhereInput
     some?: UserPermissionWhereInput
@@ -17159,22 +20247,6 @@ export namespace Prisma {
     id?: SortOrder
     autoLogoutTimer?: SortOrder
     failedLoginAttempts?: SortOrder
-  }
-
-  export type IntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
   }
 
   export type BytesFilter<$PrismaModel = never> = {
@@ -17373,12 +20445,32 @@ export namespace Prisma {
     assignedBy?: SortOrder
   }
 
+  export type IncidentCreateNestedOneWithoutOffensesInput = {
+    create?: XOR<IncidentCreateWithoutOffensesInput, IncidentUncheckedCreateWithoutOffensesInput>
+    connectOrCreate?: IncidentCreateOrConnectWithoutOffensesInput
+    connect?: IncidentWhereUniqueInput
+  }
+
+  export type OffenseDefinitionCreateNestedOneWithoutRecordsInput = {
+    create?: XOR<OffenseDefinitionCreateWithoutRecordsInput, OffenseDefinitionUncheckedCreateWithoutRecordsInput>
+    connectOrCreate?: OffenseDefinitionCreateOrConnectWithoutRecordsInput
+    connect?: OffenseDefinitionWhereUniqueInput
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -17393,14 +20485,6 @@ export namespace Prisma {
     set?: boolean
   }
 
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
   export type NullableBoolFieldUpdateOperationsInput = {
     set?: boolean | null
   }
@@ -17411,6 +20495,114 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type IncidentUpdateOneRequiredWithoutOffensesNestedInput = {
+    create?: XOR<IncidentCreateWithoutOffensesInput, IncidentUncheckedCreateWithoutOffensesInput>
+    connectOrCreate?: IncidentCreateOrConnectWithoutOffensesInput
+    upsert?: IncidentUpsertWithoutOffensesInput
+    connect?: IncidentWhereUniqueInput
+    update?: XOR<XOR<IncidentUpdateToOneWithWhereWithoutOffensesInput, IncidentUpdateWithoutOffensesInput>, IncidentUncheckedUpdateWithoutOffensesInput>
+  }
+
+  export type OffenseDefinitionUpdateOneRequiredWithoutRecordsNestedInput = {
+    create?: XOR<OffenseDefinitionCreateWithoutRecordsInput, OffenseDefinitionUncheckedCreateWithoutRecordsInput>
+    connectOrCreate?: OffenseDefinitionCreateOrConnectWithoutRecordsInput
+    upsert?: OffenseDefinitionUpsertWithoutRecordsInput
+    connect?: OffenseDefinitionWhereUniqueInput
+    update?: XOR<XOR<OffenseDefinitionUpdateToOneWithWhereWithoutRecordsInput, OffenseDefinitionUpdateWithoutRecordsInput>, OffenseDefinitionUncheckedUpdateWithoutRecordsInput>
+  }
+
+  export type CrimeIncidentCreateNestedManyWithoutIncidentInput = {
+    create?: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput> | CrimeIncidentCreateWithoutIncidentInput[] | CrimeIncidentUncheckedCreateWithoutIncidentInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutIncidentInput | CrimeIncidentCreateOrConnectWithoutIncidentInput[]
+    createMany?: CrimeIncidentCreateManyIncidentInputEnvelope
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+  }
+
+  export type CrimeIncidentUncheckedCreateNestedManyWithoutIncidentInput = {
+    create?: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput> | CrimeIncidentCreateWithoutIncidentInput[] | CrimeIncidentUncheckedCreateWithoutIncidentInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutIncidentInput | CrimeIncidentCreateOrConnectWithoutIncidentInput[]
+    createMany?: CrimeIncidentCreateManyIncidentInputEnvelope
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type CrimeIncidentUpdateManyWithoutIncidentNestedInput = {
+    create?: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput> | CrimeIncidentCreateWithoutIncidentInput[] | CrimeIncidentUncheckedCreateWithoutIncidentInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutIncidentInput | CrimeIncidentCreateOrConnectWithoutIncidentInput[]
+    upsert?: CrimeIncidentUpsertWithWhereUniqueWithoutIncidentInput | CrimeIncidentUpsertWithWhereUniqueWithoutIncidentInput[]
+    createMany?: CrimeIncidentCreateManyIncidentInputEnvelope
+    set?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    disconnect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    delete?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    update?: CrimeIncidentUpdateWithWhereUniqueWithoutIncidentInput | CrimeIncidentUpdateWithWhereUniqueWithoutIncidentInput[]
+    updateMany?: CrimeIncidentUpdateManyWithWhereWithoutIncidentInput | CrimeIncidentUpdateManyWithWhereWithoutIncidentInput[]
+    deleteMany?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
+  }
+
+  export type CrimeIncidentUncheckedUpdateManyWithoutIncidentNestedInput = {
+    create?: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput> | CrimeIncidentCreateWithoutIncidentInput[] | CrimeIncidentUncheckedCreateWithoutIncidentInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutIncidentInput | CrimeIncidentCreateOrConnectWithoutIncidentInput[]
+    upsert?: CrimeIncidentUpsertWithWhereUniqueWithoutIncidentInput | CrimeIncidentUpsertWithWhereUniqueWithoutIncidentInput[]
+    createMany?: CrimeIncidentCreateManyIncidentInputEnvelope
+    set?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    disconnect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    delete?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    update?: CrimeIncidentUpdateWithWhereUniqueWithoutIncidentInput | CrimeIncidentUpdateWithWhereUniqueWithoutIncidentInput[]
+    updateMany?: CrimeIncidentUpdateManyWithWhereWithoutIncidentInput | CrimeIncidentUpdateManyWithWhereWithoutIncidentInput[]
+    deleteMany?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
+  }
+
+  export type CrimeIncidentCreateNestedManyWithoutOffenseDefinitionInput = {
+    create?: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput> | CrimeIncidentCreateWithoutOffenseDefinitionInput[] | CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput | CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput[]
+    createMany?: CrimeIncidentCreateManyOffenseDefinitionInputEnvelope
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+  }
+
+  export type CrimeIncidentUncheckedCreateNestedManyWithoutOffenseDefinitionInput = {
+    create?: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput> | CrimeIncidentCreateWithoutOffenseDefinitionInput[] | CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput | CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput[]
+    createMany?: CrimeIncidentCreateManyOffenseDefinitionInputEnvelope
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+  }
+
+  export type CrimeIncidentUpdateManyWithoutOffenseDefinitionNestedInput = {
+    create?: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput> | CrimeIncidentCreateWithoutOffenseDefinitionInput[] | CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput | CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput[]
+    upsert?: CrimeIncidentUpsertWithWhereUniqueWithoutOffenseDefinitionInput | CrimeIncidentUpsertWithWhereUniqueWithoutOffenseDefinitionInput[]
+    createMany?: CrimeIncidentCreateManyOffenseDefinitionInputEnvelope
+    set?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    disconnect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    delete?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    update?: CrimeIncidentUpdateWithWhereUniqueWithoutOffenseDefinitionInput | CrimeIncidentUpdateWithWhereUniqueWithoutOffenseDefinitionInput[]
+    updateMany?: CrimeIncidentUpdateManyWithWhereWithoutOffenseDefinitionInput | CrimeIncidentUpdateManyWithWhereWithoutOffenseDefinitionInput[]
+    deleteMany?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
+  }
+
+  export type CrimeIncidentUncheckedUpdateManyWithoutOffenseDefinitionNestedInput = {
+    create?: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput> | CrimeIncidentCreateWithoutOffenseDefinitionInput[] | CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput[]
+    connectOrCreate?: CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput | CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput[]
+    upsert?: CrimeIncidentUpsertWithWhereUniqueWithoutOffenseDefinitionInput | CrimeIncidentUpsertWithWhereUniqueWithoutOffenseDefinitionInput[]
+    createMany?: CrimeIncidentCreateManyOffenseDefinitionInputEnvelope
+    set?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    disconnect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    delete?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    connect?: CrimeIncidentWhereUniqueInput | CrimeIncidentWhereUniqueInput[]
+    update?: CrimeIncidentUpdateWithWhereUniqueWithoutOffenseDefinitionInput | CrimeIncidentUpdateWithWhereUniqueWithoutOffenseDefinitionInput[]
+    updateMany?: CrimeIncidentUpdateManyWithWhereWithoutOffenseDefinitionInput | CrimeIncidentUpdateManyWithWhereWithoutOffenseDefinitionInput[]
+    deleteMany?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
   }
 
   export type NotificationCreateNestedManyWithoutUploadLogInput = {
@@ -17509,14 +20701,6 @@ export namespace Prisma {
     connectOrCreate?: ExportScheduleCreateOrConnectWithoutUserInput | ExportScheduleCreateOrConnectWithoutUserInput[]
     createMany?: ExportScheduleCreateManyUserInputEnvelope
     connect?: ExportScheduleWhereUniqueInput | ExportScheduleWhereUniqueInput[]
-  }
-
-  export type IntFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type UserPermissionUpdateManyWithoutUserNestedInput = {
@@ -17691,6 +20875,17 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -17716,17 +20911,6 @@ export namespace Prisma {
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedIntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
   export type NestedBoolNullableFilter<$PrismaModel = never> = {
@@ -17790,6 +20974,22 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -17826,22 +21026,6 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
   export type NestedBoolNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel> | null
     not?: NestedBoolNullableWithAggregatesFilter<$PrismaModel> | boolean | null
@@ -17864,6 +21048,33 @@ export namespace Prisma {
     _sum?: NestedFloatNullableFilter<$PrismaModel>
     _min?: NestedFloatNullableFilter<$PrismaModel>
     _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
   }
   export type NestedJsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -17963,33 +21174,6 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
-  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
-  }
-
-  export type NestedFloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
-  }
-
   export type NestedBytesFilter<$PrismaModel = never> = {
     equals?: Bytes | BytesFieldRefInput<$PrismaModel>
     in?: Bytes[] | ListBytesFieldRefInput<$PrismaModel>
@@ -18005,6 +21189,457 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBytesFilter<$PrismaModel>
     _max?: NestedBytesFilter<$PrismaModel>
+  }
+
+  export type IncidentCreateWithoutOffensesInput = {
+    id?: string
+    key: string
+    blotterNo?: string | null
+    station?: string | null
+    hasMultipleOffenses?: boolean
+    offenseCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IncidentUncheckedCreateWithoutOffensesInput = {
+    id?: string
+    key: string
+    blotterNo?: string | null
+    station?: string | null
+    hasMultipleOffenses?: boolean
+    offenseCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type IncidentCreateOrConnectWithoutOffensesInput = {
+    where: IncidentWhereUniqueInput
+    create: XOR<IncidentCreateWithoutOffensesInput, IncidentUncheckedCreateWithoutOffensesInput>
+  }
+
+  export type OffenseDefinitionCreateWithoutRecordsInput = {
+    id?: string
+    code: string
+    label: string
+  }
+
+  export type OffenseDefinitionUncheckedCreateWithoutRecordsInput = {
+    id?: string
+    code: string
+    label: string
+  }
+
+  export type OffenseDefinitionCreateOrConnectWithoutRecordsInput = {
+    where: OffenseDefinitionWhereUniqueInput
+    create: XOR<OffenseDefinitionCreateWithoutRecordsInput, OffenseDefinitionUncheckedCreateWithoutRecordsInput>
+  }
+
+  export type IncidentUpsertWithoutOffensesInput = {
+    update: XOR<IncidentUpdateWithoutOffensesInput, IncidentUncheckedUpdateWithoutOffensesInput>
+    create: XOR<IncidentCreateWithoutOffensesInput, IncidentUncheckedCreateWithoutOffensesInput>
+    where?: IncidentWhereInput
+  }
+
+  export type IncidentUpdateToOneWithWhereWithoutOffensesInput = {
+    where?: IncidentWhereInput
+    data: XOR<IncidentUpdateWithoutOffensesInput, IncidentUncheckedUpdateWithoutOffensesInput>
+  }
+
+  export type IncidentUpdateWithoutOffensesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type IncidentUncheckedUpdateWithoutOffensesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    station?: NullableStringFieldUpdateOperationsInput | string | null
+    hasMultipleOffenses?: BoolFieldUpdateOperationsInput | boolean
+    offenseCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OffenseDefinitionUpsertWithoutRecordsInput = {
+    update: XOR<OffenseDefinitionUpdateWithoutRecordsInput, OffenseDefinitionUncheckedUpdateWithoutRecordsInput>
+    create: XOR<OffenseDefinitionCreateWithoutRecordsInput, OffenseDefinitionUncheckedCreateWithoutRecordsInput>
+    where?: OffenseDefinitionWhereInput
+  }
+
+  export type OffenseDefinitionUpdateToOneWithWhereWithoutRecordsInput = {
+    where?: OffenseDefinitionWhereInput
+    data: XOR<OffenseDefinitionUpdateWithoutRecordsInput, OffenseDefinitionUncheckedUpdateWithoutRecordsInput>
+  }
+
+  export type OffenseDefinitionUpdateWithoutRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type OffenseDefinitionUncheckedUpdateWithoutRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    label?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type CrimeIncidentCreateWithoutIncidentInput = {
+    id?: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    offenseDefinition: OffenseDefinitionCreateNestedOneWithoutRecordsInput
+  }
+
+  export type CrimeIncidentUncheckedCreateWithoutIncidentInput = {
+    id?: string
+    offenseDefinitionId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CrimeIncidentCreateOrConnectWithoutIncidentInput = {
+    where: CrimeIncidentWhereUniqueInput
+    create: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput>
+  }
+
+  export type CrimeIncidentCreateManyIncidentInputEnvelope = {
+    data: CrimeIncidentCreateManyIncidentInput | CrimeIncidentCreateManyIncidentInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CrimeIncidentUpsertWithWhereUniqueWithoutIncidentInput = {
+    where: CrimeIncidentWhereUniqueInput
+    update: XOR<CrimeIncidentUpdateWithoutIncidentInput, CrimeIncidentUncheckedUpdateWithoutIncidentInput>
+    create: XOR<CrimeIncidentCreateWithoutIncidentInput, CrimeIncidentUncheckedCreateWithoutIncidentInput>
+  }
+
+  export type CrimeIncidentUpdateWithWhereUniqueWithoutIncidentInput = {
+    where: CrimeIncidentWhereUniqueInput
+    data: XOR<CrimeIncidentUpdateWithoutIncidentInput, CrimeIncidentUncheckedUpdateWithoutIncidentInput>
+  }
+
+  export type CrimeIncidentUpdateManyWithWhereWithoutIncidentInput = {
+    where: CrimeIncidentScalarWhereInput
+    data: XOR<CrimeIncidentUpdateManyMutationInput, CrimeIncidentUncheckedUpdateManyWithoutIncidentInput>
+  }
+
+  export type CrimeIncidentScalarWhereInput = {
+    AND?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
+    OR?: CrimeIncidentScalarWhereInput[]
+    NOT?: CrimeIncidentScalarWhereInput | CrimeIncidentScalarWhereInput[]
+    id?: StringFilter<"CrimeIncident"> | string
+    incidentId?: StringFilter<"CrimeIncident"> | string
+    offenseDefinitionId?: StringFilter<"CrimeIncident"> | string
+    importKey?: StringNullableFilter<"CrimeIncident"> | string | null
+    crimeType?: StringFilter<"CrimeIncident"> | string
+    felonyStage?: StringFilter<"CrimeIncident"> | string
+    sourceFile?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceSheet?: StringNullableFilter<"CrimeIncident"> | string | null
+    sourceRow?: IntNullableFilter<"CrimeIncident"> | number | null
+    blotterNo?: StringNullableFilter<"CrimeIncident"> | string | null
+    dateEncoded?: DateTimeNullableFilter<"CrimeIncident"> | Date | string | null
+    pro?: StringNullableFilter<"CrimeIncident"> | string | null
+    ppo?: StringNullableFilter<"CrimeIncident"> | string | null
+    stn?: StringNullableFilter<"CrimeIncident"> | string | null
+    pcp?: StringNullableFilter<"CrimeIncident"> | string | null
+    region?: StringNullableFilter<"CrimeIncident"> | string | null
+    province?: StringNullableFilter<"CrimeIncident"> | string | null
+    municipal?: StringNullableFilter<"CrimeIncident"> | string | null
+    barangay?: StringFilter<"CrimeIncident"> | string
+    street?: StringNullableFilter<"CrimeIncident"> | string | null
+    typeOfPlace?: StringNullableFilter<"CrimeIncident"> | string | null
+    dateReported?: DateTimeFilter<"CrimeIncident"> | Date | string
+    timeReported?: StringFilter<"CrimeIncident"> | string
+    dateCommitted?: DateTimeFilter<"CrimeIncident"> | Date | string
+    timeCommitted?: StringFilter<"CrimeIncident"> | string
+    incidentType?: StringFilter<"CrimeIncident"> | string
+    isCrime?: BoolFilter<"CrimeIncident"> | boolean
+    modeReporting?: StringNullableFilter<"CrimeIncident"> | string | null
+    stageOfFelony?: StringNullableFilter<"CrimeIncident"> | string | null
+    offense?: StringNullableFilter<"CrimeIncident"> | string | null
+    offenseType?: StringNullableFilter<"CrimeIncident"> | string | null
+    section?: StringNullableFilter<"CrimeIncident"> | string | null
+    modus?: StringNullableFilter<"CrimeIncident"> | string | null
+    suspectMotive?: StringNullableFilter<"CrimeIncident"> | string | null
+    suspectSubMotive?: StringNullableFilter<"CrimeIncident"> | string | null
+    heinous?: BoolFilter<"CrimeIncident"> | boolean
+    sensational?: BoolFilter<"CrimeIncident"> | boolean
+    threatGrp?: BoolFilter<"CrimeIncident"> | boolean
+    grpAffiliation?: StringNullableFilter<"CrimeIncident"> | string | null
+    incidentTypeThreatGrp?: StringNullableFilter<"CrimeIncident"> | string | null
+    mrs?: StringNullableFilter<"CrimeIncident"> | string | null
+    suspectIsEGO?: BoolFilter<"CrimeIncident"> | boolean
+    suspectEGOPosition?: StringNullableFilter<"CrimeIncident"> | string | null
+    suspectEGOClass?: StringNullableFilter<"CrimeIncident"> | string | null
+    suspectCount?: IntNullableFilter<"CrimeIncident"> | number | null
+    suspectArrested?: BoolNullableFilter<"CrimeIncident"> | boolean | null
+    victimIsEGO?: BoolFilter<"CrimeIncident"> | boolean
+    victimEGOPosition?: StringNullableFilter<"CrimeIncident"> | string | null
+    victimEGOClass?: StringNullableFilter<"CrimeIncident"> | string | null
+    victimCount?: IntNullableFilter<"CrimeIncident"> | number | null
+    caseStatus?: StringNullableFilter<"CrimeIncident"> | string | null
+    investigator?: StringNullableFilter<"CrimeIncident"> | string | null
+    headInves?: StringNullableFilter<"CrimeIncident"> | string | null
+    latitude?: FloatNullableFilter<"CrimeIncident"> | number | null
+    longitude?: FloatNullableFilter<"CrimeIncident"> | number | null
+    createdAt?: DateTimeFilter<"CrimeIncident"> | Date | string
+    updatedAt?: DateTimeFilter<"CrimeIncident"> | Date | string
+  }
+
+  export type CrimeIncidentCreateWithoutOffenseDefinitionInput = {
+    id?: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    incident: IncidentCreateNestedOneWithoutOffensesInput
+  }
+
+  export type CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput = {
+    id?: string
+    incidentId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CrimeIncidentCreateOrConnectWithoutOffenseDefinitionInput = {
+    where: CrimeIncidentWhereUniqueInput
+    create: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput>
+  }
+
+  export type CrimeIncidentCreateManyOffenseDefinitionInputEnvelope = {
+    data: CrimeIncidentCreateManyOffenseDefinitionInput | CrimeIncidentCreateManyOffenseDefinitionInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CrimeIncidentUpsertWithWhereUniqueWithoutOffenseDefinitionInput = {
+    where: CrimeIncidentWhereUniqueInput
+    update: XOR<CrimeIncidentUpdateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedUpdateWithoutOffenseDefinitionInput>
+    create: XOR<CrimeIncidentCreateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedCreateWithoutOffenseDefinitionInput>
+  }
+
+  export type CrimeIncidentUpdateWithWhereUniqueWithoutOffenseDefinitionInput = {
+    where: CrimeIncidentWhereUniqueInput
+    data: XOR<CrimeIncidentUpdateWithoutOffenseDefinitionInput, CrimeIncidentUncheckedUpdateWithoutOffenseDefinitionInput>
+  }
+
+  export type CrimeIncidentUpdateManyWithWhereWithoutOffenseDefinitionInput = {
+    where: CrimeIncidentScalarWhereInput
+    data: XOR<CrimeIncidentUpdateManyMutationInput, CrimeIncidentUncheckedUpdateManyWithoutOffenseDefinitionInput>
   }
 
   export type NotificationCreateWithoutUploadLogInput = {
@@ -18506,6 +22141,478 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     permissionName?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type CrimeIncidentCreateManyIncidentInput = {
+    id?: string
+    offenseDefinitionId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CrimeIncidentUpdateWithoutIncidentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    offenseDefinition?: OffenseDefinitionUpdateOneRequiredWithoutRecordsNestedInput
+  }
+
+  export type CrimeIncidentUncheckedUpdateWithoutIncidentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    offenseDefinitionId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CrimeIncidentUncheckedUpdateManyWithoutIncidentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    offenseDefinitionId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CrimeIncidentCreateManyOffenseDefinitionInput = {
+    id?: string
+    incidentId: string
+    importKey?: string | null
+    crimeType: string
+    felonyStage?: string
+    sourceFile?: string | null
+    sourceSheet?: string | null
+    sourceRow?: number | null
+    blotterNo?: string | null
+    dateEncoded?: Date | string | null
+    pro?: string | null
+    ppo?: string | null
+    stn?: string | null
+    pcp?: string | null
+    region?: string | null
+    province?: string | null
+    municipal?: string | null
+    barangay: string
+    street?: string | null
+    typeOfPlace?: string | null
+    dateReported: Date | string
+    timeReported: string
+    dateCommitted: Date | string
+    timeCommitted: string
+    incidentType: string
+    isCrime?: boolean
+    modeReporting?: string | null
+    stageOfFelony?: string | null
+    offense?: string | null
+    offenseType?: string | null
+    section?: string | null
+    modus?: string | null
+    suspectMotive?: string | null
+    suspectSubMotive?: string | null
+    heinous?: boolean
+    sensational?: boolean
+    threatGrp?: boolean
+    grpAffiliation?: string | null
+    incidentTypeThreatGrp?: string | null
+    mrs?: string | null
+    suspectIsEGO?: boolean
+    suspectEGOPosition?: string | null
+    suspectEGOClass?: string | null
+    suspectCount?: number | null
+    suspectArrested?: boolean | null
+    victimIsEGO?: boolean
+    victimEGOPosition?: string | null
+    victimEGOClass?: string | null
+    victimCount?: number | null
+    caseStatus?: string | null
+    investigator?: string | null
+    headInves?: string | null
+    latitude?: number | null
+    longitude?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CrimeIncidentUpdateWithoutOffenseDefinitionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    incident?: IncidentUpdateOneRequiredWithoutOffensesNestedInput
+  }
+
+  export type CrimeIncidentUncheckedUpdateWithoutOffenseDefinitionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    incidentId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CrimeIncidentUncheckedUpdateManyWithoutOffenseDefinitionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    incidentId?: StringFieldUpdateOperationsInput | string
+    importKey?: NullableStringFieldUpdateOperationsInput | string | null
+    crimeType?: StringFieldUpdateOperationsInput | string
+    felonyStage?: StringFieldUpdateOperationsInput | string
+    sourceFile?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceSheet?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceRow?: NullableIntFieldUpdateOperationsInput | number | null
+    blotterNo?: NullableStringFieldUpdateOperationsInput | string | null
+    dateEncoded?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    pro?: NullableStringFieldUpdateOperationsInput | string | null
+    ppo?: NullableStringFieldUpdateOperationsInput | string | null
+    stn?: NullableStringFieldUpdateOperationsInput | string | null
+    pcp?: NullableStringFieldUpdateOperationsInput | string | null
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    province?: NullableStringFieldUpdateOperationsInput | string | null
+    municipal?: NullableStringFieldUpdateOperationsInput | string | null
+    barangay?: StringFieldUpdateOperationsInput | string
+    street?: NullableStringFieldUpdateOperationsInput | string | null
+    typeOfPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    dateReported?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeReported?: StringFieldUpdateOperationsInput | string
+    dateCommitted?: DateTimeFieldUpdateOperationsInput | Date | string
+    timeCommitted?: StringFieldUpdateOperationsInput | string
+    incidentType?: StringFieldUpdateOperationsInput | string
+    isCrime?: BoolFieldUpdateOperationsInput | boolean
+    modeReporting?: NullableStringFieldUpdateOperationsInput | string | null
+    stageOfFelony?: NullableStringFieldUpdateOperationsInput | string | null
+    offense?: NullableStringFieldUpdateOperationsInput | string | null
+    offenseType?: NullableStringFieldUpdateOperationsInput | string | null
+    section?: NullableStringFieldUpdateOperationsInput | string | null
+    modus?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectSubMotive?: NullableStringFieldUpdateOperationsInput | string | null
+    heinous?: BoolFieldUpdateOperationsInput | boolean
+    sensational?: BoolFieldUpdateOperationsInput | boolean
+    threatGrp?: BoolFieldUpdateOperationsInput | boolean
+    grpAffiliation?: NullableStringFieldUpdateOperationsInput | string | null
+    incidentTypeThreatGrp?: NullableStringFieldUpdateOperationsInput | string | null
+    mrs?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    suspectEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    suspectCount?: NullableIntFieldUpdateOperationsInput | number | null
+    suspectArrested?: NullableBoolFieldUpdateOperationsInput | boolean | null
+    victimIsEGO?: BoolFieldUpdateOperationsInput | boolean
+    victimEGOPosition?: NullableStringFieldUpdateOperationsInput | string | null
+    victimEGOClass?: NullableStringFieldUpdateOperationsInput | string | null
+    victimCount?: NullableIntFieldUpdateOperationsInput | number | null
+    caseStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    investigator?: NullableStringFieldUpdateOperationsInput | string | null
+    headInves?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type NotificationCreateManyUploadLogInput = {

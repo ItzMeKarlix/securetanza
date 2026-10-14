@@ -74,7 +74,7 @@ function HomeContent() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isFocusMode]);
 
-	const handleFilterChange = useCallback((filters: any) => {
+	const handleFilterChange = useCallback((filters: unknown) => {
 		console.log("Filter changed:", filters);
 	}, []);
 
@@ -126,7 +126,7 @@ function HomeContent() {
 						className={`absolute left-3 sm:left-4 lg:left-6 flex flex-col items-start gap-3 transition-all duration-500 ease-in-out ${
 							isFilterActive
 								? "top-3 bottom-3 sm:top-4 sm:bottom-4 lg:top-6 lg:bottom-6"
-								: "top-[72px] sm:top-20"
+								: "top-[72px] sm:top-20 z-20"
 						}`}>
 						{/* Filters are tucked away while the temporal view is open — it has its own focus */}
 						{!isFilterActive && <UnifiedFilterBar />}
@@ -154,7 +154,7 @@ function HomeContent() {
 				    how tall the controls column really is. */}
 				<div
 					className={`absolute right-3 sm:right-4 lg:right-6 bottom-3 sm:bottom-4 lg:bottom-6 flex flex-col items-end gap-3 transition-all duration-500 ease-in-out ${
-						isFilterActive ? "top-3 sm:top-4 lg:top-6" : "top-[72px] sm:top-20"
+						isFilterActive ? "top-3 sm:top-4 lg:top-6" : isFocusMode ? "top-[72px] sm:top-20" : "top-[180px] sm:top-20"
 					}`}>
 					{/* min-h-0 (no overflow here) — the barangay-breakdown popup escapes to
 					    the left of the legend via right-full, and CSS forces overflow-x to

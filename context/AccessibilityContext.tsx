@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
+export type DataColorPalette = "original" | "colorful";
+
 export type TextSize = "default" | "large" | "larger";
 
 interface AccessibilityContextType {
@@ -9,6 +11,8 @@ interface AccessibilityContextType {
 	setReduceMotion: (value: boolean) => void;
 	highContrast: boolean;
 	setHighContrast: (value: boolean) => void;
+	dataColorPalette: DataColorPalette;
+	setDataColorPalette: (value: DataColorPalette) => void;
 	textSize: TextSize;
 	setTextSize: (value: TextSize) => void;
 }
@@ -20,6 +24,7 @@ const AccessibilityContext = createContext<AccessibilityContextType | undefined>
 export const A11Y_STORAGE_KEYS = {
 	reduceMotion: "a11y-reduce-motion",
 	highContrast: "a11y-high-contrast",
+	dataColorPalette: "data-color-palette",
 	textSize: "a11y-text-size",
 } as const;
 
@@ -29,14 +34,14 @@ export const A11Y_STORAGE_KEYS = {
  * in globals.css so every component reacts automatically — no prop drilling,
  * no per-component opt-in required.
  *
- * Each setting defaults to whatever the OS already reports (prefers-reduced-
- * motion, prefers-contrast) the first time, then remembers whatever the
- * officer explicitly chose from then on — same "system by default,
- * overridable" shape the theme picker already uses for prefers-color-scheme.
+ * Motion and interface contrast follow the OS until explicitly chosen.
+ * Data palette selection is independent and starts with the original colors.
+ * All choices are remembered in this browser.
  */
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
 	const [reduceMotion, setReduceMotion] = useState(false);
 	const [highContrast, setHighContrast] = useState(false);
+	const [dataColorPalette, setDataColorPalette] = useState<DataColorPalette>("original");
 	const [textSize, setTextSize] = useState<TextSize>("default");
 	const [mounted, setMounted] = useState(false);
 
@@ -58,6 +63,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 		}
 
 		const storedTextSize = localStorage.getItem(A11Y_STORAGE_KEYS.textSize);
+		setDataColorPalette(localStorage.getItem(A11Y_STORAGE_KEYS.dataColorPalette) === "colorful" ? "colorful" : "original");
 		if (storedTextSize === "large" || storedTextSize === "larger") {
 			setTextSize(storedTextSize);
 		}
@@ -79,6 +85,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		if (!mounted) return;
+		document.documentElement.setAttribute("data-color-palette", dataColorPalette);
+		localStorage.setItem(A11Y_STORAGE_KEYS.dataColorPalette, dataColorPalette);
+	}, [dataColorPalette, mounted]);
+
+	useEffect(() => {
+		if (!mounted) return;
 		document.documentElement.setAttribute("data-text-size", textSize);
 		localStorage.setItem(A11Y_STORAGE_KEYS.textSize, textSize);
 	}, [textSize, mounted]);
@@ -88,6 +100,8 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 		setReduceMotion,
 		highContrast,
 		setHighContrast,
+		dataColorPalette,
+		setDataColorPalette,
 		textSize,
 		setTextSize,
 	};

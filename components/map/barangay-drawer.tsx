@@ -15,7 +15,7 @@ import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { useCrimeHoverStats } from "@/hooks/useCrimeHoverStats";
 import { useThreatLevels, getThreatLevelFromCount } from "@/hooks/useThreatLevels";
 import { useTheme } from "@/context/ThemeContext";
-import { getCrimeTypeColor } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 import { OVERLAY_LABEL } from "@/lib/map-overlay";
 
 interface BarangayDrawerProps {
@@ -31,22 +31,14 @@ interface BarangayDrawerProps {
  * dividers, ranked bars on the shared sky ramp, and hairline info rows.
  */
 export default function BarangayDrawer({ open, onOpenChange, barangayName, onMoreInfo }: BarangayDrawerProps) {
+  const { crimeColor, palette, threatColors } = useDataColors();
   const { stats, loading } = useCrimeHoverStats(barangayName);
-  const { barangayCrimeCounts } = useThreatLevels();
+  const { thresholds } = useThreatLevels();
   const { theme } = useTheme();
   const dark = theme === "dark";
 
-  // Calculate threat level and risk
-  const totalCrimes = stats?.crimesByType.reduce((sum, crime) => sum + crime.count, 0) || 0;
-  const normalizedName = barangayName?.toUpperCase() || "";
-  const actualCrimeCount = barangayCrimeCounts[normalizedName] || barangayCrimeCounts[barangayName || ""] || totalCrimes;
-
-  const threatLevel = getThreatLevelFromCount(actualCrimeCount, {
-    low: 2,
-    moderate: 5,
-    high: 10,
-    critical: 15,
-  });
+  const totalOffenses = stats?.totalOffenses ?? 0;
+  const threatLevel = getThreatLevelFromCount(stats?.totalIncidents ?? 0, thresholds);
 
   const riskLevel = threatLevel.charAt(0).toUpperCase() + threatLevel.slice(1);
   const riskColor =
@@ -60,15 +52,6 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
             ? dark ? "text-emerald-400" : "text-emerald-600"
             : dark ? "text-sky-400" : "text-sky-600";
 
-  const statusText =
-    threatLevel === "critical" || threatLevel === "high" ? "Alert" : threatLevel === "moderate" ? "Nominal" : "Secure";
-  const statusColor =
-    statusText === "Secure"
-      ? dark ? "text-emerald-400" : "text-emerald-600"
-      : statusText === "Alert"
-        ? dark ? "text-red-400" : "text-red-600"
-        : dark ? "text-slate-300" : "text-slate-600";
-
   const mutedText = dark ? "text-slate-400" : "text-slate-500";
   const hairline = dark ? "border-white/[0.06]" : "border-slate-100";
   const valueClass = `text-[1.15rem] font-bold leading-tight tabular-nums ${dark ? "text-white" : "text-slate-900"}`;
@@ -78,9 +61,9 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
     .sort((a, b) => b.count - a.count);
 
   const statCells = [
-    { label: "Total Crimes", value: totalCrimes.toLocaleString(), className: "" },
+    { label: "Incidents", value: (stats?.totalIncidents ?? 0).toLocaleString(), className: "" },
+    { label: "Offenses", value: totalOffenses.toLocaleString(), className: "" },
     { label: "Risk Level", value: riskLevel, className: riskColor },
-    { label: "Status", value: statusText, className: statusColor },
     { label: "Safety Index", value: stats?.safetyIndex ?? "—", className: dark ? "text-emerald-400" : "text-emerald-600" },
   ];
 
@@ -134,7 +117,7 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
                       {barangayName}
                     </DrawerTitle>
                     <DrawerDescription className={`mt-1 text-sm ${mutedText}`}>
-                      Crime statistics for this area
+                      One incident may include multiple offenses
                     </DrawerDescription>
                   </div>
                   <DrawerClose asChild>
@@ -163,17 +146,17 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
                       className={`px-4 py-3.5 ${i % 2 === 1 ? `border-l ${hairline}` : ""} ${i >= 2 ? `border-t ${hairline}` : ""}`}
                     >
                       <p className={`${OVERLAY_LABEL} mb-1.5`}>{cell.label}</p>
-                      <p className={`${valueClass} ${cell.className}`}>{cell.value}</p>
+                      <p className={`${valueClass} ${cell.className}`} style={palette === "colorful" && cell.label === "Risk Level" ? { color: threatColors[threatLevel] } : undefined}>{cell.value}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Crime distribution */}
                 <div>
-                  <h4 className={`${OVERLAY_LABEL} mb-3`}>Crime Distribution</h4>
+                  <h4 className={`${OVERLAY_LABEL} mb-3`}>Offense Distribution</h4>
                   <div className="custom-scrollbar max-h-[380px] overflow-y-auto">
                     {distribution.map((crime) => {
-                      const share = totalCrimes > 0 ? Math.round((crime.count / totalCrimes) * 100) : 0;
+                      const share = totalOffenses > 0 ? Math.round((crime.count / totalOffenses) * 100) : 0;
                       return (
                         <div
                           key={crime.type}
@@ -181,7 +164,7 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
                         >
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: getCrimeTypeColor(crime.type) }}
+                            style={{ backgroundColor: crimeColor(crime.type) }}
                           />
                           <span className={`min-w-0 flex-1 truncate text-[0.82rem] ${dark ? "text-slate-200" : "text-slate-700"}`}>
                             {crime.type}

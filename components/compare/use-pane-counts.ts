@@ -21,14 +21,14 @@ interface PaneResult {
  * overwrite the current one. While a new period loads, the last counts stay up.
  */
 export function usePaneCounts() {
-  const { selectedCrimeType } = useMapContext();
+  const { selectedCrimeType, selectedFelonyStage } = useMapContext();
   const dateRanges = useTimeRangeData();
   const [result, setResult] = useState<PaneResult | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   const requestKey = `${dateRanges.map(({ start, end }) => `${start.getTime()}-${end.getTime()}`).join(",")}|${
     selectedCrimeType ?? ""
-  }|${attempt}`;
+  }|${selectedFelonyStage ?? ""}|${attempt}`;
 
   useEffect(() => {
     // The provider hasn't picked an opening period yet.
@@ -42,13 +42,21 @@ export function usePaneCounts() {
           startDateCommitted: start.toISOString(),
           endDateCommitted: end.toISOString(),
         });
-        if (selectedCrimeType) params.set("incidentType", toIncidentTypeParam(selectedCrimeType));
+        if (selectedCrimeType)
+          params.set("offenseCategory", toIncidentTypeParam(selectedCrimeType));
 
-        const res = await fetch(`/api/crimes/barangay-counts?${params}`, { signal: controller.signal });
+        if (selectedFelonyStage)
+          params.set("stageOfFelony", selectedFelonyStage);
+        const res = await fetch(`/api/crimes/barangay-counts?${params}`, {
+          signal: controller.signal,
+        });
         const body = await res.json();
-        if (!res.ok || !body?.success) throw new Error(body?.error || `Counts request failed (${res.status})`);
+        if (!res.ok || !body?.success)
+          throw new Error(
+            body?.error || `Counts request failed (${res.status})`,
+          );
         return (body.data?.barangayCounts ?? {}) as Record<string, number>;
-      })
+      }),
     )
       .then((results) => {
         const counts: Record<string, number> = {};
@@ -58,14 +66,22 @@ export function usePaneCounts() {
             const key = countKey(name);
             counts[key] = (counts[key] ?? 0) + count;
             total += count;
-          })
+          }),
         );
         setResult({ key: requestKey, counts, total, failed: false });
       })
       .catch((error) => {
         if (controller.signal.aborted) return;
-        console.error("Could not load barangay counts for the compare view:", error);
-        setResult((prev) => ({ key: requestKey, counts: prev?.counts ?? {}, total: prev?.total ?? 0, failed: true }));
+        console.error(
+          "Could not load barangay counts for the compare view:",
+          error,
+        );
+        setResult((prev) => ({
+          key: requestKey,
+          counts: prev?.counts ?? {},
+          total: prev?.total ?? 0,
+          failed: true,
+        }));
       });
 
     return () => controller.abort();
@@ -73,7 +89,12 @@ export function usePaneCounts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const status: PaneStatus = !result || result.key !== requestKey ? "loading" : result.failed ? "error" : "ready";
+  const status: PaneStatus =
+    !result || result.key !== requestKey
+      ? "loading"
+      : result.failed
+        ? "error"
+        : "ready";
 
   return {
     counts: result?.counts ?? EMPTY,

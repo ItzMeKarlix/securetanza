@@ -1,3 +1,4 @@
+import { insertCrimeRecords } from "../lib/crime-records"
 // Load environment variables FIRST before any imports
 import { config } from 'dotenv'
 config({ path: '.env.local' })
@@ -244,6 +245,8 @@ async function main() {
     // Clear existing data
     console.log('🗑️ Clearing existing data...')
     await prisma.crimeIncident.deleteMany()
+    await prisma.incident.deleteMany()
+    await prisma.offenseDefinition.deleteMany()
     await prisma.barangay.deleteMany()
 
     // Create barangays
@@ -275,8 +278,7 @@ async function main() {
           continue
         }
 
-        await prisma.crimeIncident.create({
-          data: {
+        await insertCrimeRecords([{
             // Blotter Information
             blotterNo: processedData.blotterNo,
             dateEncoded: processedData.dateEncoded,
@@ -351,8 +353,7 @@ async function main() {
             // Geographic Coordinates
             latitude: processedData.latitude,
             longitude: processedData.longitude,
-          }
-        })
+        }], prisma)
         
         successCount++
         

@@ -428,7 +428,7 @@ export class ImageExporter {
     const W = 1600;
     const H = Math.max(600, 220 + Math.min(byType.length, 8) * 58 + 60);
     const { canvas, ctx } = newCanvas(W, H);
-    const bodyY = drawHeader(ctx, W, { kicker: 'Incident Classification', title: 'Leading Incident Types', subtitle: this.scopeSubtitle(data) });
+    const bodyY = drawHeader(ctx, W, { kicker: 'Offense Classification', title: 'Leading Offenses', subtitle: this.scopeSubtitle(data) });
 
     if (!byType.length) {
       text(ctx, 'No incident data was recorded for this period.', PAD, bodyY + 40, { size: 24, color: INK_SOFT });

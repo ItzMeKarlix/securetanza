@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "concurrently --kill-others-on-fail \"next start\" \"npx tsx backend/cron/worker.ts\"",
     "lint": "eslint",
+    "test": "bun test tests",
+    "test:crime:db": "bun test tests/crime-database.test.ts",
+    "test:crime:http": "bun test tests/crime-http.test.ts",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -16,6 +20,7 @@
     "install:excel": "bun add xlsx"
   },
   "dependencies": {
+    "@next/swc-darwin-arm64": "^16.4.0",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@prisma/client-runtime-utils": "^7.10.0",

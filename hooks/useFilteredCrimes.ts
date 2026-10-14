@@ -1,56 +1,32 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { fetchCrimes, CrimeIncident } from "@/lib/api";
+import { fetchCrimes, type CrimeIncident } from "@/lib/api";
 import { useMapContext } from "@/context/MapContext";
+import { useTimeRangeData } from "./useTimeRangeData";
+import { buildMapQueries, readMapCrimes } from "./map-query";
 
 export function useFilteredCrimes() {
-  const [crimes, setCrimes] = useState<CrimeIncident[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { timeFilterDate, timeFilterHour, selectedYear } = useMapContext();
-
+  const scope = useMapContext();
+  const ranges = useTimeRangeData();
+  const key = JSON.stringify(buildMapQueries(scope, ranges, "barangay-counts", scope.selectedBarangay).map(query => query.toString()));
+  const [settled, setSettled] = useState<{ key: string; crimes: CrimeIncident[] } | null>(null);
   useEffect(() => {
-    const fetchFilteredCrimes = async () => {
-      setLoading(true);
+    const controller = new AbortController();
+    void (async () => {
       try {
-        if (!timeFilterDate) {
-          // No time filter active, fetch all recent crimes (with optional year filter)
-          const allCrimes = await fetchCrimes({ 
-            limit: 1000,
-            year: selectedYear || undefined
-          });
-          setCrimes(allCrimes);
-        } else {
-          // Filter by date and hour
-          const startDate = new Date(timeFilterDate);
-          const endDate = new Date(timeFilterDate);
-          
-          if (timeFilterHour !== null) {
-            // Filter by specific hour
-            startDate.setHours(timeFilterHour, 0, 0, 0);
-            endDate.setHours(timeFilterHour, 59, 59, 999);
-          } else {
-            // Filter by entire day
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-          }
-
-          const filteredCrimes = await fetchCrimes({
-            startDateCommitted: startDate.toISOString(),
-            endDateCommitted: endDate.toISOString(),
-            year: selectedYear || undefined
-          });
-          
-          setCrimes(filteredCrimes);
-        }
+        const queries = (JSON.parse(key) as string[]).map(value => new URLSearchParams(value));
+        const crimes = await readMapCrimes(queries, controller.signal, fetchCrimes);
+        if (!controller.signal.aborted) setSettled({ key, crimes });
       } catch (error) {
-        console.error("Error fetching filtered crimes:", error);
-        setCrimes([]);
-      } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          console.error("Error loading filtered map crimes:", error);
+          setSettled({ key, crimes: [] });
+        }
       }
-    };
-
-    fetchFilteredCrimes();
-  }, [timeFilterDate, timeFilterHour, selectedYear]);
-
-  return { crimes, loading };
+    })();
+    return () => controller.abort();
+  }, [key]);
+  const current = settled?.key === key;
+  return { crimes: current ? settled.crimes : [], loading: !current };
 }

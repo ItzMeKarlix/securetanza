@@ -1,47 +1,39 @@
 import { useState, useEffect } from 'react'
-import { fetchCrimes, fetchCrimeStats, transformCrimeToIncident } from '@/lib/api'
+import { fetchCrimes, transformCrimeToIncident } from '@/lib/api'
 import { BarangayData } from '@/constants/dummy'
 import { useMapContext } from '@/context/MapContext'
+import { useTimeRangeData } from './useTimeRangeData'
+import { buildMapQueries, mergeMapStats, readMapCrimes, readMapResponses } from './map-query'
 
 export function useBarangayData(barangayName: string | null) {
-  const { selectedYear } = useMapContext()
-  const [data, setData] = useState<BarangayData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const scope = useMapContext()
+  const ranges = useTimeRangeData()
+  const statsKey = JSON.stringify(buildMapQueries(scope, ranges, "stats", barangayName).map(query => query.toString()))
+  const crimesKey = JSON.stringify(buildMapQueries(scope, ranges, "barangay-counts", barangayName).map(query => query.toString()))
+  const key = `${statsKey}:${crimesKey}`
+  const [settled, setSettled] = useState<{ key: string; data: BarangayData | null; error: string | null } | null>(null)
 
   useEffect(() => {
-    if (!barangayName) {
-      setData(null)
-      return
-    }
-
-    // Don't fetch until selectedYear is set (wait for MapContext to initialize)
-    if (selectedYear === null) {
-      console.log('⏳ BarangayData: Waiting for selectedYear to be set...')
-      return
-    }
+    if (!barangayName) return
+    const controller = new AbortController()
 
     async function loadBarangayData() {
       try {
-        setLoading(true)
-        setError(null)
-
-        // Fetch barangay-specific data
-        const [stats, crimes] = await Promise.all([
-          fetchCrimeStats({ 
-            barangay: barangayName!,
-            year: selectedYear || undefined
-          }),
-          fetchCrimes({ 
-            barangay: barangayName!, 
-            year: selectedYear || undefined,
-            limit: 5 
-          })
+        const statQueries = (JSON.parse(statsKey) as string[]).map(value => new URLSearchParams(value))
+        const crimeQueries = (JSON.parse(crimesKey) as string[]).map(value => new URLSearchParams(value))
+        const [results, recent] = await Promise.all([
+          readMapResponses("stats", statQueries, controller.signal),
+          readMapCrimes(crimeQueries, controller.signal, fetchCrimes, 5),
         ])
-
-        if (!stats) {
-          throw new Error('Failed to fetch statistics')
+        if (controller.signal.aborted) return
+        const totals = mergeMapStats(results)
+        const stats = {
+          ...totals,
+          activeCases: results.reduce((sum, result) => sum + (result.activeCases ?? 0), 0),
+          resolvedToday: results.reduce((sum, result) => sum + (result.resolvedToday ?? 0), 0),
+          activity: Array.from({ length: 12 }, (_, month) => results.reduce((sum, result) => sum + (result.activity?.[month] ?? 0), 0)),
         }
+        const crimes = recent.sort((a, b) => +new Date(b.dateCommitted) - +new Date(a.dateCommitted)).slice(0, 5)
 
         // Transform crimes to incidents
         const incidents = crimes.map(transformCrimeToIncident)
@@ -80,17 +72,19 @@ export function useBarangayData(barangayName: string | null) {
           }
         }
 
-        setData(barangayData)
+        setSettled({ key, data: barangayData, error: null })
       } catch (error) {
-        console.error('Error loading barangay data:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load barangay data')
-      } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          console.error('Error loading barangay data:', error)
+          setSettled({ key, data: null, error: error instanceof Error ? error.message : 'Failed to load barangay data' })
+        }
       }
     }
 
-    loadBarangayData()
-  }, [barangayName, selectedYear])
+    void loadBarangayData()
+    return () => controller.abort()
+  }, [barangayName, statsKey, crimesKey, key])
 
-  return { data, loading, error }
+  const current = Boolean(barangayName && settled?.key === key)
+  return { data: current ? settled?.data ?? null : null, loading: Boolean(barangayName && !current), error: current ? settled?.error ?? null : null }
 }

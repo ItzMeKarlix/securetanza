@@ -4,15 +4,20 @@
  * for Excel/CSV uploads and incident creation.
  */
 
-import { PrismaClient } from './generated/prisma';
+import type { PrismaClient } from './generated/prisma';
+import { normalizeFelonyStage } from '@/lib/offense-classification';
 
 export interface CrimeRecordForFingerprint {
   blotterNo?: string | null;
+  stn?: string | null;
+  municipal?: string | null;
   barangay: string;
   dateCommitted: Date | string;
   timeCommitted: string;
   incidentType: string;
   offense?: string | null;
+  stageOfFelony?: string | null;
+  section?: string | null;
   dateReported: Date | string;
   timeReported: string;
 }
@@ -71,21 +76,18 @@ export function normalizeCrimeTime(val: string | null | undefined): string {
  * - If blotterNo is present, returns a blotter-keyed fingerprint.
  * - If blotterNo is absent, returns a composite key of the incident's core attributes.
  */
-export function generateCrimeFingerprint(record: CrimeRecordForFingerprint): string {
+export function generateIncidentKey(record: CrimeRecordForFingerprint): string {
   const blotter = normalizeCrimeText(record.blotterNo);
   if (blotter && blotter !== '-' && blotter !== 'n/a' && blotter !== 'none' && blotter !== 'null') {
-    return `blotter:${blotter}`;
+    const station = normalizeCrimeText(record.stn) || normalizeCrimeText(record.municipal) || 'unknown-station';
+    return `blotter:${station}|${blotter}`;
   }
+  // Without a blotter there is insufficient evidence to link different offenses.
+  return `comp:${normalizeCrimeText(record.stn)}|${normalizeCrimeText(record.barangay)}|${normalizeCrimeDate(record.dateCommitted)}|${normalizeCrimeTime(record.timeCommitted)}|${normalizeCrimeText(record.incidentType)}|${normalizeCrimeText(record.offense)}|${normalizeCrimeDate(record.dateReported)}|${normalizeCrimeTime(record.timeReported)}`;
+}
 
-  const barangay = normalizeCrimeText(record.barangay);
-  const dateCommitted = normalizeCrimeDate(record.dateCommitted);
-  const timeCommitted = normalizeCrimeTime(record.timeCommitted);
-  const incidentType = normalizeCrimeText(record.incidentType);
-  const offense = normalizeCrimeText(record.offense);
-  const dateReported = normalizeCrimeDate(record.dateReported);
-  const timeReported = normalizeCrimeTime(record.timeReported);
-
-  return `comp:${barangay}|${dateCommitted}|${timeCommitted}|${incidentType}|${offense}|${dateReported}|${timeReported}`;
+export function generateCrimeFingerprint(record: CrimeRecordForFingerprint): string {
+  return JSON.stringify([generateIncidentKey(record), normalizeCrimeText(record.offense) || `unclassified:${normalizeCrimeText(record.incidentType)}`, normalizeFelonyStage(record.stageOfFelony), normalizeCrimeText(record.section)]);
 }
 
 /**
@@ -154,11 +156,15 @@ export async function findExistingCrimeFingerprints(
     },
     select: {
       blotterNo: true,
+      stn: true,
+      municipal: true,
       barangay: true,
       dateCommitted: true,
       timeCommitted: true,
       incidentType: true,
       offense: true,
+      stageOfFelony: true,
+      section: true,
       dateReported: true,
       timeReported: true,
     },
@@ -167,14 +173,6 @@ export async function findExistingCrimeFingerprints(
   for (const existing of existingInDb) {
     const fp = generateCrimeFingerprint(existing);
     existingFingerprints.add(fp);
-    // If blotter is present, also add composite fingerprint to catch matches where blotter was omitted in one record
-    if (existing.blotterNo) {
-      const compositeFp = generateCrimeFingerprint({
-        ...existing,
-        blotterNo: null,
-      });
-      existingFingerprints.add(compositeFp);
-    }
   }
 
   return existingFingerprints;

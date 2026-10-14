@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CrimeService } from '@/backend/services/crime.service';
+import { getSession } from '@/lib/auth';
 
 const updateCrimeSchema = z.object({
   barangay: z.string().min(1).optional(),
   date: z.string().datetime().optional(),
   time: z.string().min(1).optional(),
   crimeType: z.string().min(1).optional(),
+  offense: z.string().min(1).optional(),
+  stageOfFelony: z.enum(['CONSUMMATED','FRUSTRATED','ATTEMPTED','UNKNOWN']).optional(),
+  section: z.string().optional(),
+  blotterNo: z.string().optional(),
+  stn: z.string().optional(),
+  sourceIncidentType: z.string().min(1).optional(),
+}).refine(value => value.crimeType === undefined, {
+  message: 'Crime classification is derived from offense and felony stage; update those fields instead.',
+  path: ['crimeType'],
 });
 
 // GET /api/crimes/[id] - Get a specific crime incident (Cached)
@@ -44,6 +54,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session || !session.permissions.some(p => p === 'admin' || p === 'admin_operational_officer')) {
+      return NextResponse.json({ success: false, error: 'Administrative access required' }, { status: 403 });
+    }
     const { id } = await params;
     const body = await request.json();
     const validatedData = updateCrimeSchema.parse(body);
@@ -52,7 +66,10 @@ export async function PUT(
     if (validatedData.barangay) updateData.barangay = validatedData.barangay;
     if (validatedData.date) updateData.dateCommitted = new Date(validatedData.date);
     if (validatedData.time) updateData.timeCommitted = validatedData.time;
-    if (validatedData.crimeType) updateData.incidentType = validatedData.crimeType;
+    if (validatedData.sourceIncidentType) updateData.incidentType = validatedData.sourceIncidentType;
+    for (const field of ['offense','stageOfFelony','section','blotterNo','stn'] as const) {
+      if (validatedData[field] !== undefined) updateData[field] = validatedData[field];
+    }
 
     const crime = await CrimeService.updateIncident(id, updateData);
 
@@ -87,6 +104,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session || !session.permissions.some(p => p === 'admin' || p === 'admin_operational_officer')) {
+      return NextResponse.json({ success: false, error: 'Administrative access required' }, { status: 403 });
+    }
     const { id } = await params;
     await CrimeService.deleteIncident(id);
 

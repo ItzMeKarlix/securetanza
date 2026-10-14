@@ -5,6 +5,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAccessibility, type TextSize } from "@/context/AccessibilityContext";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
 	PageHeader,
 	Section,
@@ -27,7 +28,7 @@ const TEXT_SIZES: { id: TextSize; label: string }[] = [
 export default function PreferencesPage() {
 	const { theme, setTheme } = useTheme();
 	const { user, refreshSession } = useAuth();
-	const { reduceMotion, setReduceMotion, highContrast, setHighContrast, textSize, setTextSize } =
+	const { reduceMotion, setReduceMotion, highContrast, setHighContrast, dataColorPalette, setDataColorPalette, textSize, setTextSize } =
 		useAccessibility();
 	const [savedSync, setSavedSync] = useState(false);
 	const [draftSync, setDraftSync] = useState(false);
@@ -207,6 +208,27 @@ export default function PreferencesPage() {
 							</PickerTile>
 						))}
 					</div>
+				</Section>
+			</div>
+
+			<div data-tour="preferences-data-colors">
+				<Section
+					title="Data colors"
+					description="Choose the colors used for crime coding, maps, and analytics graphs. Applied immediately."
+				>
+					<Rows>
+						<Row label="Map and graph palette" description="Original keeps the current colors. Colorful adds distinct crime colors, teal charts, and purple heatmaps." htmlFor="data-color-palette">
+							<Select value={dataColorPalette} onValueChange={(value) => setDataColorPalette(value === "colorful" ? "colorful" : "original")}>
+								<SelectTrigger id="data-color-palette" aria-label="Map and graph palette" className="w-[220px] max-w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="original">Original</SelectItem>
+									<SelectItem value="colorful">Colorful</SelectItem>
+								</SelectContent>
+							</Select>
+						</Row>
+					</Rows>
 				</Section>
 			</div>
 

@@ -207,12 +207,12 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
 				</span>
 			</header>
 
-			<div className="flex min-h-0 flex-1 lg:flex-row">
+			<div className="flex min-h-0 flex-1 flex-col lg:flex-row">
 				<SettingsNav groups={groups} pathname={pathname} isAdmin={isAdmin} />
 
 				<main
 					data-tour="settings-workspace"
-					className="settings-scroll min-w-0 flex-1 overflow-y-auto scroll-smooth"
+					className="settings-scroll min-h-0 min-w-0 flex-1 overflow-y-auto scroll-smooth"
 				>
 					<div key={pathname} className="settings-enter px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
 						{children}

@@ -1,7 +1,9 @@
 import { prisma } from './prisma';
+import { uniqueIncidentRecords } from '@/lib/offense-classification';
 
 export interface BatchRecordItem {
   id: string;
+  incidentId?: string;
   barangay: string;
   incidentType: string;
   dateCommitted: Date;
@@ -177,7 +179,7 @@ export class NotificationEngine {
 
       notifs.push({
         title: `Dataset Ingested & Analyzed (${timeframe.yearStr})`,
-        message: `Successfully processed "${fileName}" (${timeframe.yearStr} dataset). Imported ${insertedRecords.length} crime incident records across ${uniqueBarangays} barangays (${timeframe.dateSpan}). Analytical patterns evaluated.`,
+        message: `Successfully processed "${fileName}" (${timeframe.yearStr} dataset). Imported ${insertedRecords.length} recorded offenses across ${uniqueIncidentRecords(insertedRecords).length} incidents and ${uniqueBarangays} barangays (${timeframe.dateSpan}). Analytical patterns evaluated.`,
         category: 'DATASET_PROCESSING',
         severity: ruleConfig?.severity || 'INFO',
         metadata: {
@@ -201,6 +203,7 @@ export class NotificationEngine {
     records: BatchRecordItem[],
     rule: { severity: 'INFO' | 'WARNING' | 'CRITICAL'; parameters: any }
   ): GeneratedNotificationPayload | null {
+    records = uniqueIncidentRecords(records);
     const params = (rule.parameters || {}) as {
       windowSpanHours?: number;
       densityThresholdPercent?: number;
@@ -345,6 +348,7 @@ export class NotificationEngine {
     records: BatchRecordItem[],
     rule: { severity: 'INFO' | 'WARNING' | 'CRITICAL'; parameters: any }
   ): Promise<GeneratedNotificationPayload[]> {
+    records = uniqueIncidentRecords(records);
     const notifs: GeneratedNotificationPayload[] = [];
     const params = (rule.parameters || {}) as {
       surgeThresholdPercent?: number;
@@ -442,8 +446,8 @@ export class NotificationEngine {
         const leadingBarangay = Object.entries(bCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Various';
 
         notifs.push({
-          title: `High Frequency Spike: ${targetType} (${count} Cases, ${timeframe.yearStr})`,
-          message: `The imported ${timeframe.yearStr} dataset shows ${count} cases of ${targetType} (${timeframe.dateSpan}), exceeding the operational threshold of ${threshold}. Highest frequency reported in ${leadingBarangay}.`,
+          title: `High Frequency Spike: ${targetType} (${count} Offenses, ${timeframe.yearStr})`,
+          message: `The imported ${timeframe.yearStr} dataset shows ${count} recorded offenses of ${targetType} (${timeframe.dateSpan}), exceeding the operational threshold of ${threshold}. Highest frequency reported in ${leadingBarangay}.`,
           category: 'CRIME_ACTIVITY',
           severity: rule.severity || 'WARNING',
           metadata: {

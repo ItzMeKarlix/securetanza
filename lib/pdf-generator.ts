@@ -64,6 +64,7 @@ export interface ReportData {
   crimeType?: string | null;
   analyticsData: AnalyticsData;
   totalCrimes: number;
+  totalOffenses: number;
   generatedBy?: string;
 }
 
@@ -746,6 +747,7 @@ export class PDFReportGenerator {
     const meta: Array<[string, string]> = [
       ['Reference', this.reference],
       ['Total incidents', data.totalCrimes.toLocaleString()],
+      ['Recorded offenses', data.totalOffenses.toLocaleString()],
       ['Sections included', String(sectionCount)],
       ['Generated', new Date().toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })],
     ];
@@ -828,7 +830,7 @@ export class PDFReportGenerator {
         : `Barangay ${data.barangayName}`;
 
     this.paragraph(
-      `${data.totalCrimes.toLocaleString()} incidents${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
+      `${data.totalCrimes.toLocaleString()} unique incidents with ${data.totalOffenses.toLocaleString()} recorded offenses${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
         `The current quarterly threat rating is ${trends.currentThreatLevel.toLowerCase()}, ` +
         `${
           trends.trendDirection === 'improved' ? 'down from' : trends.trendDirection === 'worsened' ? 'up from' : 'unchanged against'
@@ -850,9 +852,9 @@ export class PDFReportGenerator {
         trends.currentQuarterCrimes
       }).`,
       topType
-        ? `${topType.type} is the leading incident type at ${topType.count} ${
-            topType.count === 1 ? 'case' : 'cases'
-          }${data.totalCrimes ? ` (${((topType.count / data.totalCrimes) * 100).toFixed(1)}% of the total)` : ''}.`
+        ? `${topType.type} is the leading offense category at ${topType.count} ${
+            topType.count === 1 ? 'offense' : 'offenses'
+          }${data.totalOffenses ? ` (${((topType.count / data.totalOffenses) * 100).toFixed(1)}% of recorded offenses)` : ''}.`
         : 'No incident types were recorded in this period, so no leading category can be identified.',
       // Full time-of-day breakdown lives in Temporal Analysis — this just flags the busiest window.
       `Roughly ${peakCount} incident${peakCount === 1 ? '' : 's'} cluster in the ${hourBand(
@@ -1025,11 +1027,11 @@ export class PDFReportGenerator {
     const hasData = byType.length > 0;
     if (hasData && !opts.includeText && !opts.includeTables) return;
 
-    this.section('Incident Classification');
+    this.section('Offense Classification');
 
     if (opts.includeText) {
       this.paragraph(
-        'Complete breakdown of recorded incidents by offence category, ordered by volume.'
+        'Recorded offenses grouped by offense and felony stage. One incident may contain several offenses.'
       );
       this.gap(4);
     }
@@ -1041,12 +1043,12 @@ export class PDFReportGenerator {
 
     if (opts.includeTables) {
       this.table({
-        head: ['#', 'Incident type', 'Cases', 'Share', ''],
+        head: ['#', 'Offense and stage', 'Offenses', 'Share', ''],
         body: byType.map((crime, i) => [
           String(i + 1).padStart(2, '0'),
           crime.type,
           crime.count.toLocaleString(),
-          this.share(crime.count, data.totalCrimes),
+          this.share(crime.count, data.totalOffenses),
           '',
         ]),
         columnStyles: {
@@ -1057,7 +1059,7 @@ export class PDFReportGenerator {
         },
         shareColumn: {
           index: 4,
-          values: byType.map((crime) => (data.totalCrimes ? crime.count / data.totalCrimes : 0)),
+          values: byType.map((crime) => (data.totalOffenses ? crime.count / data.totalOffenses : 0)),
         },
       });
     }
@@ -1237,11 +1239,11 @@ export class PDFReportGenerator {
     const hasData = matrix.length > 0;
     if (hasData && !opts.includeText && !opts.includeCharts) return;
 
-    this.section('Incidence Matrix', 108);
+    this.section('Offense Matrix', 108);
 
     if (opts.includeText) {
       this.paragraph(
-        'Monthly incidence by offence category. Cell shading encodes volume relative to the busiest cell in the matrix; a dash marks a month with no recorded cases.'
+        'Monthly offense counts by category and felony stage. One incident may contribute several offenses; a dash marks a month with no recorded offenses.'
       );
       this.gap(5);
     }

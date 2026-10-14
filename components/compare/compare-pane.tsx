@@ -6,8 +6,7 @@ import { ChevronDown, Filter, RotateCw, X } from "lucide-react";
 import { MapProvider, useMapContext } from "@/context/MapContext";
 import { usePeriod, PeriodPanel } from "@/components/layout/period-picker";
 import CrimeTypeOptions from "@/components/layout/crime-type-options";
-import { getCrimeTypeColor } from "@/hooks/useCrimeTypes";
-import { THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useDataColors } from "@/hooks/useDataColors";
 import { threatLevelOf, type ThreatThresholds } from "@/lib/geo-threat";
 import { OVERLAY_SURFACE } from "@/lib/map-overlay";
 import { openingPeriod, type PaneReport, type Side } from "./compare-data";
@@ -36,12 +35,15 @@ interface ComparePaneProps {
 
 /**
  * One side of the compare view. Each side runs its own MapProvider, so it owns
- * a period and a crime type exactly as the main map does, and reuses the main
- * map's period picker and crime type list unchanged.
+ * a period and an offense exactly as the main map does, and reuses the main
+ * map's period picker and offense list unchanged.
  */
 export default function ComparePane(props: ComparePaneProps) {
   return (
-    <MapProvider persistPeriod={false} initialPeriod={(years) => openingPeriod(years, props.side)}>
+    <MapProvider
+      persistPeriod={false}
+      initialPeriod={(years) => openingPeriod(years, props.side)}
+    >
       <PaneBody {...props} />
     </MapProvider>
   );
@@ -66,7 +68,14 @@ function PaneBody({
   className = "",
   children,
 }: ComparePaneProps) {
-  const { geoJsonData, selectedCrimeType, setSelectedCrimeType } = useMapContext();
+  const { crimeColor, threatColors } = useDataColors();
+  const {
+    geoJsonData,
+    selectedCrimeType,
+    selectedFelonyStage,
+    setSelectedCrimeType,
+    setSelectedFelonyStage,
+  } = useMapContext();
   const { counts, total, status, retry } = usePaneCounts();
   const period = usePeriod(true);
   const label = period.displayText;
@@ -74,14 +83,21 @@ function PaneBody({
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    onReport(side, { label, crimeType: selectedCrimeType, counts, total, status });
+    onReport(side, {
+      label,
+      crimeType: selectedCrimeType,
+      counts,
+      total,
+      status,
+    });
   }, [side, label, selectedCrimeType, counts, total, status, onReport]);
 
   // Close the open dropdown on an outside click or Escape, as the main map's filter bar does.
   useEffect(() => {
     if (!open) return;
     const onPointer = (e: MouseEvent) => {
-      if (stripRef.current && !stripRef.current.contains(e.target as Node)) setOpen(null);
+      if (stripRef.current && !stripRef.current.contains(e.target as Node))
+        setOpen(null);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(null);
@@ -94,11 +110,14 @@ function PaneBody({
     };
   }, [open]);
 
-  const toggle = (next: Dropdown) => setOpen((current) => (current === next ? null : next));
+  const toggle = (next: Dropdown) =>
+    setOpen((current) => (current === next ? null : next));
 
   const hoveredCount = hovered ? (counts[hovered] ?? 0) : 0;
-  const hoveredLevel = hovered && thresholds ? threatLevelOf(hoveredCount, thresholds) : null;
-  const firstLoad = status === "loading" && total === 0 && Object.keys(counts).length === 0;
+  const hoveredLevel =
+    hovered && thresholds ? threatLevelOf(hoveredCount, thresholds) : null;
+  const firstLoad =
+    status === "loading" && total === 0 && Object.keys(counts).length === 0;
 
   return (
     <section
@@ -124,11 +143,16 @@ function PaneBody({
       </div>
 
       {/* Counting: an indeterminate line along the top edge, since the request reports no progress. */}
-      <div className="absolute inset-x-0 top-0 z-10 h-[2px] overflow-hidden" aria-hidden="true">
-        {status === "loading" && <div className="h-full w-1/3 animate-pulse bg-sky-500 dark:bg-sky-400" />}
+      <div
+        className="absolute inset-x-0 top-0 z-10 h-[2px] overflow-hidden"
+        aria-hidden="true"
+      >
+        {status === "loading" && (
+          <div className="h-full w-1/3 animate-pulse bg-sky-500 dark:bg-sky-400" />
+        )}
       </div>
 
-      {/* ── Which side, which period, which crime type ── */}
+      {/* ── Which side, which period, which offense ── */}
       <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex">
         <div
           ref={stripRef}
@@ -161,32 +185,45 @@ function PaneBody({
             />
           </button>
 
-          <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-slate-200 dark:bg-white/[0.08]" />
+          <span
+            aria-hidden="true"
+            className="mx-0.5 h-5 w-px bg-slate-200 dark:bg-white/[0.08]"
+          />
 
           <div className="flex min-w-0 items-center">
             <button
               type="button"
               onClick={() => toggle("crime")}
               aria-expanded={open === "crime"}
-              title="Change this map's crime type"
+              title="Change this map's offense"
               className={`${TRIGGER} ${open === "crime" ? "bg-slate-100 dark:bg-white/10" : ""}`}
             >
-              <span className="sr-only">Map {side} crime type: </span>
+              <span className="sr-only">Map {side} offense: </span>
               {selectedCrimeType ? (
                 <span
                   aria-hidden="true"
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: getCrimeTypeColor(selectedCrimeType) }}
+                  style={{
+                    backgroundColor: crimeColor(selectedCrimeType),
+                  }}
                 />
               ) : (
-                <Filter aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <Filter
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                />
               )}
               <span
                 className={`max-w-[160px] truncate text-[13px] font-medium ${
-                  selectedCrimeType ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"
+                  selectedCrimeType
+                    ? "text-slate-900 dark:text-white"
+                    : "text-slate-600 dark:text-slate-300"
                 }`}
               >
-                {selectedCrimeType ?? "All crime types"}
+                {selectedCrimeType ?? "All offenses"}
+                {selectedFelonyStage
+                  ? ` · ${selectedFelonyStage.toLowerCase()}`
+                  : ""}
               </span>
               <ChevronDown
                 aria-hidden="true"
@@ -195,12 +232,15 @@ function PaneBody({
                 }`}
               />
             </button>
-            {selectedCrimeType && (
+            {(selectedCrimeType || selectedFelonyStage) && (
               <button
                 type="button"
-                onClick={() => setSelectedCrimeType(null)}
-                aria-label={`Show all crime types on map ${side}`}
-                title="Show all crime types"
+                onClick={() => {
+                  setSelectedCrimeType(null);
+                  setSelectedFelonyStage(null);
+                }}
+                aria-label={`Clear offense and stage filters on map ${side}`}
+                title="Clear offense and stage filters"
                 className="mr-1 grid h-5 w-5 shrink-0 cursor-pointer place-items-center rounded-full bg-sky-500/15 text-sky-700 transition-colors hover:bg-red-500 hover:text-white dark:bg-sky-400/20 dark:text-sky-300"
               >
                 <X aria-hidden="true" className="h-3 w-3" />
@@ -209,14 +249,22 @@ function PaneBody({
           </div>
 
           {open === "period" && (
-            <div role="dialog" aria-label={`Period for map ${side}`} className={`${DROPDOWN} w-[400px] max-w-[calc(100vw-48px)]`}>
+            <div
+              role="dialog"
+              aria-label={`Period for map ${side}`}
+              className={`${DROPDOWN} w-[400px] max-w-[calc(100vw-48px)]`}
+            >
               <div className="p-5">
                 <PeriodPanel period={period} allowCustomRange />
               </div>
             </div>
           )}
           {open === "crime" && (
-            <div role="dialog" aria-label={`Crime type for map ${side}`} className={`${DROPDOWN} w-[300px] max-w-[calc(100vw-48px)]`}>
+            <div
+              role="dialog"
+              aria-label={`Offense for map ${side}`}
+              className={`${DROPDOWN} w-[300px] max-w-[calc(100vw-48px)]`}
+            >
               <CrimeTypeOptions onPick={() => setOpen(null)} />
             </div>
           )}
@@ -245,39 +293,53 @@ function PaneBody({
           </div>
         ) : hovered && hoveredName ? (
           <>
-            <p className="truncate text-[14px] font-semibold text-slate-900 dark:text-white">{hoveredName}</p>
+            <p className="truncate text-[14px] font-semibold text-slate-900 dark:text-white">
+              {hoveredName}
+            </p>
             <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-slate-600 dark:text-slate-300">
               {hoveredLevel && (
                 <>
                   <span
                     aria-hidden="true"
                     className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: THREAT_COLORS[hoveredLevel] }}
+                    style={{ backgroundColor: threatColors[hoveredLevel] }}
                   />
-                  <span className="font-semibold capitalize text-slate-800 dark:text-slate-100">{hoveredLevel}</span>
-                  <span aria-hidden="true" className="text-slate-300 dark:text-slate-600">
+                  <span className="font-semibold capitalize text-slate-800 dark:text-slate-100">
+                    {hoveredLevel}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="text-slate-300 dark:text-slate-600"
+                  >
                     /
                   </span>
                 </>
               )}
               <span className="tabular-nums">
-                {hoveredCount.toLocaleString("en-US")} incident{hoveredCount === 1 ? "" : "s"}
+                {hoveredCount.toLocaleString("en-US")} incident
+                {hoveredCount === 1 ? "" : "s"}
               </span>
             </p>
           </>
         ) : firstLoad ? (
-          <p className="text-[12.5px] text-slate-500 dark:text-slate-400">Counting incidents…</p>
+          <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+            Counting incidents…
+          </p>
         ) : (
           <>
             <p className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-white">
               {total.toLocaleString("en-US")} incident{total === 1 ? "" : "s"}
             </p>
-            <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">Point at a barangay for its count</p>
+            <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
+              Point at a barangay for its count
+            </p>
           </>
         )}
       </div>
 
-      {children && <div className="absolute bottom-3 right-3 z-10">{children}</div>}
+      {children && (
+        <div className="absolute bottom-3 right-3 z-10">{children}</div>
+      )}
     </section>
   );
 }

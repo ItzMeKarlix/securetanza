@@ -48,7 +48,7 @@ function ReportsContent() {
       <MapHeader isVisible={true} />
 
       {/* Dashboard Sub-header with Barangay and Period Selectors */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b shrink-0 bg-white/60 border-slate-200/60 dark:bg-[#0f172a]/80 dark:border-white/[0.04]">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b shrink-0 lg:flex-nowrap sm:gap-4 sm:px-6 bg-white/60 border-slate-200/60 dark:bg-[#0f172a]/80 dark:border-white/[0.04]">
         <DashboardBarangaySelector currentBarangay={barangayName} />
         {/* Scopes the report to a year, half, quarter, month, or day without
             leaving for the map to set it */}

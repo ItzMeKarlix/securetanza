@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { prisma } from '@/backend/lib/prisma';
+import { uniqueIncidentRecords } from '@/lib/offense-classification';
 
 export type BackupKind = 'crime_data' | 'report' | 'scheduled_export';
 
@@ -82,11 +83,17 @@ export class BackupService {
     const incidents = await prisma.crimeIncident.findMany({
       where,
       orderBy: { dateCommitted: 'desc' },
+      include: { incident: { select: { offenseCount: true, hasMultipleOffenses: true } } },
     });
 
     // ── Sheet 1: the register itself, one row per incident ──
     const incidentRows = incidents.map((incident) => ({
       'Blotter No': incident.blotterNo ?? '',
+      'Incident ID': incident.incidentId,
+      'Analytical Crime Type': incident.crimeType,
+      'Normalized Felony Stage': incident.felonyStage,
+      'Multiple Offenses': incident.incident.hasMultipleOffenses ? 1 : 0,
+      'Offenses in Blotter': incident.incident.offenseCount,
       'Date Encoded': isoDate(incident.dateEncoded),
       'Regional Office': incident.pro ?? '',
       'Provincial Office': incident.ppo ?? '',
@@ -133,12 +140,15 @@ export class BackupService {
     const byMonth = new Map<string, number[]>();
 
     for (const incident of incidents) {
-      byBarangay.set(incident.barangay, (byBarangay.get(incident.barangay) ?? 0) + 1);
-      byType.set(incident.incidentType, (byType.get(incident.incidentType) ?? 0) + 1);
+      byType.set(incident.crimeType, (byType.get(incident.crimeType) ?? 0) + 1);
 
-      const months = byMonth.get(incident.incidentType) ?? new Array(12).fill(0);
-      months[incident.dateCommitted.getMonth()] += 1;
-      byMonth.set(incident.incidentType, months);
+      const months = byMonth.get(incident.crimeType) ?? new Array(12).fill(0);
+      months[incident.dateCommitted.getUTCMonth()] += 1;
+      byMonth.set(incident.crimeType, months);
+    }
+    const parents = uniqueIncidentRecords(incidents);
+    for (const incident of parents) {
+      byBarangay.set(incident.barangay, (byBarangay.get(incident.barangay) ?? 0) + 1);
     }
 
     const total = incidents.length;
@@ -147,12 +157,12 @@ export class BackupService {
     const barangayRows = [...byBarangay.entries()].sort(sortDesc).map(([barangay, count]) => ({
       Barangay: barangay,
       Incidents: count,
-      'Share %': total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
+      'Share %': parents.length > 0 ? Number(((count / parents.length) * 100).toFixed(2)) : 0,
     }));
 
     const typeRows = [...byType.entries()].sort(sortDesc).map(([type, count]) => ({
       'Crime Type': type,
-      Incidents: count,
+      Offenses: count,
       'Share %': total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0,
     }));
 
@@ -179,7 +189,9 @@ export class BackupService {
       { Field: 'Generated at', Value: new Date().toISOString() },
       { Field: 'Scope', Value: filters.barangay || 'All barangays' },
       { Field: 'Requested period', Value: periodLabel },
-      { Field: 'Incidents captured', Value: total },
+      { Field: 'Unique incidents captured', Value: parents.length },
+      { Field: 'Recorded offense rows captured', Value: total },
+      { Field: 'Incidents with multiple offenses', Value: parents.filter(r => r.incident.hasMultipleOffenses).length },
       { Field: 'Earliest incident', Value: isoDate(earliest) },
       { Field: 'Latest incident', Value: isoDate(latest) },
       { Field: 'Barangays represented', Value: byBarangay.size },

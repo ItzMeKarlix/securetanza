@@ -1,4 +1,4 @@
-import { prisma } from './prisma'
+import { CrimeService } from '../services/crime.service'
 import type { CrimeIncident as PrismaCrimeIncident } from './generated/prisma'
 
 export interface CrimeIncident {
@@ -27,26 +27,11 @@ export async function getCrimesForBarangay(
   limit: number = 200
 ): Promise<CrimeIncident[]> {
   try {
-    const where: any = {
-      barangay: {
-        equals: barangayName,
-        mode: 'insensitive'
-      }
-    }
-
-    if (startDate && endDate) {
-      where.dateCommitted = {
-        gte: startDate,
-        lte: endDate
-      }
-    }
-
-    const crimes = await prisma.crimeIncident.findMany({
-      where,
-      orderBy: {
-        dateCommitted: 'desc'
-      },
-      take: Math.min(Math.max(1, limit), 1000)
+    const crimes = await CrimeService.getCrimes({
+      barangay: barangayName,
+      startDateCommitted: startDate?.toISOString(),
+      endDateCommitted: endDate?.toISOString(),
+      limit,
     })
 
     // Map Prisma model to CrimeIncident interface
@@ -72,121 +57,11 @@ export async function getCrimeStats(
   endDate?: Date
 ): Promise<CrimeStats> {
   try {
-    const where: any = {}
-
-    if (barangayName) {
-      where.barangay = {
-        equals: barangayName,
-        mode: 'insensitive'
-      }
-    }
-
-    if (startDate && endDate) {
-      where.dateCommitted = {
-        gte: startDate,
-        lte: endDate
-      }
-    }
-
-    // Get recent crimes (last 7 days)
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-    // Get monthly stats for current year (or date range year)
-    const currentYear = new Date().getFullYear()
-    const yearStart = startDate || new Date(`${currentYear}-01-01T00:00:00.000Z`)
-    const yearEnd = endDate || new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
-
-    const monthlyQuery = barangayName
-      ? prisma.$queryRaw<Array<{ month: number; count: number | bigint }>>`
-          SELECT 
-            EXTRACT(MONTH FROM date_committed)::integer AS month,
-            COUNT(*)::integer AS count
-          FROM crime_incidents
-          WHERE date_committed >= ${yearStart}
-            AND date_committed < ${yearEnd}
-            AND LOWER(barangay) = LOWER(${barangayName})
-          GROUP BY month
-          ORDER BY month ASC
-        `
-      : prisma.$queryRaw<Array<{ month: number; count: number | bigint }>>`
-          SELECT 
-            EXTRACT(MONTH FROM date_committed)::integer AS month,
-            COUNT(*)::integer AS count
-          FROM crime_incidents
-          WHERE date_committed >= ${yearStart}
-            AND date_committed < ${yearEnd}
-          GROUP BY month
-          ORDER BY month ASC
-        `
-
-    // Run all aggregate queries concurrently in PostgreSQL
-    const [
-      totalCrimes,
-      recentCrimes,
-      crimesByType,
-      crimesByBarangay,
-      monthlyCountsRaw
-    ] = await Promise.all([
-      prisma.crimeIncident.count({ where }),
-      prisma.crimeIncident.count({
-        where: {
-          ...where,
-          dateCommitted: {
-            gte: sevenDaysAgo
-          }
-        }
-      }),
-      prisma.crimeIncident.groupBy({
-        by: ['incidentType'],
-        where,
-        _count: {
-          incidentType: true
-        },
-        orderBy: {
-          _count: {
-            incidentType: 'desc'
-          }
-        }
-      }),
-      prisma.crimeIncident.groupBy({
-        by: ['barangay'],
-        where,
-        _count: {
-          barangay: true
-        },
-        orderBy: {
-          _count: {
-            barangay: 'desc'
-          }
-        }
-      }),
-      monthlyQuery
-    ])
-
-    // Process monthly stats
-    const monthlyStats = Array.from({ length: 12 }, (_, i) => {
-      const month = i + 1
-      const found = monthlyCountsRaw.find(m => Number(m.month) === month)
-      return {
-        month,
-        count: found ? Number(found.count) : 0
-      }
+    return await CrimeService.getStats({
+      barangay: barangayName,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
     })
-
-    return {
-      totalCrimes,
-      recentCrimes,
-      crimesByType: crimesByType.map(item => ({
-        type: item.incidentType,
-        count: item._count.incidentType
-      })),
-      crimesByBarangay: crimesByBarangay.map(item => ({
-        barangay: item.barangay,
-        count: item._count.barangay
-      })),
-      monthlyStats
-    }
   } catch (error) {
     console.error('Error fetching crime statistics:', error)
     return {

@@ -99,6 +99,10 @@ async function runTests() {
         timeCommitted: existingRecord.timeCommitted,
         incidentType: existingRecord.incidentType,
         offense: existingRecord.offense,
+        stageOfFelony: existingRecord.stageOfFelony,
+        section: existingRecord.section,
+        stn: existingRecord.stn,
+        municipal: existingRecord.municipal,
         dateReported: existingRecord.dateReported,
         timeReported: existingRecord.timeReported,
       });

@@ -1,12 +1,25 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { MapPin, Filter, Clock, Search, X, ChevronDown, Check, RotateCcw } from "lucide-react";
+import {
+  MapPin,
+  Filter,
+  Clock,
+  Search,
+  X,
+  ChevronDown,
+  Check,
+  RotateCcw,
+} from "lucide-react";
 import { useMapContext } from "@/context/MapContext";
-import { getCrimeTypeColor } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 import { usePeriod, PeriodPanel } from "./period-picker";
 import CrimeTypeOptions from "./crime-type-options";
-import { OVERLAY_SURFACE, OVERLAY_ITEM, OVERLAY_ITEM_ACTIVE } from "@/lib/map-overlay";
+import {
+  OVERLAY_SURFACE,
+  OVERLAY_ITEM,
+  OVERLAY_ITEM_ACTIVE,
+} from "@/lib/map-overlay";
 
 type ActiveDropdown = "barangay" | "crime" | "time" | null;
 
@@ -25,10 +38,10 @@ function segmentClass(active: boolean, open: boolean) {
 const CLEAR_CHIP =
   "ml-0.5 w-4 h-4 rounded-full flex items-center justify-center bg-sky-500/15 text-sky-700 transition-colors hover:bg-red-500 hover:text-white dark:bg-sky-400/20 dark:text-sky-300";
 
-const DROPDOWN =
-  `absolute top-[calc(100%+8px)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${OVERLAY_SURFACE}`;
+const DROPDOWN = `absolute top-[calc(100%+8px)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${OVERLAY_SURFACE}`;
 
 export default function UnifiedFilterBar() {
+  const { crimeColor: getCrimeTypeColor } = useDataColors();
   const {
     selectedBarangay,
     setSelectedBarangay,
@@ -36,12 +49,18 @@ export default function UnifiedFilterBar() {
     setSearchQuery,
     filteredBarangays,
     selectedCrimeType,
+    selectedFelonyStage,
     setSelectedCrimeType,
+    setSelectedFelonyStage,
   } = useMapContext();
 
   // The map has no exact-date range, so the picker offers Period + Specific days.
   const period = usePeriod(false);
-  const { isDefault: isTimeDefault, displayText: timeText, resetToDefault: resetTime } = period;
+  const {
+    isDefault: isTimeDefault,
+    displayText: timeText,
+    resetToDefault: resetTime,
+  } = period;
   const [activeDropdown, setActiveDropdown] = useState<ActiveDropdown>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -54,7 +73,10 @@ export default function UnifiedFilterBar() {
   // Close dropdowns on outside click or escape key
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setActiveDropdown(null);
       }
     };
@@ -74,27 +96,29 @@ export default function UnifiedFilterBar() {
   }, []);
 
   const isBarangayActive = Boolean(selectedBarangay);
-  const isCrimeActive = Boolean(selectedCrimeType);
+  const isCrimeActive = Boolean(selectedCrimeType || selectedFelonyStage);
   // Sitting on the latest year is the default, not a filter — only a deliberate change counts.
   const isTimeActive = !isTimeDefault;
 
-  const activeFiltersCount = (isBarangayActive ? 1 : 0) + (isCrimeActive ? 1 : 0) + (isTimeActive ? 1 : 0);
+  const activeFiltersCount =
+    (isBarangayActive ? 1 : 0) +
+    (isCrimeActive ? 1 : 0) +
+    (isTimeActive ? 1 : 0);
 
   const clearAllFilters = useCallback(() => {
     setSelectedBarangay(null);
     setSelectedCrimeType(null);
+    setSelectedFelonyStage(null);
     resetTime();
     setActiveDropdown(null);
-  }, [setSelectedBarangay, setSelectedCrimeType, resetTime]);
+  }, [setSelectedBarangay, setSelectedCrimeType, setSelectedFelonyStage, resetTime]);
 
   const toggleDropdown = (section: ActiveDropdown) => {
     setActiveDropdown((prev) => (prev === section ? null : section));
   };
 
   if (!mounted) {
-    return (
-      <div className={`h-12 w-80 animate-pulse ${OVERLAY_SURFACE}`} />
-    );
+    return <div className={`h-12 w-80 animate-pulse ${OVERLAY_SURFACE}`} />;
   }
 
   return (
@@ -110,15 +134,25 @@ export default function UnifiedFilterBar() {
             control) and unreachable by keyboard regardless of any tabIndex,
             since browsers don't give nested content inside a <button> its own
             tab stop. Two sibling buttons in one styled wrapper instead. */}
-        <div className={segmentClass(isBarangayActive, activeDropdown === "barangay")}>
+        <div
+          className={segmentClass(
+            isBarangayActive,
+            activeDropdown === "barangay",
+          )}
+        >
           <button
             type="button"
             onClick={() => toggleDropdown("barangay")}
             className="flex min-w-0 flex-1 items-center gap-2 cursor-pointer"
             title={selectedBarangay || "Filter by Barangay"}
           >
-            <MapPin className={`h-4 w-4 shrink-0 ${isBarangayActive ? "" : "text-slate-400"}`} />
-            <span className="truncate max-w-[110px] sm:max-w-[140px]" style={{ fontFamily: "var(--font-inter)" }}>
+            <MapPin
+              className={`h-4 w-4 shrink-0 ${isBarangayActive ? "" : "text-slate-400"}`}
+            />
+            <span
+              className="truncate max-w-[110px] sm:max-w-[140px]"
+              style={{ fontFamily: "var(--font-inter)" }}
+            >
               {selectedBarangay || "Barangay"}
             </span>
             <ChevronDown
@@ -143,7 +177,9 @@ export default function UnifiedFilterBar() {
 
         {/* Barangay Dropdown */}
         {activeDropdown === "barangay" && (
-          <div className={`${DROPDOWN} left-0 min-w-[280px] sm:min-w-[300px] origin-top-left`}>
+          <div
+            className={`${DROPDOWN} left-0 min-w-[280px] sm:min-w-[300px] origin-top-left`}
+          >
             {/* Search header */}
             <div className="p-3 border-b border-slate-100 dark:border-white/[0.06]">
               <div className="relative">
@@ -170,7 +206,9 @@ export default function UnifiedFilterBar() {
                   setSearchQuery("");
                 }}
                 className={`flex items-center justify-between w-full text-left px-3 py-2 text-[13px] ${
-                  !selectedBarangay ? OVERLAY_ITEM_ACTIVE : `${OVERLAY_ITEM} font-medium`
+                  !selectedBarangay
+                    ? OVERLAY_ITEM_ACTIVE
+                    : `${OVERLAY_ITEM} font-medium`
                 }`}
               >
                 <span>All Barangays (Municipality Wide)</span>
@@ -178,7 +216,9 @@ export default function UnifiedFilterBar() {
               </button>
 
               {filteredBarangays.length === 0 ? (
-                <div className="p-4 text-[13px] text-slate-400 text-center">No barangays found</div>
+                <div className="p-4 text-[13px] text-slate-400 text-center">
+                  No barangays found
+                </div>
               ) : (
                 filteredBarangays.map((name) => (
                   <button
@@ -189,11 +229,15 @@ export default function UnifiedFilterBar() {
                       setSearchQuery("");
                     }}
                     className={`flex items-center justify-between w-full text-left px-3 py-2 text-[13px] ${
-                      selectedBarangay === name ? OVERLAY_ITEM_ACTIVE : `${OVERLAY_ITEM} font-medium`
+                      selectedBarangay === name
+                        ? OVERLAY_ITEM_ACTIVE
+                        : `${OVERLAY_ITEM} font-medium`
                     }`}
                   >
                     <span>{name}</span>
-                    {selectedBarangay === name && <Check className="h-3.5 w-3.5" />}
+                    {selectedBarangay === name && (
+                      <Check className="h-3.5 w-3.5" />
+                    )}
                   </button>
                 ))
               )}
@@ -207,23 +251,33 @@ export default function UnifiedFilterBar() {
 
       {/* ── 2. CRIME TYPE FILTER SEGMENT ── */}
       <div className="relative" data-tour="crime-type-filter">
-        <div className={segmentClass(isCrimeActive, activeDropdown === "crime")}>
+        <div
+          className={segmentClass(isCrimeActive, activeDropdown === "crime")}
+        >
           <button
             type="button"
             onClick={() => toggleDropdown("crime")}
             className="flex min-w-0 flex-1 items-center gap-2 cursor-pointer"
-            title={selectedCrimeType || "Filter by Crime Type"}
+            title={selectedCrimeType || "Filter by offense and stage"}
           >
             {isCrimeActive ? (
               <div
                 className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: getCrimeTypeColor(selectedCrimeType || "") }}
+                style={{
+                  backgroundColor: getCrimeTypeColor(selectedCrimeType || ""),
+                }}
               />
             ) : (
               <Filter className="h-4 w-4 shrink-0 text-slate-400" />
             )}
-            <span className="truncate max-w-[110px] sm:max-w-[140px]" style={{ fontFamily: "var(--font-inter)" }}>
-              {selectedCrimeType || "Crime Type"}
+            <span
+              className="truncate max-w-[110px] sm:max-w-[140px]"
+              style={{ fontFamily: "var(--font-inter)" }}
+            >
+              {selectedCrimeType || "All offenses"}
+              {selectedFelonyStage
+                ? ` · ${selectedFelonyStage.toLowerCase()}`
+                : ""}
             </span>
             <ChevronDown
               className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
@@ -235,10 +289,13 @@ export default function UnifiedFilterBar() {
           {isCrimeActive && (
             <button
               type="button"
-              onClick={() => setSelectedCrimeType(null)}
+              onClick={() => {
+                setSelectedCrimeType(null);
+                setSelectedFelonyStage(null);
+              }}
               className={CLEAR_CHIP}
-              title="Clear crime type filter"
-              aria-label="Clear crime type filter"
+              title="Clear offense and stage filters"
+              aria-label="Clear offense and stage filters"
             >
               <X className="h-2.5 w-2.5" />
             </button>
@@ -247,7 +304,9 @@ export default function UnifiedFilterBar() {
 
         {/* Crime Type Dropdown */}
         {activeDropdown === "crime" && (
-          <div className={`${DROPDOWN} left-0 w-[300px] max-w-[calc(100vw-24px)] origin-top-left`}>
+          <div
+            className={`${DROPDOWN} left-0 w-[300px] max-w-[calc(100vw-24px)] origin-top-left`}
+          >
             <CrimeTypeOptions onPick={() => setActiveDropdown(null)} />
           </div>
         )}
@@ -263,10 +322,19 @@ export default function UnifiedFilterBar() {
             type="button"
             onClick={() => toggleDropdown("time")}
             className="flex min-w-0 flex-1 items-center gap-2 cursor-pointer"
-            title={isTimeDefault ? "Showing the latest year — click to change the time range" : timeText}
+            title={
+              isTimeDefault
+                ? "Showing the latest year — click to change the time range"
+                : timeText
+            }
           >
-            <Clock className={`h-4 w-4 shrink-0 ${isTimeActive ? "" : "text-slate-400"}`} />
-            <span className="truncate max-w-[110px] sm:max-w-[160px]" style={{ fontFamily: "var(--font-inter)" }}>
+            <Clock
+              className={`h-4 w-4 shrink-0 ${isTimeActive ? "" : "text-slate-400"}`}
+            />
+            <span
+              className="truncate max-w-[110px] sm:max-w-[160px]"
+              style={{ fontFamily: "var(--font-inter)" }}
+            >
               {isTimeDefault ? "Latest year" : timeText}
             </span>
             <ChevronDown

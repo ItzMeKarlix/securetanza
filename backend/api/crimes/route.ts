@@ -16,6 +16,7 @@ const crimeIncidentSchema = z.object({
   incidentType: z.string().min(1, 'Incident type is required'),
   
   // Optional fields
+  blotterNo: z.string().optional(),
   ppo: z.string().optional(),
   stn: z.string().optional(),
   pcp: z.string().optional(),
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
 
     const crimes = await CrimeService.getCrimes({
+      incidentId: searchParams.get('incidentId'),
       barangay: searchParams.get('barangay'),
       region: searchParams.get('region'),
       province: searchParams.get('province'),
@@ -53,6 +55,7 @@ export async function GET(request: NextRequest) {
       startDateCommitted: searchParams.get('startDateCommitted'),
       endDateCommitted: searchParams.get('endDateCommitted'),
       modeReporting: searchParams.get('modeReporting'),
+      offenseCategory: searchParams.get('offenseCategory'),
       stageOfFelony: searchParams.get('stageOfFelony'),
       caseStatus: searchParams.get('caseStatus'),
       offenseType: searchParams.get('offenseType'),
@@ -60,7 +63,9 @@ export async function GET(request: NextRequest) {
       typeOfPlace: searchParams.get('typeOfPlace'),
       hour: searchParams.get('hour'),
       year: searchParams.get('year'),
+      view: searchParams.get('view') === 'analysis' ? 'analysis' : undefined,
       limit: limit ? parseInt(limit, 10) : 500,
+      offset: Number(searchParams.get('offset') || 0),
     });
 
     return NextResponse.json({
@@ -96,6 +101,7 @@ export async function POST(request: NextRequest) {
     const validatedData = crimeIncidentSchema.parse(body);
 
     const crime = await CrimeService.createIncident({
+      blotterNo: validatedData.blotterNo,
       barangay: validatedData.barangay,
       dateReported: new Date(validatedData.dateReported),
       timeReported: validatedData.timeReported,
@@ -154,8 +160,8 @@ export async function POST(request: NextRequest) {
 
     console.error('Error creating crime:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create crime incident' },
-      { status: 500 }
+      { success: false, error: error instanceof Error && error.message.includes('already exists') ? error.message : 'Failed to create crime incident' },
+      { status: error instanceof Error && error.message.includes('already exists') ? 409 : 500 }
     );
   }
 }

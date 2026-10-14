@@ -3,9 +3,11 @@
 import React, { useRef, useEffect } from "react";
 import { Filter, X, ChevronDown } from "lucide-react";
 import { useMapContext } from "@/context/MapContext";
-import { useCrimeTypes, getCrimeTypeColor } from "@/hooks/useCrimeTypes";
+import { useCrimeTypes } from "@/hooks/useCrimeTypes";
+import { useDataColors } from "@/hooks/useDataColors";
 
 export default function CrimeTypeFilter() {
+	const { crimeColor: getCrimeTypeColor } = useDataColors();
 	const { selectedCrimeType, setSelectedCrimeType } = useMapContext();
 	const [filterOpen, setFilterOpen] = React.useState(false);
 	const { stats, loading } = useCrimeTypes();

@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useMapContext } from "@/context/MapContext";
-import { useThreatLevels, THREAT_COLORS } from "@/hooks/useThreatLevels";
+import { useThreatLevels } from "@/hooks/useThreatLevels";
 import { OVERLAY_SURFACE } from "@/lib/map-overlay";
 
 /**
@@ -12,6 +13,7 @@ import { OVERLAY_SURFACE } from "@/lib/map-overlay";
  * clicking a step spotlights just those barangays.
  */
 export default function ThreatScale() {
+  const { threatColors } = useDataColors();
   const { hoveredThreatLevel, setHoveredThreatLevel } = useMapContext();
   const { thresholds, loading } = useThreatLevels();
 
@@ -54,7 +56,7 @@ export default function ThreatScale() {
                 className={`block w-full rounded-full transition-all duration-200 ${
                   active ? "h-2.5" : "h-1.5 group-hover:h-2.5"
                 } ${loading ? "animate-pulse bg-slate-300 dark:bg-white/20" : ""}`}
-                style={loading ? undefined : { backgroundColor: THREAT_COLORS[step.key] }}
+                style={loading ? undefined : { backgroundColor: threatColors[step.key] }}
               />
             </button>
           );

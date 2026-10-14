@@ -13,13 +13,24 @@ export interface CrimeGroup {
 export const CRIME_GROUPS: CrimeGroup[] = [
   {
     label: "8 Focus Crimes",
-    description: "Murder, Homicide, Physical Injury, Rape, Robbery, Theft, Carnapping (MV & MC)",
+    description:
+      "Murder, Homicide, Physical Injury, Rape, Robbery, Theft, Carnapping (MV & MC)",
     color: "#DC2626",
-    keywords: ["Murder", "Homicide", "Physical Injur", "Rape", "Robbery", "Theft", "Carnapping", "Carjacking"],
+    keywords: [
+      "Murder",
+      "Homicide",
+      "Physical Injur",
+      "Rape",
+      "Robbery",
+      "Theft",
+      "Carnapping",
+      "Carjacking",
+    ],
   },
   {
     label: "Special Laws",
-    description: "Drugs, Illegal Gambling, Firearms, VAWC/Domestic Violence, Child Abuse (RA 7610), Gun Ban, Anti-Fencing and other special law violations",
+    description:
+      "Drugs, Illegal Gambling, Firearms, VAWC/Domestic Violence, Child Abuse (RA 7610), Gun Ban, Anti-Fencing and other special law violations",
     color: "#8B5CF6",
     keywords: [
       "Drug",
@@ -37,13 +48,18 @@ export const CRIME_GROUPS: CrimeGroup[] = [
       "Pot Session",
       "Anti-",
       "Special Law",
+      "(RA ",
+      "(PD ",
+      "(BP ",
     ],
   },
 ];
 
 export const KEYWORD_SEPARATOR = "|";
 
-export function getCrimeGroup(label: string | null | undefined): CrimeGroup | undefined {
+export function getCrimeGroup(
+  label: string | null | undefined,
+): CrimeGroup | undefined {
   return label ? CRIME_GROUPS.find((g) => g.label === label) : undefined;
 }
 
@@ -60,9 +76,34 @@ export function buildIncidentTypeWhere(value: string) {
     .map((t) => t.trim())
     .filter(Boolean);
   if (terms.length <= 1) {
-    return { incidentType: { contains: terms[0] ?? value, mode: "insensitive" as const } };
+    return {
+      crimeType: { equals: terms[0] ?? value, mode: "insensitive" as const },
+    };
   }
   return {
-    OR: terms.map((t) => ({ incidentType: { contains: t, mode: "insensitive" as const } })),
+    OR: terms.map((t) => ({
+      crimeType: { contains: t, mode: "insensitive" as const },
+    })),
   };
+}
+
+/** Base recorded offense family is independent of its felony stage. */
+export function buildOffenseCategoryWhere(value: string) {
+  const terms = value
+    .split(KEYWORD_SEPARATOR)
+    .map((term) => term.trim())
+    .filter(Boolean);
+  return terms.length <= 1
+    ? {
+        offenseDefinition: {
+          label: { equals: terms[0] ?? value, mode: "insensitive" as const },
+        },
+      }
+    : {
+        OR: terms.map((term) => ({
+          offenseDefinition: {
+            label: { contains: term, mode: "insensitive" as const },
+          },
+        })),
+      };
 }

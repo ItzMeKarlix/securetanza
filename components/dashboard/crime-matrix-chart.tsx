@@ -7,8 +7,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { useTheme } from "@/context/ThemeContext";
-import { rampColorForTheme, rgbToCss } from "@/lib/report-theme";
+import { useDataColors } from "@/hooks/useDataColors";
 import {
   type AnalyticsSlice,
   MONTH_LONG,
@@ -33,23 +32,12 @@ interface CrimeMatrixChartProps {
 
 const MONTH_LABELS = MONTH_SHORT;
 
-// Same sequential ramp system as the PDF report (lib/report-theme.ts) — in
-// light mode, exactly. Dark mode uses rampColorForTheme's inverted ramp
-// (muted → bright accent instead of pale → deep navy): the paper direction
-// has less contrast against a dark card at high intensity than at low,
-// which would make the heaviest months read as the dimmest cells. A zero
-// month still gets the palest ramp step (not literally transparent) so it
-// reads as "an empty box" rather than a gap where a box is missing.
-function intensityColor(intensity: number, theme: "light" | "dark") {
-  return rgbToCss(rampColorForTheme(intensity, theme));
-}
-
 export default function CrimeMatrixChart({
   data,
   description = "Monthly distribution by crime type",
   onSelect,
 }: CrimeMatrixChartProps) {
-  const { theme } = useTheme();
+  const { theme, colorful, ramp, matrixTextColor } = useDataColors();
   const { tooltip, bind, hide } = useChartTooltip(theme);
   // Which cell the cursor is on, so the rest of the grid can recede and the
   // hovered cell's row + column can stay lit (a crosshair, not a spotlight —
@@ -95,6 +83,7 @@ export default function CrimeMatrixChart({
 
   const ruleColor = theme === "dark" ? "rgba(255,255,255,0.08)" : "#e2e8f0";
   const faintText = theme === "dark" ? "#64748b" : "#94a3b8";
+  const zeroColor = theme === "dark" ? "#334155" : "#f1f5f9";
   const midText = theme === "dark" ? "#cbd5e1" : "#334155";
   const inkText = theme === "dark" ? "#f1f5f9" : "#0f172a";
 
@@ -191,6 +180,7 @@ export default function CrimeMatrixChart({
                     const dimmed = hoveredCell !== null && !onCross;
                     const clickable = Boolean(onSelect) && value > 0;
                     const level = levelOf(value);
+                    const intensity = level >= 0 ? heatLevels[level].intensity : 0;
                     return (
                       <td key={colIdx} style={{ textAlign: "center", padding: 3 }}>
                         <div
@@ -203,8 +193,8 @@ export default function CrimeMatrixChart({
                             borderRadius: 4,
                             fontWeight: 700,
                             fontVariantNumeric: "tabular-nums",
-                            background: intensityColor(level >= 0 ? heatLevels[level].intensity : 0, theme),
-                            color: value === 0 ? "transparent" : level >= 0 && heatLevels[level].intensity >= 0.6 ? "#ffffff" : inkText,
+                            background: colorful && value === 0 ? zeroColor : ramp(intensity, "heatmap"),
+                            color: value === 0 ? "transparent" : colorful ? matrixTextColor(intensity) : level >= 0 && intensity >= 0.6 ? "#ffffff" : inkText,
                             opacity: dimmed ? 0.35 : 1,
                             cursor: clickable ? "pointer" : "default",
                           }}
@@ -280,11 +270,17 @@ export default function CrimeMatrixChart({
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 14, fontSize: "0.76rem", color: faintText }}>
+        {colorful && (
+          <span className="flex flex-col items-center" style={{ gap: 2 }}>
+            <span style={{ width: 34, height: 11, borderRadius: 2, background: zeroColor }} />
+            <span style={{ fontSize: "0.64rem" }}>0</span>
+          </span>
+        )}
         <span>Less</span>
         {heatLevels.map((level, idx) => (
           <span key={idx} className="flex flex-col items-center" style={{ gap: 2 }}>
             <span
-              style={{ width: 34, height: 11, borderRadius: 2, background: intensityColor(level.intensity, theme) }}
+              style={{ width: 34, height: 11, borderRadius: 2, background: ramp(level.intensity, "heatmap") }}
             />
             <span style={{ fontSize: "0.64rem", fontVariantNumeric: "tabular-nums" }}>
               {levelRangeLabel(level)}
@@ -300,7 +296,7 @@ export default function CrimeMatrixChart({
           {topCrimeType?.type ? cleanLabel(topCrimeType.type) : "N/A"} is the most frequent crime type
         </div>
         <div style={{ color: faintText, marginTop: 2 }}>
-          {grandTotal.toLocaleString()} total incidents across all months
+          {grandTotal.toLocaleString()} recorded offenses across all months
         </div>
       </div>
     </div>

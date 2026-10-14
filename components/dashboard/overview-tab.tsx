@@ -11,10 +11,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { useTheme } from "@/context/ThemeContext";
+import { useDataColors } from "@/hooks/useDataColors";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useThreatLevels } from "@/hooks/useThreatLevels";
-import { ACCENT, ACCENT_DEEP, rampColorForTheme, rgbToCss } from "@/lib/report-theme";
 import { SectionHeader, Panel } from "./section-primitives";
 import { useChartTooltip } from "./analytics/chart-tooltip";
 import { cleanLabel } from "@/lib/analytics-slice";
@@ -26,14 +25,7 @@ interface OverviewTabProps {
 // Month labels for the activity chart
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const ACCENT_CSS = rgbToCss(ACCENT);
-const ACCENT_DEEP_CSS = rgbToCss(ACCENT_DEEP);
-
-// Same "one ink, one accent" system as the Analytics page and the PDF report:
-// everything runs along the sky-blue ramp instead of a different hue per slice.
-function rampCss(intensity: number, theme: string) {
-  return rgbToCss(rampColorForTheme(intensity, theme === "dark" ? "dark" : "light"));
-}
+// Data colors share the Analytics page's selected palette.
 
 /**
  * Loading state that mirrors the finished page — same header, numbered
@@ -121,7 +113,7 @@ function OverviewSkeleton({
               ))}
             </div>
           </Panel>
-          <Panel theme={theme} title="Crime Distribution" subtitle="Share of incidents by type" footer={footer}>
+          <Panel theme={theme} title="Crime Distribution" subtitle="Share of recorded offenses by type" footer={footer}>
             <div className="flex-1 flex flex-col justify-between">
               {rankWidths.map((w, i) => (
                 <div key={i} className="flex items-center" style={{ gap: 10, padding: "6px 0" }}>
@@ -162,7 +154,7 @@ function OverviewSkeleton({
 }
 
 export default function OverviewTab({ barangayName }: OverviewTabProps) {
-  const { theme } = useTheme();
+  const { theme, colorful, ramp, chartColor, crimeColor } = useDataColors();
   const dark = theme === "dark";
   const { stats, activity, crimesByType, incidents, loading } = useDashboardData(barangayName);
   const { barangayCrimeCounts } = useThreatLevels();
@@ -229,7 +221,6 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
   const peakMonthIndex = activity.reduce((best, v, i) => (v > activity[best] ? i : best), 0);
   const peakMonthCount = activity[peakMonthIndex] ?? 0;
 
-  const chartColor = dark ? ACCENT_CSS : ACCENT_DEEP_CSS;
   const activityChartConfig: ChartConfig = {
     incidents: { label: "Incidents", color: chartColor },
   };
@@ -281,11 +272,22 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <ShieldAlert className="h-3.5 w-3.5" />
-                Total Crimes (All Time)
+                Unique Incidents
               </p>
               <p className={valueClass}>{stats.totalCrimes.toLocaleString()}</p>
               <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
-                Recorded incidents
+                {stats.multipleOffenseIncidents.toLocaleString()} with multiple offenses
+              </p>
+            </div>
+
+            <div className="flex-1 min-w-0" style={{ padding: "16px 22px" }}>
+              <p className={labelClass} style={{ marginBottom: 8 }}>
+                <BarChart3 className="h-3.5 w-3.5" />
+                Recorded Offenses
+              </p>
+              <p className={valueClass}>{stats.totalOffenses.toLocaleString()}</p>
+              <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
+                Classified by offense and felony stage
               </p>
             </div>
 
@@ -296,7 +298,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
               </p>
               <p className={valueClass}>{mostFrequentCrime}</p>
               <p className={`text-[0.78rem] ${mutedText}`} style={{ marginTop: 5 }}>
-                {topType ? `${topType.count.toLocaleString()} incidents · ${topTypePercent}% of total` : "No data"}
+                {topType ? `${topType.count.toLocaleString()} offenses · ${topTypePercent}% of offenses` : "No data"}
               </p>
             </div>
 
@@ -381,14 +383,14 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <Panel
               theme={theme}
               title="Crime Distribution"
-              subtitle="Share of incidents by type"
+              subtitle="Share of recorded offenses by type"
               className="flex-1"
               footer={
                 <>
                   <div className="flex items-center gap-2 font-semibold leading-none">
-                    {topType ? `${mostFrequentCrime} accounts for ${topTypePercent}% of incidents` : "No incidents recorded"}
+                    {topType ? `${mostFrequentCrime} accounts for ${topTypePercent}% of recorded offenses` : "No offenses recorded"}
                   </div>
-                  <div className={mutedText}>{totalCrimesCount.toLocaleString()} total incidents recorded</div>
+                  <div className={mutedText}>{totalCrimesCount.toLocaleString()} recorded offenses</div>
                 </>
               }
             >
@@ -402,7 +404,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
                 >
                   {distribution.map((item, i) => {
                     const share = totalCrimesCount > 0 ? Math.round((item.count / totalCrimesCount) * 100) : 0;
-                    const fill = rampCss(item.count / distributionMax, theme);
+                    const fill = colorful ? crimeColor(item.type) : ramp(item.count / distributionMax);
                     const dimmed = hoveredBar !== null && hoveredBar !== i;
                     return (
                       <div

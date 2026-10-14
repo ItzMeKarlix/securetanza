@@ -1,11 +1,24 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  ReactNode,
+} from "react";
 import L from "leaflet";
-import { BARANGAY_NAMES, generateBarangayData, getHotspotSectorForDate } from "../constants/dummy";
+import type { FelonyStage } from "@/lib/offense-classification";
+import {
+  BARANGAY_NAMES,
+  generateBarangayData,
+  getHotspotSectorForDate,
+} from "../constants/dummy";
 
 // Time range selection types
-export type FilterMode = 'day' | 'month' | 'quarter' | 'half-year' | 'year';
+export type FilterMode = "day" | "month" | "quarter" | "half-year" | "year";
 
 export interface TimeSelection {
   year: number;
@@ -46,6 +59,7 @@ interface MapContextType {
   timeFilterHourCrimeCount: number;
   isTimeFilterActive: boolean;
   selectedCrimeType: string | null;
+  selectedFelonyStage: FelonyStage | null;
   selectedYear: number | null;
   availableYears: number[];
   timeRange: TimeRange;
@@ -64,9 +78,14 @@ interface MapContextType {
   setHotspotDate: (month: string, year: string) => void;
   setHoveredThreatLevel: (level: string | null) => void;
   setInitialBounds: (bounds: L.LatLngBounds | null) => void;
-  setTimeFilter: (date: Date | null, hour: number | null, hourCrimeCount?: number) => void;
+  setTimeFilter: (
+    date: Date | null,
+    hour: number | null,
+    hourCrimeCount?: number,
+  ) => void;
   setIsTimeFilterActive: (isActive: boolean) => void;
   setSelectedCrimeType: (crimeType: string | null) => void;
+  setSelectedFelonyStage: (stage: FelonyStage | null) => void;
   setSelectedYear: (year: number | null) => void;
   setTimeRange: (timeRange: TimeRange) => void;
   setCustomDateRange: (range: CustomDateRange | null) => void;
@@ -85,7 +104,11 @@ interface MapProviderProps {
   initialPeriod?: (availableYears: number[]) => TimeRange;
 }
 
-export function MapProvider({ children, persistPeriod = true, initialPeriod }: MapProviderProps) {
+export function MapProvider({
+  children,
+  persistPeriod = true,
+  initialPeriod,
+}: MapProviderProps) {
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
   const [barangayNames, setBarangayNames] = useState<string[]>([]);
   const [selectedBarangay, setSelectedBarangay] = useState<string | null>(null);
@@ -96,64 +119,88 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
   const [hotspotMode, setHotspotMode] = useState(false);
   const [hotspotMonth, setHotspotMonth] = useState("Apr");
   const [hotspotYear, setHotspotYear] = useState("2026");
-  const [hoveredThreatLevel, setHoveredThreatLevel] = useState<string | null>(null);
+  const [hoveredThreatLevel, setHoveredThreatLevel] = useState<string | null>(
+    null,
+  );
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [timeFilterDate, setTimeFilterDate] = useState<Date | null>(null);
   const [timeFilterHour, setTimeFilterHour] = useState<number | null>(null);
-  const [timeFilterHourCrimeCount, setTimeFilterHourCrimeCount] = useState<number>(0);
+  const [timeFilterHourCrimeCount, setTimeFilterHourCrimeCount] =
+    useState<number>(0);
   const [isTimeFilterActive, setIsTimeFilterActive] = useState(false);
-  const [selectedCrimeType, setSelectedCrimeType] = useState<string | null>(null);
+  const [selectedFelonyStage, setSelectedFelonyStage] =
+    useState<FelonyStage | null>(null);
+  const [selectedCrimeType, setSelectedCrimeType] = useState<string | null>(
+    null,
+  );
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [timeRange, setTimeRangeState] = useState<TimeRange>({ mode: 'year', selections: [] });
-  const [customDateRange, setCustomDateRange] = useState<CustomDateRange | null>(null);
-  const [initialBounds, setInitialBounds] = useState<L.LatLngBounds | null>(null);
+  const [timeRange, setTimeRangeState] = useState<TimeRange>({
+    mode: "year",
+    selections: [],
+  });
+  const [customDateRange, setCustomDateRange] =
+    useState<CustomDateRange | null>(null);
+  const [initialBounds, setInitialBounds] = useState<L.LatLngBounds | null>(
+    null,
+  );
   const mapRef = useRef<L.Map | null>(null);
 
   // Wrapper for setTimeRange that also saves to localStorage
-  const setTimeRange = useCallback((newTimeRange: TimeRange) => {
-    setTimeRangeState(newTimeRange);
-    if (!persistPeriod) return;
-    
-    // Save to localStorage (serialize Date objects)
-    const serialized = {
-      mode: newTimeRange.mode,
-      selections: newTimeRange.selections.map(s => ({
-        year: s.year,
-        quarter: s.quarter,
-        halfYear: s.halfYear,
-        month: s.month,
-        day: s.day ? s.day.toISOString() : undefined
-      }))
-    };
-    localStorage.setItem('timeRange', JSON.stringify(serialized));
-    
-    console.log('💾 Saved timeRange to localStorage:', serialized);
-  }, [persistPeriod]);
+  const setTimeRange = useCallback(
+    (newTimeRange: TimeRange) => {
+      setTimeRangeState(newTimeRange);
+      if (!persistPeriod) return;
+
+      // Save to localStorage (serialize Date objects)
+      const serialized = {
+        mode: newTimeRange.mode,
+        selections: newTimeRange.selections.map((s) => ({
+          year: s.year,
+          quarter: s.quarter,
+          halfYear: s.halfYear,
+          month: s.month,
+          day: s.day ? s.day.toISOString() : undefined,
+        })),
+      };
+      localStorage.setItem("timeRange", JSON.stringify(serialized));
+
+      console.log("💾 Saved timeRange to localStorage:", serialized);
+    },
+    [persistPeriod],
+  );
 
   // Wrapper for setSelectedYear that also saves to localStorage
-  const setSelectedYearWithPersistence = useCallback((year: number | null) => {
-    setSelectedYear(year);
-    if (!persistPeriod) return;
-    if (year !== null) {
-      localStorage.setItem('selectedYear', year.toString());
-    } else {
-      localStorage.removeItem('selectedYear');
-    }
-  }, [persistPeriod]);
+  const setSelectedYearWithPersistence = useCallback(
+    (year: number | null) => {
+      setSelectedYear(year);
+      if (!persistPeriod) return;
+      if (year !== null) {
+        localStorage.setItem("selectedYear", year.toString());
+      } else {
+        localStorage.removeItem("selectedYear");
+      }
+    },
+    [persistPeriod],
+  );
 
   const setHotspotDate = useCallback((month: string, year: string) => {
     setHotspotMonth(month);
     setHotspotYear(year);
   }, []);
 
-  const setTimeFilter = useCallback((date: Date | null, hour: number | null, hourCrimeCount: number = 0) => {
-    setTimeFilterDate(date);
-    setTimeFilterHour(hour);
-    setTimeFilterHourCrimeCount(hourCrimeCount);
-  }, []);
+  const setTimeFilter = useCallback(
+    (date: Date | null, hour: number | null, hourCrimeCount: number = 0) => {
+      setTimeFilterDate(date);
+      setTimeFilterHour(hour);
+      setTimeFilterHourCrimeCount(hourCrimeCount);
+    },
+    [],
+  );
 
-  const hotspotBarangay = hotspotMode ? getHotspotSectorForDate(hotspotMonth, hotspotYear) : null;
+  const hotspotBarangay = hotspotMode
+    ? getHotspotSectorForDate(hotspotMonth, hotspotYear)
+    : null;
 
   // Fetch available years from database
   useEffect(() => {
@@ -169,9 +216,11 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
       .then((data) => {
         if (data?.years && data.years.length > 0) {
           setAvailableYears(data.years);
-          
+
           // Try to restore timeRange from localStorage first
-          const savedTimeRange = persistPeriod ? localStorage.getItem('timeRange') : null;
+          const savedTimeRange = persistPeriod
+            ? localStorage.getItem("timeRange")
+            : null;
           if (savedTimeRange) {
             try {
               const parsed = JSON.parse(savedTimeRange);
@@ -183,19 +232,22 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
                   quarter: s.quarter,
                   halfYear: s.halfYear,
                   month: s.month,
-                  day: s.day ? new Date(s.day) : undefined
-                }))
+                  day: s.day ? new Date(s.day) : undefined,
+                })),
               };
-              
+
               // Validate that the restored selections are still valid
-              const validSelections = restored.selections.filter(s => {
+              const validSelections = restored.selections.filter((s) => {
                 return data.years.includes(s.year);
               });
-              
+
               if (validSelections.length > 0) {
-                console.log('📅 Restored timeRange from localStorage:', restored);
+                console.log(
+                  "📅 Restored timeRange from localStorage:",
+                  restored,
+                );
                 setTimeRangeState({ ...restored, selections: validSelections });
-                
+
                 // If the restored mode is 'year', also set selectedYear
                 if (validSelections[0]?.year) {
                   setSelectedYear(validSelections[0].year);
@@ -203,15 +255,20 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
                 return;
               }
             } catch (e) {
-              console.error('Failed to restore timeRange from localStorage:', e);
+              console.error(
+                "Failed to restore timeRange from localStorage:",
+                e,
+              );
             }
           }
-          
+
           if (initialPeriod) {
             const opening = initialPeriod(data.years);
             if (opening.selections.length > 0) {
               setTimeRangeState(opening);
-              setSelectedYear(Math.max(...opening.selections.map((s) => s.year)));
+              setSelectedYear(
+                Math.max(...opening.selections.map((s) => s.year)),
+              );
               return;
             }
           }
@@ -220,10 +277,16 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
           const currentYear = new Date().getFullYear();
           if (data.years.includes(currentYear)) {
             setSelectedYear(currentYear);
-            setTimeRangeState({ mode: 'year', selections: [{ year: currentYear }] });
+            setTimeRangeState({
+              mode: "year",
+              selections: [{ year: currentYear }],
+            });
           } else {
             setSelectedYear(data.years[0]); // Most recent year
-            setTimeRangeState({ mode: 'year', selections: [{ year: data.years[0] }] });
+            setTimeRangeState({
+              mode: "year",
+              selections: [{ year: data.years[0] }],
+            });
           }
         }
       })
@@ -246,7 +309,10 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
         if (data && data.features) {
           setGeoJsonData(data);
           setBarangayNames(
-            data.features.map((f: any) => f.properties.adm4_en).filter(Boolean).sort()
+            data.features
+              .map((f: any) => f.properties.adm4_en)
+              .filter(Boolean)
+              .sort(),
           );
         }
       })
@@ -256,7 +322,7 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
   const onFlyToStationComplete = useCallback(() => setFlyToStation(false), []);
 
   const filteredBarangays = barangayNames.filter((n) =>
-    n.toLowerCase().includes(searchQuery.toLowerCase())
+    n.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const value = {
@@ -278,6 +344,7 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
     timeFilterHourCrimeCount,
     isTimeFilterActive,
     selectedCrimeType,
+    selectedFelonyStage,
     selectedYear,
     availableYears,
     timeRange,
@@ -296,6 +363,7 @@ export function MapProvider({ children, persistPeriod = true, initialPeriod }: M
     setTimeFilter,
     setIsTimeFilterActive,
     setSelectedCrimeType,
+    setSelectedFelonyStage,
     setSelectedYear: setSelectedYearWithPersistence,
     setTimeRange,
     setCustomDateRange,

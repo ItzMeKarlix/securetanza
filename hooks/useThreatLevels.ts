@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { useMapContext } from '@/context/MapContext'
 import { useTimeRangeData } from '@/hooks/useTimeRangeData'
-import { useCrimeTypeByBarangay } from '@/hooks/useCrimeTypeByBarangay'
+import { buildMapQueries, mergeBarangayCounts } from './map-query'
+import { useMapStatistics } from './useMapStatistics'
 import { calculateDynamicThresholds } from '@/lib/geo-threat'
+import { DEFAULT_THREAT_COLORS } from '@/lib/data-colors'
 
 export interface ThreatLevelStats {
   secure: number
@@ -24,187 +26,25 @@ export interface ThreatThresholds {
 export { calculateDynamicThresholds }
 
 export function useThreatLevels() {
-  const [stats, setStats] = useState<ThreatLevelStats>({
-    secure: 0,
-    low: 0,
-    moderate: 0,
-    high: 0,
-    critical: 0
-  })
-  const [thresholds, setThresholds] = useState<ThreatThresholds>({
-    low: 2,
-    moderate: 5,
-    high: 10,
-    critical: 15
-  })
-  const [barangayCrimeCounts, setBarangayCrimeCounts] = useState<Record<string, number>>({})
-  const [filteredBarangayCrimeCounts, setFilteredBarangayCrimeCounts] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
-  
-  const { timeFilterDate, timeFilterHour, isTimeFilterActive, selectedYear, timeRange, selectedCrimeType } = useMapContext()
-  const { crimeTypeCounts } = useCrimeTypeByBarangay()
-  const dateRanges = useTimeRangeData()
-
-  // Fetch base crime data (all crimes or filtered by timeRange / year)
-  useEffect(() => {
-    // Wait until timeRange selections or selectedYear is set
-    if (dateRanges.length === 0 && selectedYear === null) {
-      console.log('⏳ Waiting for temporal filter to be initialized...')
-      return
-    }
-    
-    async function loadBaseThreatData() {
-      try {
-        setLoading(true)
-        const mergedCounts: Record<string, number> = {}
-
-        if (dateRanges.length > 0) {
-          // Multi-Range / Granular TimeRange (Year, Quarter, Month, Half-Year, Day)
-          const results = await Promise.all(
-            dateRanges.map(async ({ start, end }) => {
-              const params = new URLSearchParams()
-              params.set('startDateCommitted', start.toISOString())
-              params.set('endDateCommitted', end.toISOString())
-              const response = await fetch(`/api/crimes/barangay-counts?${params}`)
-              if (!response.ok) return null
-              return response.json()
-            })
-          )
-
-          results.forEach(result => {
-            if (result?.success && result.data?.barangayCounts) {
-              Object.entries(result.data.barangayCounts).forEach(([barangay, count]) => {
-                mergedCounts[barangay] = (mergedCounts[barangay] || 0) + (count as number)
-              })
-            }
-          })
-        } else if (selectedYear) {
-          // Fallback to year filter
-          const params = new URLSearchParams()
-          params.set('year', selectedYear.toString())
-          const response = await fetch(`/api/crimes/barangay-counts?${params}`)
-          if (response.ok) {
-            const result = await response.json()
-            if (result.success && result.data?.barangayCounts) {
-              Object.assign(mergedCounts, result.data.barangayCounts)
-            }
-          }
-        }
-
-        setBarangayCrimeCounts(mergedCounts)
-        
-        // Calculate dynamic thresholds based on actual data distribution
-        const crimeCounts = Object.values(mergedCounts) as number[];
-        const dynamicThresholds = calculateDynamicThresholds(crimeCounts);
-        setThresholds(dynamicThresholds);
-        
-        // Calculate threat level distribution using dynamic thresholds
-        const threatStats = {
-          secure: 0,
-          low: 0,
-          moderate: 0,
-          high: 0,
-          critical: 0
-        }
-        
-        Object.values(mergedCounts).forEach(count => {
-          const level = getThreatLevelFromCount(count as number, dynamicThresholds)
-          threatStats[level]++
-        })
-        
-        // Add barangays with no crimes as secure
-        const totalKnownBarangays = 24 // Total barangays in Tanza
-        const barangaysWithCrimes = Object.keys(mergedCounts).length
-        threatStats.secure += Math.max(0, totalKnownBarangays - barangaysWithCrimes)
-        
-        setStats(threatStats)
-      } catch (error) {
-        console.error('Error loading threat data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadBaseThreatData()
-  }, [selectedYear, timeRange, dateRanges])
-
-  // Fetch filtered crime data when time filter is active
-  useEffect(() => {
-    async function loadFilteredThreatData() {
-      if (!isTimeFilterActive || !timeFilterDate) {
-        setFilteredBarangayCrimeCounts({})
-        return
-      }
-
-      try {
-        const params = new URLSearchParams()
-        
-        // Use the EXACT selected date for the entire day
-        const startDate = new Date(timeFilterDate)
-        startDate.setHours(0, 0, 0, 0)
-        
-        const endDate = new Date(timeFilterDate)
-        endDate.setHours(23, 59, 59, 999)
-        
-        // Convert to ISO string for API
-        params.set('startDateCommitted', startDate.toISOString())
-        params.set('endDateCommitted', endDate.toISOString())
-        
-        if (timeFilterHour !== null) {
-          params.set('hour', timeFilterHour.toString())
-        }
-        
-        if (selectedYear) {
-          params.set('year', selectedYear.toString())
-        }
-        
-        const response = await fetch(`/api/crimes/barangay-counts?${params}`)
-        if (!response.ok) return
-        const result = await response.json()
-        
-        if (result.success) {
-          const counts = result.data.barangayCounts;
-          setFilteredBarangayCrimeCounts(counts);
-        }
-      } catch (error) {
-        console.error('Error loading filtered threat data:', error)
-      }
-    }
-
-    loadFilteredThreatData()
-  }, [timeFilterDate, timeFilterHour, isTimeFilterActive, selectedYear])
-
-  // The scale follows whatever the map is showing: the selected crime type, a single
-  // day / hour, or the whole period. Thresholds, legend ranges and the level tally all
-  // come from that same set of counts, so the key can't disagree with the shading.
-  const TOTAL_BARANGAYS = 24
-  const viewCounts = selectedCrimeType
-    ? crimeTypeCounts
-    : isTimeFilterActive && Object.keys(filteredBarangayCrimeCounts).length > 0
-      ? filteredBarangayCrimeCounts
-      : null
-  const viewThresholds = React.useMemo(
-    () => (viewCounts ? calculateDynamicThresholds(Object.values(viewCounts)) : thresholds),
-    [viewCounts, thresholds]
-  )
-  const viewStats = React.useMemo(() => {
-    if (!viewCounts) return stats
-    const tally: ThreatLevelStats = { secure: 0, low: 0, moderate: 0, high: 0, critical: 0 }
-    const counts = Object.values(viewCounts).filter((c) => c > 0)
-    counts.forEach((count) => {
-      tally[getThreatLevelFromCount(count, viewThresholds)]++
-    })
-    tally.secure = Math.max(0, TOTAL_BARANGAYS - counts.length)
-    return tally
-  }, [viewCounts, viewThresholds, stats])
-
-  return { 
-    stats: viewStats, 
-    thresholds: viewThresholds, 
-    barangayCrimeCounts, 
-    filteredBarangayCrimeCounts,
-    loading 
-  }
+  const scope = useMapContext();
+  const dateRanges = useTimeRangeData();
+  const queries = buildMapQueries(scope, dateRanges, "barangay-counts");
+  const { results, loading } = useMapStatistics("barangay-counts", queries);
+  const barangayCrimeCounts = React.useMemo(() => results ? mergeBarangayCounts(results) : {}, [results]);
+  const thresholds = React.useMemo(() => calculateDynamicThresholds(Object.values(barangayCrimeCounts)), [barangayCrimeCounts]);
+  const stats = React.useMemo(() => {
+    const tally: ThreatLevelStats = { secure: 0, low: 0, moderate: 0, high: 0, critical: 0 };
+    const counts = Object.values(barangayCrimeCounts).filter(count => count > 0);
+    counts.forEach(count => { tally[getThreatLevelFromCount(count, thresholds)]++; });
+    tally.secure = Math.max(0, 24 - counts.length);
+    return tally;
+  }, [barangayCrimeCounts, thresholds]);
+  return {
+    stats, thresholds, barangayCrimeCounts,
+    // An empty active day/hour stays empty; it never falls back to period counts.
+    filteredBarangayCrimeCounts: scope.isTimeFilterActive ? barangayCrimeCounts : {},
+    loading,
+  };
 }
 
 export function getThreatLevelFromCount(count: number, thresholds: ThreatThresholds): keyof ThreatLevelStats {
@@ -215,10 +55,4 @@ export function getThreatLevelFromCount(count: number, thresholds: ThreatThresho
   return 'critical'
 }
 
-export const THREAT_COLORS = {
-  secure: "#0ea5e9", // Sky Blue
-  low: "#10b981", // Emerald
-  moderate: "#eab308", // Yellow
-  high: "#f97316", // Orange
-  critical: "#ef4444", // Red
-}
+export const THREAT_COLORS = DEFAULT_THREAT_COLORS;

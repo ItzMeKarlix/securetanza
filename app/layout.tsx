@@ -57,6 +57,9 @@ export default function RootLayout({
                 var highContrast = hc !== null ? hc === 'true' : (window.matchMedia && window.matchMedia('(prefers-contrast: more)').matches);
                 document.documentElement.setAttribute('data-high-contrast', String(highContrast));
 
+                var palette = localStorage.getItem('data-color-palette');
+                document.documentElement.setAttribute('data-color-palette', palette === 'colorful' ? 'colorful' : 'original');
+
                 var ts = localStorage.getItem('a11y-text-size');
                 document.documentElement.setAttribute('data-text-size', (ts === 'large' || ts === 'larger') ? ts : 'default');
               } catch (_) {}

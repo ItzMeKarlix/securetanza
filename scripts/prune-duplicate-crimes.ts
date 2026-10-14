@@ -8,6 +8,7 @@
 
 import { prisma, disconnectPrisma } from '../backend/lib/prisma';
 import { generateCrimeFingerprint } from '../backend/lib/crime-deduplication';
+import { deleteCrimeRecord } from '../backend/lib/crime-records';
 import { cacheService, CacheKeys } from '../backend/cache';
 
 async function main() {
@@ -23,18 +24,20 @@ async function main() {
     select: {
       id: true,
       blotterNo: true,
+      stn: true,
+      municipal: true,
       barangay: true,
       dateCommitted: true,
       timeCommitted: true,
       incidentType: true,
       offense: true,
+      stageOfFelony: true,
+      section: true,
       dateReported: true,
       timeReported: true,
       createdAt: true,
     },
-    orderBy: {
-      createdAt: 'asc', // Earliest records are ranked first (preserved as originals)
-    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
 
   console.log(`Loaded ${allIncidents.length} total records.\n`);
@@ -100,12 +103,10 @@ async function main() {
   let deletedCount = 0;
   for (let i = 0; i < idsToDelete.length; i += BATCH) {
     const batch = idsToDelete.slice(i, i + BATCH);
-    const res = await prisma.crimeIncident.deleteMany({
-      where: {
-        id: { in: batch },
-      },
-    });
-    deletedCount += res.count;
+    for (const id of batch) {
+      await deleteCrimeRecord(id, prisma);
+      deletedCount++;
+    }
   }
 
   console.log(`✅ Successfully pruned ${deletedCount} duplicate records.`);

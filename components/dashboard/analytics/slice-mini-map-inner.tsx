@@ -7,7 +7,7 @@ import type { Layer } from "leaflet";
 import L from "leaflet";
 import { TANZA_CENTER, TILE_URL, MAP_ATTR } from "@/constants/map-constants";
 import type { CrimeIncident } from "@/lib/api";
-import { rampColorForTheme, rgbToCss } from "@/lib/report-theme";
+import { useDataColors } from "@/hooks/useDataColors";
 import { normalizeBarangayName as norm } from "@/lib/analytics-slice";
 
 /**
@@ -214,6 +214,7 @@ export default function SliceMiniMapInner({
   incidents: CrimeIncident[];
   theme: string;
 }) {
+  const { palette, colorful, ramp } = useDataColors();
   const [geo, setGeo] = useState<any>(null);
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
 
@@ -269,9 +270,7 @@ export default function SliceMiniMapInner({
       };
     }
     return {
-      fillColor: rgbToCss(
-        rampColorForTheme(count / maxCount, theme === "dark" ? "dark" : "light")
-      ),
+      fillColor: ramp(count / maxCount),
       fillOpacity: 0.75,
       color: theme === "dark" ? "#38bdf8" : "#0369a1",
       weight: 1.5,
@@ -301,7 +300,7 @@ export default function SliceMiniMapInner({
     setBounds(involved.isValid() ? involved : null);
   }, [geo, countsByBarangay]);
 
-  const accent = theme === "dark" ? "#38bdf8" : "#0369a1";
+  const accent = colorful ? ramp(1) : theme === "dark" ? "#38bdf8" : "#0369a1";
 
   return (
     <MapContainer
@@ -315,7 +314,7 @@ export default function SliceMiniMapInner({
       {geo && (
         <GeoJSON
           // Re-style when the slice changes — Leaflet caches layer styles.
-          key={`${countsByBarangay.size}-${maxCount}-${theme}`}
+          key={`${countsByBarangay.size}-${maxCount}-${theme}-${palette}`}
           data={geo}
           style={styleFeature}
           onEachFeature={onEachFeature}

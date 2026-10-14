@@ -258,8 +258,8 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
 
   const timeRangeText = getTimeRangeText();
   const totalCrimes = useMemo(
-    () => analyticsData.crimesByType.reduce((sum, item) => sum + item.count, 0),
-    [analyticsData.crimesByType]
+    () => analyticsData.totalIncidents,
+    [analyticsData.totalIncidents]
   );
 
   const selectedSections = SECTIONS.filter((section) => reportConfig[section.key].enabled);
@@ -292,6 +292,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
         trends: analyticsData.trends,
       },
       totalCrimes,
+      totalOffenses: analyticsData.totalOffenses,
       generatedBy: user?.fullName || user?.accountNumber || 'System',
     };
   };

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { buildMapQueries, mergeMapStats } from "./map-query";
+import { useMapStatistics } from "./useMapStatistics";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "@/hooks/useTimeRangeData";
 import { getCrimeGroup } from "@/lib/crime-groups";
+import { colorfulCrimeColor, type DataColorTheme, type DataColorPalette } from "@/lib/data-colors";
 
 export interface CrimeTypeStats {
   type: string;
@@ -42,7 +44,8 @@ export function extractCrimeType(incidentType: string): string {
 }
 
 // Helper function to get color for a crime type
-export function getCrimeTypeColor(type: string): string {
+export function getCrimeTypeColor(type: string, palette: DataColorPalette = "original", theme: DataColorTheme = "light"): string {
+  if (palette === "colorful") return colorfulCrimeColor(type, theme);
   const group = getCrimeGroup(type);
   if (group) return group.color;
 
@@ -66,125 +69,11 @@ export function getCrimeTypeColor(type: string): string {
 }
 
 export function useCrimeTypes(): CrimeTypesData {
-  const [stats, setStats] = useState<CrimeTypeStats[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const {
-    selectedBarangay,
-    timeFilterDate,
-    timeFilterHour,
-    isTimeFilterActive,
-    selectedYear,
-    timeRange,
-  } = useMapContext();
+  const scope = useMapContext();
   const dateRanges = useTimeRangeData();
-
-  useEffect(() => {
-    async function fetchCrimeTypes() {
-      setLoading(true);
-      try {
-        const typeCountMap: Record<string, number> = {};
-        let totalCount = 0;
-
-        if (isTimeFilterActive && timeFilterDate) {
-          // 1. Time Filter takes precedence
-          // `dateCommitted` only carries the date (stored at local midnight); the hour
-          // of day lives in a separate field, so the day stays whole here and the hour
-          // is passed on its own below — narrowing this range to the hour would never
-          // match anything and made this panel go blank while the map still had data.
-          const startDate = new Date(timeFilterDate);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(timeFilterDate);
-          endDate.setHours(23, 59, 59, 999);
-
-          const params = new URLSearchParams();
-          if (selectedBarangay) params.append("barangay", selectedBarangay);
-          params.append("startDate", startDate.toISOString());
-          params.append("endDate", endDate.toISOString());
-          if (timeFilterHour !== null) params.append("hour", timeFilterHour.toString());
-
-          const response = await fetch(`/api/crimes/stats?${params.toString()}`);
-          if (!response.ok) throw new Error("Failed to fetch crime types");
-          const data = await response.json();
-
-          if (data.success && data.data?.crimesByType) {
-            data.data.crimesByType.forEach((c: { type?: string; incidentType?: string; count?: number; _count?: { incidentType: number } }) => {
-              const name = c.type || c.incidentType || "Other";
-              const count = c.count || c._count?.incidentType || 0;
-              typeCountMap[name] = (typeCountMap[name] || 0) + count;
-              totalCount += count;
-            });
-          }
-        } else if (dateRanges.length > 0) {
-          // 2. Granular TimeRange (Year, Quarter, Month, Half-Year, Day)
-          const results = await Promise.all(
-            dateRanges.map(async ({ start, end }) => {
-              const params = new URLSearchParams();
-              if (selectedBarangay) params.append("barangay", selectedBarangay);
-              params.append("startDate", start.toISOString());
-              params.append("endDate", end.toISOString());
-
-              const res = await fetch(`/api/crimes/stats?${params.toString()}`);
-              if (!res.ok) return null;
-              return res.json();
-            })
-          );
-
-          results.forEach((result) => {
-            if (result?.success && result.data?.crimesByType) {
-              result.data.crimesByType.forEach((c: { type?: string; incidentType?: string; count?: number; _count?: { incidentType: number } }) => {
-                const name = c.type || c.incidentType || "Other";
-                const count = c.count || c._count?.incidentType || 0;
-                typeCountMap[name] = (typeCountMap[name] || 0) + count;
-                totalCount += count;
-              });
-            }
-          });
-        } else if (selectedYear) {
-          // 3. Fallback to Year
-          const params = new URLSearchParams();
-          if (selectedBarangay) params.append("barangay", selectedBarangay);
-          params.append("year", selectedYear.toString());
-
-          const response = await fetch(`/api/crimes/stats?${params.toString()}`);
-          if (!response.ok) throw new Error("Failed to fetch crime types");
-          const data = await response.json();
-
-          if (data.success && data.data?.crimesByType) {
-            data.data.crimesByType.forEach((c: { type?: string; incidentType?: string; count?: number; _count?: { incidentType: number } }) => {
-              const name = c.type || c.incidentType || "Other";
-              const count = c.count || c._count?.incidentType || 0;
-              typeCountMap[name] = (typeCountMap[name] || 0) + count;
-              totalCount += count;
-            });
-          }
-        }
-
-        const sortedStats: CrimeTypeStats[] = Object.entries(typeCountMap)
-          .map(([type, count]) => ({ type, count }))
-          .sort((a, b) => b.count - a.count);
-
-        setStats(sortedStats);
-        setTotal(totalCount);
-      } catch (error) {
-        console.error("Error fetching crime types:", error);
-        setStats([]);
-        setTotal(0);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCrimeTypes();
-  }, [
-    selectedBarangay,
-    timeFilterDate,
-    timeFilterHour,
-    isTimeFilterActive,
-    selectedYear,
-    timeRange,
-    dateRanges,
-  ]);
-
-  return { stats, total, loading };
+  // Keep alternative categories available when a category is selected.
+  const queries = buildMapQueries({ ...scope, selectedCrimeType: null }, dateRanges, "stats", scope.selectedBarangay);
+  const { results, loading } = useMapStatistics("stats", queries);
+  const stats = results ? mergeMapStats(results) : null;
+  return { stats: stats?.crimesByType ?? [], total: stats?.totalOffenses ?? 0, loading };
 }

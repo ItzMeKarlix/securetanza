@@ -125,6 +125,7 @@ export function DocsSettings() {
               <li><strong className="text-slate-800 dark:text-slate-200">Theme:</strong> Select Light, Dark, or System Sync mode.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">Reduce Motion:</strong> Suppress UI animations and transitions for reduced vestibular motion.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">High Contrast:</strong> Strengthen border definitions and focus rings for maximum tactical visibility.</li>
+              <li><strong className="text-slate-800 dark:text-slate-200">Data colors:</strong> Keep Original or choose Colorful for distinct crime colors, teal charts, and purple heatmaps.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">Dynamic Text Size:</strong> Choose between Default, Large, or Larger typographic scaling for optimal field readability.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">Default Landing Page:</strong> Set whether login routes to the GIS Crime Map, Executive Overview, or Case Blotter.</li>
             </ul>
