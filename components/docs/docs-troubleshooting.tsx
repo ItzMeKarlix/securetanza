@@ -1,53 +1,91 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Map, Sparkles } from "lucide-react";
 import { DocsCta } from "./docs-cta";
+import { UserRoleType, getUserRole, hasUploadAccess } from "./docs-permissions";
+import { useAuth } from "@/context/AuthContext";
+import { isAdminUser, hasMapAccess, hasAnalyticsAccess } from "@/lib/auth-routes";
 
 interface DocsTroubleshootingProps {
   onReplayTour?: () => void;
+  role?: UserRoleType;
+  permissions?: string[];
 }
 
-export function DocsTroubleshooting({ onReplayTour }: DocsTroubleshootingProps) {
-  const issues = [
-    {
-      problem: "Interactive Crime Map appears blank or tiles do not load",
-      cause: "Network timeout or WebGL hardware acceleration disabled in browser.",
-      solutions: [
-        "Verify internet connection to allow OpenStreetMap tile fetching.",
-        "Ensure Hardware Acceleration is enabled under browser Settings > System.",
-        "Perform a hard browser refresh (Ctrl + F5 or Cmd + Shift + R).",
-        "Clear browser cache and reload the application."
-      ]
-    },
-    {
+export function DocsTroubleshooting({ onReplayTour, role, permissions: propPerms }: DocsTroubleshootingProps) {
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const effectiveRole = role ?? userRole;
+
+  let effectivePerms = propPerms || user?.permissions || [];
+  if (role && role !== userRole) {
+    if (role === "admin") {
+      effectivePerms = ["admin_operational_officer", "admin"];
+    } else if (role === "operational_officer") {
+      effectivePerms = ["operational_officer", "privileged_map_view", "privileged_cases_view", "privileged_analytics_view"];
+    } else {
+      effectivePerms = ["privileged_user", "privileged_map_view"];
+    }
+  }
+
+  const isAdmin = effectiveRole === "admin" || isAdminUser(effectivePerms);
+  const canMap = isAdmin || hasMapAccess(effectivePerms);
+  const canAnalytics = isAdmin || hasAnalyticsAccess(effectivePerms);
+  const canUpload = hasUploadAccess(effectivePerms, effectiveRole);
+
+  const issues = useMemo(() => {
+    const list = [];
+
+    if (canMap) {
+      list.push({
+        problem: "Interactive Crime Map appears blank or tiles do not load",
+        cause: "Network timeout or WebGL hardware acceleration disabled in browser.",
+        solutions: [
+          "Verify internet connection to allow OpenStreetMap tile fetching.",
+          "Ensure Hardware Acceleration is enabled under browser Settings > System.",
+          "Perform a hard browser refresh (Ctrl + F5 or Cmd + Shift + R).",
+          "Clear browser cache and reload the application.",
+        ],
+      });
+    }
+
+    list.push({
       problem: "Cannot access Crime Cases Blotter or Settings page",
       cause: "User session token expired or account lacks administrative or operational clearance.",
       solutions: [
         "Log in again with valid credentials via the User Menu.",
         "Verify your account number and password.",
-        "Contact a System Administrator to assign 'admin' or 'operational_officer' clearance in Access & Security settings."
-      ]
-    },
-    {
-      problem: "PDF Report Generation times out or fails to download",
-      cause: "Browser pop-up blocker triggered or high-resolution chart capture buffer delay.",
-      solutions: [
-        "Allow automatic file downloads from the SecureTanza domain in browser settings.",
-        "Reduce report scope by unchecking 1 or 2 optional sections.",
-        "Ensure all analytics charts on the page finish rendering before initiating export."
-      ]
-    },
-    {
-      problem: "Batch Excel Upload reports schema error",
-      cause: "Missing mandatory column headers or invalid date/time cell formatting.",
-      solutions: [
-        "Verify that column headers match exact names: incident_type, barangay, date_committed, time_committed.",
-        "Ensure dates are formatted as YYYY-MM-DD and times as HH:MM:SS in Excel.",
-        "Verify file size is under 10 MB and file extension is .xlsx or .xls."
-      ]
+        "Contact a System Administrator to assign 'admin' or 'operational_officer' clearance in Access & Security settings.",
+      ],
+    });
+
+    if (canAnalytics) {
+      list.push({
+        problem: "PDF Report Generation times out or fails to download",
+        cause: "Browser pop-up blocker triggered or high-resolution chart capture buffer delay.",
+        solutions: [
+          "Allow automatic file downloads from the SecureTanza domain in browser settings.",
+          "Reduce report scope by unchecking 1 or 2 optional sections.",
+          "Ensure all analytics charts on the page finish rendering before initiating export.",
+        ],
+      });
     }
-  ];
+
+    if (canUpload) {
+      list.push({
+        problem: "Batch Excel Upload reports schema error",
+        cause: "Missing mandatory column headers or invalid date/time cell formatting.",
+        solutions: [
+          "Verify that column headers match exact names: incident_type, barangay, date_committed, time_committed.",
+          "Ensure dates are formatted as YYYY-MM-DD and times as HH:MM:SS in Excel.",
+          "Verify file size is under 50 MB and file extension is .xlsx or .xls.",
+        ],
+      });
+    }
+
+    return list;
+  }, [canMap, canAnalytics, canUpload]);
 
   return (
     <div className="space-y-8">
@@ -59,6 +97,7 @@ export function DocsTroubleshooting({ onReplayTour }: DocsTroubleshootingProps) 
           Frequently encountered operational issues, diagnostic causes, and step-by-step resolutions.
         </p>
       </div>
+
 
       {/* Issues List */}
       <section id="troubleshooting-issues" className="space-y-6 scroll-mt-6">

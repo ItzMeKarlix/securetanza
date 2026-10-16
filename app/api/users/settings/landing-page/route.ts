@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, invalidateSessionCache } from "@/lib/auth";
 import { getClientIp, getUserAgent } from "@/lib/request-context";
 import { prisma } from "@/backend/lib/prisma";
+import { hasMapAccess, hasCasesAccess, hasAnalyticsAccess } from "@/lib/auth-routes";
 
 const ALLOWED_LANDING_PAGES = ["map", "overview", "dashboard", "analytics", "cases"];
 
@@ -68,11 +69,37 @@ export async function PATCH(request: NextRequest) {
       landingPage = "overview";
     }
 
+    // Verify user has clearance for the requested landing view
+    if (landingPage === "map" || landingPage === "overview") {
+      if (!hasMapAccess(session.permissions)) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized: You do not have clearance for the map view." },
+          { status: 403 }
+        );
+      }
+    } else if (landingPage === "cases") {
+      if (!hasCasesAccess(session.permissions)) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized: You do not have clearance for the cases view." },
+          { status: 403 }
+        );
+      }
+    } else if (landingPage === "analytics") {
+      if (!hasAnalyticsAccess(session.permissions)) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized: You do not have clearance for the analytics view." },
+          { status: 403 }
+        );
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: session.userId },
       data: { defaultLandingPage: landingPage },
       select: { id: true, defaultLandingPage: true },
     });
+
+    invalidateSessionCache(session.userId);
 
     // Audit log
     await prisma.auditLog.create({

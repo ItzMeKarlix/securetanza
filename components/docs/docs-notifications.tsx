@@ -1,10 +1,33 @@
 "use client";
 
 import React from "react";
-import { Bell, FolderOpen } from "lucide-react";
+import { Bell, FolderOpen, ShieldAlert } from "lucide-react";
 import { DocsCta } from "./docs-cta";
+import { UserRoleType, getUserRole } from "./docs-permissions";
+import { useAuth } from "@/context/AuthContext";
+import { isAdminUser } from "@/lib/auth-routes";
 
-export function DocsNotifications() {
+interface DocsNotificationsProps {
+  role?: UserRoleType;
+  permissions?: string[];
+}
+
+export function DocsNotifications({ role, permissions: propPerms }: DocsNotificationsProps) {
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const effectiveRole = role ?? userRole;
+
+  let effectivePerms = propPerms || user?.permissions || [];
+  if (role && role !== userRole) {
+    if (role === "admin") {
+      effectivePerms = ["admin_operational_officer", "admin"];
+    } else {
+      effectivePerms = ["operational_officer", "privileged_map_view"];
+    }
+  }
+
+  const isAdmin = effectiveRole === "admin" || isAdminUser(effectivePerms);
+
   return (
     <div className="space-y-8">
       <div>
@@ -48,35 +71,68 @@ export function DocsNotifications() {
         </div>
       </section>
 
-      {/* Rule Customization */}
-      <section id="rule-configuration" className="space-y-4 scroll-mt-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
-          Rule Configuration
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-          Administrators can configure notification triggers under <strong>System Settings → Notification Rules</strong>. Available rules include <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-mono">HOURLY_PERCENT_EXCEEDS</code> and barangay surge multipliers. Threshold percentages and automatic broadcast settings can be adjusted per rule.
-        </p>
-      </section>
+      {/* Rule Customization (Admin Only) */}
+      {isAdmin ? (
+        <section id="rule-configuration" className="space-y-4 scroll-mt-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
+            Rule Configuration
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            Administrators can configure notification triggers under <strong>System Settings → Notification Rules</strong>. Available rules include <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-mono">HOURLY_PERCENT_EXCEEDS</code> and barangay surge multipliers. Threshold percentages and automatic broadcast settings can be adjusted per rule.
+          </p>
+        </section>
+      ) : (
+        <section id="receiving-alerts" className="space-y-4 scroll-mt-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
+            Receiving Tactical Alerts
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            Personnel receive active alerts in real-time through the <strong>Notification Bell</strong> in the navigation header. An alert badge highlights unread critical incidents or hourly surge spikes. Click any alert item in the dropdown panel to review its timestamp, affected barangay jurisdiction, and incident details.
+          </p>
+        </section>
+      )}
 
       {/* Next Steps */}
       <DocsCta
-        title="Notification Setup"
-        suggestion="Configure automated alert thresholds to receive real-time notifications when critical volume surges occur."
-        actions={[
-          {
-            label: "Notification Rules",
-            href: "/dashboard/config",
-            icon: Bell,
-            variant: "primary",
-          },
-          {
-            label: "Review Cases",
-            href: "/dashboard/cases",
-            icon: FolderOpen,
-            variant: "secondary",
-          },
-        ]}
+        title={isAdmin ? "Notification Setup" : "Operational Alerts"}
+        suggestion={
+          isAdmin
+            ? "Configure automated alert thresholds to receive real-time notifications when critical volume surges occur."
+            : "Monitor active notifications in the header bell to stay informed on live crime spikes."
+        }
+        actions={
+          isAdmin
+            ? [
+                {
+                  label: "Notification Rules",
+                  href: "/dashboard/config/notifications",
+                  icon: Bell,
+                  variant: "primary",
+                },
+                {
+                  label: "Review Cases",
+                  href: "/dashboard/cases",
+                  icon: FolderOpen,
+                  variant: "secondary",
+                },
+              ]
+            : [
+                {
+                  label: "Review Cases",
+                  href: "/dashboard/cases",
+                  icon: FolderOpen,
+                  variant: "primary",
+                },
+                {
+                  label: "Crime Map",
+                  href: "/",
+                  icon: ShieldAlert,
+                  variant: "secondary",
+                },
+              ]
+        }
       />
     </div>
   );
 }
+
