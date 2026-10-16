@@ -180,7 +180,7 @@ export const privilegedSystemSteps: DriveStep[] = [
 		popover: {
 			title: "Security Clearance & Profile",
 			description:
-				"Review your granted module permissions and replay your role-specific walkthrough anytime.",
+				"Review your granted module permissions, access Account Settings & Preferences, and replay your role-specific walkthrough anytime.",
 			side: "bottom",
 			align: "end",
 		},

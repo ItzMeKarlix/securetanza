@@ -10,8 +10,7 @@ import {
 export { type UserRoleType };
 
 export interface AuthUserLike {
-  permissions?: string[];
-  [key: string]: unknown;
+  permissions?: string[] | null;
 }
 
 export interface RoleBadgeInfo {

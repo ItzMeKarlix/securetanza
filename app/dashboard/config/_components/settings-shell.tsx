@@ -203,7 +203,7 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
 				/>
 				{/* Quiet wayfinding label — the route's own h1 is the page title. */}
 				<span className="truncate text-[13px] text-slate-500 dark:text-slate-400">
-					System Settings &amp; Configuration
+					{isAdmin ? "System Settings & Configuration" : "Account Settings & Preferences"}
 				</span>
 			</header>
 
