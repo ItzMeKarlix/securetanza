@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
@@ -87,6 +88,21 @@ function AccessSecurity() {
 		tempPassword?: string;
 	} | null>(null);
 
+	const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+		};
+	}, []);
+
+	const closeCredentialsModal = () => {
+		if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+		setNewAccount(null);
+		setIsCopied(false);
+		setShowPassword(false);
+	};
+
 	const [userToUnlock, setUserToUnlock] = useState<User | null>(null);
 	const [isUnlocking, setIsUnlocking] = useState(false);
 
@@ -160,9 +176,13 @@ function AccessSecurity() {
 				setMgmtSuccess("Privileged user account authorized");
 				setShowCreateModal(false);
 				setFormData({ fullName: "", permissionIds: [] });
+				if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+				setIsCopied(false);
+				setShowPassword(false);
 				fetchUsers();
 				setNewAccount({ ...data.data, kind: "created" });
 			} else setMgmtError(data.error || "Failed to authorize user");
+
 		} catch {
 			setMgmtError("Failed to authorize user");
 		} finally {
@@ -252,11 +272,13 @@ function AccessSecurity() {
 			const data = await response.json();
 			if (response.ok && data.success) {
 				setUserToUnlock(null);
+				if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
 				setIsCopied(false);
 				setShowPassword(false);
 				fetchUsers();
 				setNewAccount({ ...data.data, kind: "unlocked" });
 			} else setMgmtError(data.error || "Failed to unlock account");
+
 		} catch {
 			setMgmtError("Failed to unlock account");
 		} finally {
@@ -294,10 +316,14 @@ function AccessSecurity() {
 					<button
 						onClick={() => {
 							setFormData({ fullName: "", permissionIds: [] });
+							if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+							setIsCopied(false);
+							setShowPassword(false);
 							setShowCreateModal(true);
 						}}
 						className={btnPrimary}
 					>
+
 						<UserPlus className="h-3.5 w-3.5" />
 						Authorize New Officer
 					</button>
@@ -460,7 +486,7 @@ function AccessSecurity() {
 			{newAccount && (
 				<Modal
 					title={newAccount.kind === "unlocked" ? "Account Unlocked" : "Account Created"}
-					onClose={() => setNewAccount(null)}
+					onClose={closeCredentialsModal}
 				>
 					<dl className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/[0.07] dark:border-white/[0.07]">
 						<div className="flex items-center justify-between gap-4 py-3">
@@ -507,7 +533,11 @@ function AccessSecurity() {
 									newAccount.accountNumber
 								}\nTemporary Password: ${newAccount.tempPassword}\n\nPlease sign in and change your password.`
 							);
+							if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
 							setIsCopied(true);
+							copyTimeoutRef.current = setTimeout(() => {
+								setIsCopied(false);
+							}, 4000);
 						}}
 						className={cn(btnPrimary, "mt-5 w-full")}
 					>
