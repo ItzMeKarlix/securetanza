@@ -2,16 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, hashPassword, verifyPassword } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  newPassword: z.string().min(1, 'New password is required'),
 }).refine(data => data.currentPassword !== data.newPassword, {
   message: "New password cannot be the same as your current password",
   path: ["newPassword"],
@@ -20,7 +16,7 @@ const updatePasswordSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -42,6 +38,12 @@ export async function POST(request: NextRequest) {
 
     if (!isPasswordCorrect) {
       return NextResponse.json({ error: 'Incorrect current password' }, { status: 400 });
+    }
+
+    // Composition rules, common/guessable passwords, known breaches
+    const policyError = await validateNewPassword(newPassword, user);
+    if (policyError) {
+      return NextResponse.json({ error: policyError }, { status: 400 });
     }
 
     // Hash the new password
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
+        { error: error.issues[0]?.message || 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

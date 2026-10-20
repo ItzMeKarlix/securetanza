@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { getSession, hashPassword, createSession, invalidateSessionCache } from '@/lib/auth';
+import { getSession, hashPassword, verifyPassword, createSession, invalidateSessionCache } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
 
 const changePasswordSchema = z.object({
-  newPassword: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  newPassword: z.string().min(1, 'New password is required'),
 });
 
 export async function POST(request: NextRequest) {
@@ -23,6 +19,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { newPassword } = changePasswordSchema.parse(body);
+
+    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // The temporary password was handed over in plain text — never keep it.
+    if (await verifyPassword(newPassword, user.passwordHash)) {
+      return NextResponse.json(
+        { error: 'Choose a password different from your temporary one.' },
+        { status: 400 }
+      );
+    }
+
+    // Composition rules, common/guessable passwords, known breaches
+    const policyError = await validateNewPassword(newPassword, user);
+    if (policyError) {
+      return NextResponse.json({ error: policyError }, { status: 400 });
+    }
 
     // Hash the new password
     const passwordHash = await hashPassword(newPassword);
@@ -72,7 +87,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
+        { error: error.issues[0]?.message || 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

@@ -16,8 +16,8 @@ import React from "react";
    controls on the right at a comfortable width — so the page fills the screen
    with structure instead of stretching controls across it. Table pages simply
    use the room. Content is centred so wide screens get even margins. */
-export const PAGE_FORM = "mx-auto w-full max-w-[720px] xl:max-w-[1040px]";
-export const PAGE_TABLE = "mx-auto w-full max-w-[1360px]";
+export const PAGE_FORM = "mx-auto w-full max-w-[45rem] xl:max-w-[65rem]";
+export const PAGE_TABLE = "mx-auto w-full max-w-[85rem]";
 
 const SplitContext = React.createContext(false);
 
@@ -50,7 +50,7 @@ export function PageHeader({
 					{title}
 				</h1>
 				{description && (
-					<p className="mt-1.5 max-w-[68ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+					<p className="mt-1.5 max-w-[68ch] text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 						{description}
 					</p>
 				)}
@@ -76,11 +76,11 @@ export function Section({
 
 	const heading = (
 		<div className="min-w-0">
-			<h2 className="text-[14px] font-semibold tracking-[-0.006em] text-slate-900 dark:text-white">
+			<h2 className="text-[0.875rem] font-semibold tracking-[-0.006em] text-slate-900 dark:text-white">
 				{title}
 			</h2>
 			{description && (
-				<p className="mt-1 max-w-[68ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+				<p className="mt-1 max-w-[68ch] text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 					{description}
 				</p>
 			)}
@@ -143,12 +143,12 @@ export function Row({
 			<div className="min-w-0">
 				<label
 					htmlFor={htmlFor}
-					className="block text-[14px] font-medium text-slate-900 dark:text-slate-100"
+					className="block text-[0.875rem] font-medium text-slate-900 dark:text-slate-100"
 				>
 					{label}
 				</label>
 				{description && (
-					<p className="mt-0.5 max-w-[62ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+					<p className="mt-0.5 max-w-[62ch] text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 						{description}
 					</p>
 				)}
@@ -170,10 +170,10 @@ export function DataRow({
 }) {
 	return (
 		<div className="flex flex-col gap-1 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-			<span className="text-[14px] font-medium text-slate-900 dark:text-slate-100">{label}</span>
+			<span className="text-[0.875rem] font-medium text-slate-900 dark:text-slate-100">{label}</span>
 			<span
-				className={`truncate text-[14px] tabular-nums text-slate-600 dark:text-slate-300 ${
-					mono ? "font-mono text-[13px]" : ""
+				className={`truncate text-[0.875rem] tabular-nums text-slate-600 dark:text-slate-300 ${
+					mono ? "font-mono text-[0.8125rem]" : ""
 				}`}
 			>
 				{value}
@@ -200,12 +200,12 @@ export function Field({
 		<div className={`space-y-2 ${className}`}>
 			<label
 				htmlFor={htmlFor}
-				className="block text-[13px] font-medium text-slate-700 dark:text-slate-300"
+				className="block text-[0.8125rem] font-medium text-slate-700 dark:text-slate-300"
 			>
 				{label}
 			</label>
 			{description && (
-				<p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+				<p className="text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 					{description}
 				</p>
 			)}
@@ -246,7 +246,7 @@ export function Notice({
 	return (
 		<div
 			role={tone === "error" ? "alert" : "status"}
-			className={`flex items-start gap-2.5 rounded-md border px-3.5 py-2.5 text-[13px] leading-relaxed ${NOTICE_TONE[tone]}`}
+			className={`flex items-start gap-2.5 rounded-md border px-3.5 py-2.5 text-[0.8125rem] leading-relaxed ${NOTICE_TONE[tone]}`}
 		>
 			{icon && <span className="mt-px shrink-0">{icon}</span>}
 			<span className="min-w-0">{children}</span>
@@ -260,11 +260,11 @@ export function SkeletonRows({ count = 3 }: { count?: number }) {
 		<div className={`border-y ${LINE} divide-y ${DIVIDE}`} aria-hidden="true">
 			{Array.from({ length: count }).map((_, i) => (
 				<div key={i} className="flex items-center justify-between gap-6 py-3.5">
-					<div className="w-full max-w-[280px] space-y-2">
-						<div className="h-[9px] w-[45%] rounded-full bg-slate-200 dark:bg-white/10" />
-						<div className="h-[9px] w-[80%] rounded-full bg-slate-100 dark:bg-white/[0.06]" />
+					<div className="w-full max-w-[17.5rem] space-y-2">
+						<div className="h-[0.5625rem] w-[45%] rounded-full bg-slate-200 dark:bg-white/10" />
+						<div className="h-[0.5625rem] w-[80%] rounded-full bg-slate-100 dark:bg-white/[0.06]" />
 					</div>
-					<div className="h-[18px] w-9 shrink-0 rounded-full bg-slate-100 dark:bg-white/[0.06]" />
+					<div className="h-[1.125rem] w-9 shrink-0 rounded-full bg-slate-100 dark:bg-white/[0.06]" />
 				</div>
 			))}
 		</div>
@@ -282,9 +282,9 @@ export function EmptyState({
 }) {
 	return (
 		<div className="px-6 py-14 text-center">
-			<p className="text-[14px] font-medium text-slate-700 dark:text-slate-200">{title}</p>
+			<p className="text-[0.875rem] font-medium text-slate-700 dark:text-slate-200">{title}</p>
 			{hint && (
-				<p className="mx-auto mt-1.5 max-w-[46ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+				<p className="mx-auto mt-1.5 max-w-[46ch] text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 					{hint}
 				</p>
 			)}
@@ -297,25 +297,25 @@ export function EmptyState({
 
 /** Primary action. One weight, one radius, everywhere. */
 export const btnPrimary =
-	"inline-flex h-9 items-center justify-center gap-2 rounded-md bg-slate-900 px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-slate-700 disabled:pointer-events-none disabled:opacity-40 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200";
+	"inline-flex h-9 items-center justify-center gap-2 rounded-md bg-slate-900 px-3.5 text-[0.8125rem] font-medium text-white transition-colors hover:bg-slate-700 disabled:pointer-events-none disabled:opacity-40 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200";
 
 export const btnGhost =
-	"inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white";
+	"inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-[0.8125rem] font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white";
 
 export const btnOutline =
-	"inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-200 px-3.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.12] dark:text-slate-200 dark:hover:bg-white/[0.06]";
+	"inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-200 px-3.5 text-[0.8125rem] font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40 dark:border-white/[0.12] dark:text-slate-200 dark:hover:bg-white/[0.06]";
 
 export const btnDanger =
-	"inline-flex h-9 items-center justify-center gap-2 rounded-md bg-red-600 px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-40";
+	"inline-flex h-9 items-center justify-center gap-2 rounded-md bg-red-600 px-3.5 text-[0.8125rem] font-medium text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-40";
 
 export const inputBase =
-	"h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-[14px] text-slate-900 transition-colors placeholder:text-slate-500 focus-visible:border-[#0EA5E9] dark:border-white/[0.12] dark:bg-white/[0.03] dark:text-white dark:placeholder:text-slate-400";
+	"h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-[0.875rem] text-slate-900 transition-colors placeholder:text-slate-500 focus-visible:border-[#0EA5E9] dark:border-white/[0.12] dark:bg-white/[0.03] dark:text-white dark:placeholder:text-slate-400";
 
 /** Table header cell — sentence case, not shouted small caps. */
 export const th =
-	"px-4 py-2.5 text-left text-[12px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap";
+	"px-4 py-2.5 text-left text-[0.75rem] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap";
 
-export const td = "px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300 align-middle";
+export const td = "px-4 py-3 text-[0.8125rem] text-slate-600 dark:text-slate-300 align-middle";
 
 /** Quiet status text that holds its space instead of replacing the control. */
 export function SaveState({
@@ -336,7 +336,7 @@ export function SaveState({
 	return (
 		<span
 			aria-live="polite"
-			className={`min-w-[7ch] text-right text-[13px] transition-opacity duration-200 ${
+			className={`min-w-[7ch] text-right text-[0.8125rem] transition-opacity duration-200 ${
 				state === "idle" ? "opacity-0" : "opacity-100"
 			} ${
 				state === "error"

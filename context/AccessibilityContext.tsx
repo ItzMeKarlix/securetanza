@@ -4,7 +4,22 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 
 export type DataColorPalette = "original" | "colorful";
 
-export type TextSize = "default" | "large" | "larger";
+/** Text scale as a percentage of the browser's base font size (16px = 100). */
+export const TEXT_SCALE = { min: 90, max: 150, step: 5, default: 100 } as const;
+
+/**
+ * Parse a stored text scale. Accepts the current numeric form and the old
+ * three-tier values ("large" / "larger") so existing choices carry over.
+ * Always returns an in-range value on the step grid.
+ */
+export function normalizeTextScale(raw: unknown): number {
+	if (raw === "large") return 110;
+	if (raw === "larger") return 125;
+	const n = typeof raw === "number" ? raw : Number(raw);
+	if (!Number.isFinite(n)) return TEXT_SCALE.default;
+	const snapped = Math.round(n / TEXT_SCALE.step) * TEXT_SCALE.step;
+	return Math.min(TEXT_SCALE.max, Math.max(TEXT_SCALE.min, snapped));
+}
 
 interface AccessibilityContextType {
 	reduceMotion: boolean;
@@ -13,8 +28,9 @@ interface AccessibilityContextType {
 	setHighContrast: (value: boolean) => void;
 	dataColorPalette: DataColorPalette;
 	setDataColorPalette: (value: DataColorPalette) => void;
-	textSize: TextSize;
-	setTextSize: (value: TextSize) => void;
+	/** Percentage, TEXT_SCALE.min..TEXT_SCALE.max. */
+	textScale: number;
+	setTextScale: (value: number) => void;
 }
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
@@ -42,7 +58,8 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 	const [reduceMotion, setReduceMotion] = useState(false);
 	const [highContrast, setHighContrast] = useState(false);
 	const [dataColorPalette, setDataColorPalette] = useState<DataColorPalette>("original");
-	const [textSize, setTextSize] = useState<TextSize>("default");
+	const [textScale, setTextScaleState] = useState<number>(TEXT_SCALE.default);
+	const setTextScale = (value: number) => setTextScaleState(normalizeTextScale(value));
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
@@ -62,11 +79,8 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 			setHighContrast(true);
 		}
 
-		const storedTextSize = localStorage.getItem(A11Y_STORAGE_KEYS.textSize);
 		setDataColorPalette(localStorage.getItem(A11Y_STORAGE_KEYS.dataColorPalette) === "colorful" ? "colorful" : "original");
-		if (storedTextSize === "large" || storedTextSize === "larger") {
-			setTextSize(storedTextSize);
-		}
+		setTextScaleState(normalizeTextScale(localStorage.getItem(A11Y_STORAGE_KEYS.textSize) ?? TEXT_SCALE.default));
 	}, []);
 
 	// Applied independently (not as one combined effect) so toggling any single
@@ -91,9 +105,11 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		if (!mounted) return;
-		document.documentElement.setAttribute("data-text-size", textSize);
-		localStorage.setItem(A11Y_STORAGE_KEYS.textSize, textSize);
-	}, [textSize, mounted]);
+		// Scaling the root font size reaches everything sized in rem.
+		document.documentElement.style.fontSize =
+			textScale === TEXT_SCALE.default ? "" : `${textScale}%`;
+		localStorage.setItem(A11Y_STORAGE_KEYS.textSize, String(textScale));
+	}, [textScale, mounted]);
 
 	const value: AccessibilityContextType = {
 		reduceMotion,
@@ -102,8 +118,8 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 		setHighContrast,
 		dataColorPalette,
 		setDataColorPalette,
-		textSize,
-		setTextSize,
+		textScale,
+		setTextScale,
 	};
 
 	return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;

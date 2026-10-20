@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, invalidateSessionCache } from '@/lib/auth';
+import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
-import { hash } from 'bcryptjs';
 import { z } from 'zod';
 
 const updateUserSchema = z.object({
   fullName: z.string().min(1).optional(),
-  password: z.string().min(6).optional(),
   permissionIds: z.array(z.number().int().positive()).optional(),
 });
 
@@ -43,6 +42,19 @@ export async function PUT(
       );
     }
 
+    if (validatedData.permissionIds) {
+      const selected = await prisma.permission.findMany({
+        where: { id: { in: validatedData.permissionIds } },
+      });
+      if (selected.length !== new Set(validatedData.permissionIds).size) {
+        return NextResponse.json({ error: 'Unknown permission selected' }, { status: 400 });
+      }
+      const roleError = validateRolePermissions(selected.map(p => p.permissionName));
+      if (roleError) {
+        return NextResponse.json({ error: roleError }, { status: 400 });
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
 
@@ -50,9 +62,6 @@ export async function PUT(
       updateData.fullName = validatedData.fullName;
     }
 
-    if (validatedData.password) {
-      updateData.passwordHash = await hash(validatedData.password, 10);
-    }
 
     // Update user
     const updatedUser = await prisma.user.update({

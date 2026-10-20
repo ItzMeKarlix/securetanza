@@ -2,6 +2,7 @@ import { DocsSectionItem } from "./docs-types";
 import { UserRoleType } from "@/lib/tour/steps";
 import {
   isAdminUser,
+  canOperate,
   hasMapAccess,
   hasCasesAccess,
   hasAnalyticsAccess,
@@ -53,19 +54,19 @@ export function getRoleBadge(role: UserRoleType): RoleBadgeInfo {
       };
     case "operational_officer":
       return {
-        label: "Operational Officer",
-        badge: "Tactical Clearance",
-        shortLabel: "Officer",
+        label: "Member",
+        badge: "Operational Clearance",
+        shortLabel: "Member",
         badgeClass:
           "text-sky-700 bg-sky-50 dark:text-sky-300 dark:bg-sky-950/60 border-sky-200 dark:border-sky-800",
-        description: "Tactical GIS mapping, blotter dossiers, analytics, and field reporting.",
+        description: "Day-to-day operations: mapping, cases, analytics, uploads and exports. No audit logs, security or backups.",
       };
     case "privileged_user":
     default:
       return {
-        label: "Privileged Analyst / Viewer",
+        label: "Privileged User",
         badge: "Analyst Clearance",
-        shortLabel: "Analyst",
+        shortLabel: "Privileged",
         badgeClass:
           "text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800",
         description: "Granular access to authorized mapping, cases, or analytical dashboards.",
@@ -78,7 +79,7 @@ export function getRoleBadge(role: UserRoleType): RoleBadgeInfo {
  */
 export function hasUploadAccess(permissions: string[], role: UserRoleType): boolean {
   if (role === "admin") return true;
-  return permissions.includes("admin") || permissions.includes("admin_operational_officer");
+  return canOperate(permissions);
 }
 
 /**

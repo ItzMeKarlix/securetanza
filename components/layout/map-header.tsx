@@ -9,7 +9,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import UploadModal from "./upload-modal";
 import UserMenu from "./user-menu";
-import { getDefaultRouteForUser } from "@/lib/auth-routes";
+import { canOperate, getDefaultRouteForUser } from "@/lib/auth-routes";
 
 interface MapHeaderProps {
   isVisible: boolean;
@@ -73,7 +73,7 @@ export default function MapHeader({ isVisible }: MapHeaderProps) {
   const filteredNavItems = navItems.filter((item) => {
     if (!user) return false;
     // Admin and operational officer have access to standard tabs
-    if (user.permissions.includes("admin_operational_officer") || user.permissions.includes("admin") || user.permissions.includes("operational_officer")) {
+    if (canOperate(user.permissions)) {
       return true;
     }
     // Check specific module permission
@@ -150,8 +150,8 @@ export default function MapHeader({ isVisible }: MapHeaderProps) {
 
         {/* Right Side Actions */}
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          {/* Upload Button - Admin Only */}
-          {user && (user.permissions.includes("admin_operational_officer") || user.permissions.includes("admin")) && (
+          {/* Upload Button - Admin and Member */}
+          {user && canOperate(user.permissions) && (
             <button
               onClick={() => setShowUploadModal(true)}
               data-tour="upload-data"

@@ -169,14 +169,14 @@ Enter `1`, `2`, `3`, `4`, `5`, `NT`, or `NA` in Rating. Put screenshots, sanitiz
 | ID | Evaluation statement | Check / source | Rating | Evidence / remarks |
 | --- | --- | --- | --- | --- |
 | F01 | Account-number/password sign-in, session recognition and manual sign-out work correctly. | Valid/invalid login; reload; protected page after logout. S01. | ____ | ____ |
-| F02 | A user with a temporary password must complete the password-change flow before normal application use. | Compare first sign-in, successful change and rejected inputs. S01–S02. | ____ | ____ |
+| F02 | A user with a temporary password must complete the password-change flow before normal application use. | Compare first sign-in, successful change and rejected inputs (rule failures, reuse of the temporary password, common/guessable and known-breached passwords). S01–S02. | ____ | ____ |
 | F03 | Repeated wrong passwords produce an accurate remaining-attempt message and lock the account after three consecutive failures. | Test failure/reset/locked-account paths. S01. | ____ | ____ |
 | F04 | An authorized administrator can unlock a test account and issue temporary credentials that require a new password. | Old password fails; temporary password works; audit event exists. S01, S03. | ____ | ____ |
 | F05 | Granted permissions determine available modules and prevent access to restricted functions through direct requests. | Check navigation, `/`, `/map`, dashboard/config pages and underlying APIs separately. S02–S03, S24. | ____ | ____ |
 | F06 | Idle preferences, countdown warning, Stay signed in and automatic logout behave according to the chosen inactivity duration. | Include background/resumed tabs and session polling. S02–S03. | ____ | ____ |
-| F07 | Profile identity and password settings display accurate account data and validate password updates. | Check current password, new-password rules/confirmation, invalid timer and saved timer. S03. | ____ | ____ |
+| F07 | Profile identity and password settings display accurate account data and validate password updates. | Check current password, new-password rules/confirmation (common/guessable and known-breached passwords rejected), invalid timer and saved timer. S03. | ____ | ____ |
 | F08 | User administration correctly creates, lists, edits and revokes personnel access and assigns permission sets. | Include credential copy/display, pagination, self-action protections and session refresh after revocation. S03. | ____ | ____ |
-| F09 | Appearance and accessibility settings apply correctly across the application. | Light/dark/system, Original/Colorful, reduced motion, high contrast, three text sizes and reload. S04. | ____ | ____ |
+| F09 | Appearance and accessibility settings apply correctly across the application. | Light/dark/system, Original/Colorful, reduced motion, high contrast, text scale 90–150% and reload. S04. | ____ | ____ |
 | F10 | The saved default landing page is respected when permitted and safely falls back when access changes. | Save/relogin; remove the preferred module's permission. S02, S04. | ____ | ____ |
 
 #### GIS, temporal filtering and comparison

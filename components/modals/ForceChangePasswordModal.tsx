@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Shield, Eye, EyeOff, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Shield, Eye, EyeOff, Lock, AlertCircle, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { COMMON_PASSWORD_LABEL, passwordUserInputs } from "@/lib/password-policy";
+import { usePasswordCheck } from "@/hooks/usePasswordCheck";
 
 interface ForceChangePasswordModalProps {
   onSuccess: () => void;
@@ -13,7 +15,7 @@ interface ForceChangePasswordModalProps {
 
 export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModalProps) {
   const router = useRouter();
-  const { refreshSession } = useAuth();
+  const { user, refreshSession } = useAuth();
   
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,15 +24,10 @@ export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModal
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const requirements = [
-    { label: "At least 8 characters", regex: /.{8,}/ },
-    { label: "Uppercase & lowercase letters", regex: /(?=.*[a-z])(?=.*[A-Z])/ },
-    { label: "At least one number", regex: /(?=.*[0-9])/ },
-    { label: "At least one special character", regex: /(?=.*[^A-Za-z0-9])/ },
-  ];
-
-  const score = requirements.filter(req => req.regex.test(newPassword)).length;
-  const isStrong = score === requirements.length;
+  const passwordInputs = useMemo(() => passwordUserInputs(user), [user]);
+  const passwordCheck = usePasswordCheck(newPassword, passwordInputs);
+  const { score } = passwordCheck;
+  const isStrong = passwordCheck.allPassed;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,15 +140,33 @@ export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModal
                     ))}
                   </div>
                   <div className="space-y-1.5">
-                    {requirements.map((req, i) => {
-                      const passed = req.regex.test(newPassword);
-                      return (
-                        <div key={i} className={`flex items-center gap-2 text-xs transition-colors duration-300 ${passed ? "text-emerald-400" : "text-slate-500"}`}>
-                          <CheckCircle2 className={`w-3.5 h-3.5 ${passed ? "opacity-100" : "opacity-30"}`} />
-                          <span>{req.label}</span>
-                        </div>
-                      );
-                    })}
+                    {passwordCheck.rules.map(({ label, passed }) => (
+                      <div key={label} className={`flex items-center gap-2 text-xs transition-colors duration-300 ${passed ? "text-emerald-400" : "text-slate-500"}`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${passed ? "opacity-100" : "opacity-30"}`} />
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                    <div
+                      className={`flex items-start gap-2 text-xs transition-colors duration-300 ${
+                        passwordCheck.common === "ok"
+                          ? "text-emerald-400"
+                          : passwordCheck.common === "weak"
+                          ? "text-red-400"
+                          : "text-slate-500"
+                      }`}
+                    >
+                      {passwordCheck.common === "checking" ? (
+                        <Loader2 className="mt-px w-3.5 h-3.5 shrink-0 animate-spin opacity-60" />
+                      ) : passwordCheck.common === "weak" ? (
+                        <XCircle className="mt-px w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <CheckCircle2 className={`mt-px w-3.5 h-3.5 shrink-0 ${passwordCheck.common === "ok" ? "opacity-100" : "opacity-30"}`} />
+                      )}
+                      <span>
+                        {COMMON_PASSWORD_LABEL}
+                        {passwordCheck.warning && <span className="block text-slate-400">{passwordCheck.warning}</span>}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

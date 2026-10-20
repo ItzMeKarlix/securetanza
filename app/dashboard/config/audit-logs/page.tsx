@@ -355,7 +355,7 @@ function AuditLogs() {
 
 			{/* The summary line replaces four decorative metric tiles: same numbers,
 			    but each segment narrows the table beneath it. */}
-			<div className="flex flex-wrap items-center gap-x-1 gap-y-2 border-y border-slate-200 py-2.5 text-[13px] dark:border-white/[0.07]">
+			<div className="flex flex-wrap items-center gap-x-1 gap-y-2 border-y border-slate-200 py-2.5 text-[0.8125rem] dark:border-white/[0.07]">
 				<SummaryChip
 					active={activeFilter === "All" && focus === null}
 					count={unifiedLogs.length}
@@ -387,7 +387,7 @@ function AuditLogs() {
 				/>
 				<button
 					onClick={loadLogs}
-					className={cn(btnGhost, "ml-auto h-7 px-2 text-[12.5px]")}
+					className={cn(btnGhost, "ml-auto h-7 px-2 text-[0.7812rem]")}
 					title="Reload the audit trail"
 				>
 					<RefreshCw className={`h-3.5 w-3.5 ${logsLoading ? "animate-spin" : ""}`} /> Refresh
@@ -407,7 +407,7 @@ function AuditLogs() {
 									key={filter}
 									onClick={() => selectAction(filter)}
 									aria-pressed={activeFilter === filter && focus === null}
-									className={`h-7 rounded-md px-2.5 text-[12.5px] font-medium transition-colors ${
+									className={`h-7 rounded-md px-2.5 text-[0.7812rem] font-medium transition-colors ${
 										activeFilter === filter && focus === null
 											? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
 											: "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
@@ -428,7 +428,7 @@ function AuditLogs() {
 									setSearchQuery(e.target.value);
 									setCurrentPage(1);
 								}}
-								className={cn(inputBase, "h-8 pl-8 text-[13px]")}
+								className={cn(inputBase, "h-8 pl-8 text-[0.8125rem]")}
 							/>
 						</div>
 					</div>
@@ -443,21 +443,21 @@ function AuditLogs() {
 								value={dateFrom}
 								max={dateTo || undefined}
 								onChange={(e) => setRangeEdge("from", e.target.value)}
-								className={cn(inputBase, "h-8 w-[148px] text-[13px] tabular-nums")}
+								className={cn(inputBase, "h-8 w-[9.25rem] text-[0.8125rem] tabular-nums")}
 							/>
-							<span className="text-[13px] text-slate-500 dark:text-slate-400">to</span>
+							<span className="text-[0.8125rem] text-slate-500 dark:text-slate-400">to</span>
 							<input
 								type="date"
 								aria-label="To date"
 								value={dateTo}
 								min={dateFrom || undefined}
 								onChange={(e) => setRangeEdge("to", e.target.value)}
-								className={cn(inputBase, "h-8 w-[148px] text-[13px] tabular-nums")}
+								className={cn(inputBase, "h-8 w-[9.25rem] text-[0.8125rem] tabular-nums")}
 							/>
 							{hasDateRange && (
 								<button
 									onClick={() => applyPreset({ key: "all", days: null })}
-									className={cn(btnGhost, "h-7 px-2 text-[12.5px]")}
+									className={cn(btnGhost, "h-7 px-2 text-[0.7812rem]")}
 								>
 									<X className="h-3.5 w-3.5" /> Clear
 								</button>
@@ -469,7 +469,7 @@ function AuditLogs() {
 									key={preset.key}
 									onClick={() => applyPreset(preset)}
 									aria-pressed={activePreset === preset.key}
-									className={`h-7 rounded-md px-2.5 text-[12.5px] font-medium transition-colors ${
+									className={`h-7 rounded-md px-2.5 text-[0.7812rem] font-medium transition-colors ${
 										activePreset === preset.key
 											? "bg-slate-100 text-slate-900 dark:bg-white/[0.09] dark:text-white"
 											: "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
@@ -484,7 +484,7 @@ function AuditLogs() {
 					{/* Table */}
 					<Panel>
 						<div className="overflow-x-auto">
-							<table className="w-full min-w-[860px]">
+							<table className="w-full min-w-[53.75rem]">
 								<thead>
 									<tr className="border-b border-slate-200 dark:border-white/[0.07]">
 										<th className={th}>User</th>
@@ -501,7 +501,7 @@ function AuditLogs() {
 										Array.from({ length: 6 }).map((_, i) => (
 											<tr key={i} aria-hidden="true">
 												<td colSpan={7} className="px-4 py-3">
-													<div className="h-[11px] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
+													<div className="h-[0.6875rem] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
 												</td>
 											</tr>
 										))
@@ -539,7 +539,7 @@ function AuditLogs() {
 
 						{/* Pagination */}
 						<div className="flex flex-col gap-2.5 border-t border-slate-200 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.07]">
-							<span className="text-[12.5px] tabular-nums text-slate-500 dark:text-slate-400">
+							<span className="text-[0.7812rem] tabular-nums text-slate-500 dark:text-slate-400">
 								{filteredLogs.length > 0
 									? `${Math.min((currentPage - 1) * rowsPerPage + 1, filteredLogs.length)} to ${Math.min(
 											currentPage * rowsPerPage,
@@ -549,7 +549,7 @@ function AuditLogs() {
 							</span>
 							<div className="flex items-center gap-4">
 								<div className="flex items-center gap-1.5">
-									<span className="text-[12.5px] text-slate-500 dark:text-slate-400">
+									<span className="text-[0.7812rem] text-slate-500 dark:text-slate-400">
 										Rows per page
 									</span>
 									<Select
@@ -561,7 +561,7 @@ function AuditLogs() {
 									>
 										<SelectTrigger
 											aria-label="Rows per page"
-											className="h-7 w-[62px] border-slate-200 bg-transparent text-[12.5px] dark:border-white/[0.12]"
+											className="h-7 w-[3.875rem] border-slate-200 bg-transparent text-[0.7812rem] dark:border-white/[0.12]"
 										>
 											<SelectValue placeholder={rowsPerPage.toString()} />
 										</SelectTrigger>
@@ -574,7 +574,7 @@ function AuditLogs() {
 										</SelectContent>
 									</Select>
 								</div>
-								<span className="text-[12.5px] tabular-nums text-slate-500 dark:text-slate-400">
+								<span className="text-[0.7812rem] tabular-nums text-slate-500 dark:text-slate-400">
 									Page {currentPage} of {Math.max(1, totalPages)}
 								</span>
 								<div className="flex items-center gap-0.5">
@@ -731,13 +731,13 @@ function LogRow({
 					{log.action}
 				</span>
 			</td>
-			<td className={cn(td, "font-mono text-[12px] whitespace-nowrap text-slate-500 dark:text-slate-400")}>
+			<td className={cn(td, "font-mono text-[0.75rem] whitespace-nowrap text-slate-500 dark:text-slate-400")}>
 				#{log.id.toString().substring(0, 8)}
 			</td>
 			<td className={cn(td, "max-w-xs")}>
 				<div className="truncate font-medium text-slate-900 dark:text-white">{log.details}</div>
 				{log.errorMessage && (
-					<div className="mt-0.5 truncate text-[12.5px] text-red-600 dark:text-red-400">
+					<div className="mt-0.5 truncate text-[0.7812rem] text-red-600 dark:text-red-400">
 						{log.errorMessage}
 					</div>
 				)}
@@ -770,13 +770,13 @@ function AuditCard({ log }: { log: UnifiedLog }) {
 				<span className="text-slate-500 dark:text-slate-400">
 					{ACTION_ICON[log.action] ?? <Info className="h-3.5 w-3.5" />}
 				</span>
-				<span className="text-[13px] font-medium text-slate-900 dark:text-white">
+				<span className="text-[0.8125rem] font-medium text-slate-900 dark:text-white">
 					{log.action} Event
 				</span>
 			</div>
 
-			<div className="max-h-[260px] space-y-3 overflow-y-auto overscroll-contain px-4 py-3">
-				<p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+			<div className="max-h-[16.25rem] space-y-3 overflow-y-auto overscroll-contain px-4 py-3">
+				<p className="text-[0.8125rem] leading-relaxed text-slate-700 dark:text-slate-300">
 					{log.details}
 				</p>
 
@@ -809,7 +809,7 @@ function AuditCard({ log }: { log: UnifiedLog }) {
 				{log.resource && (
 					<div>
 						<FieldLabel>Resource</FieldLabel>
-						<code className="mt-0.5 block truncate font-mono text-[12px] text-[#0369A1] dark:text-[#7DD3FC]">
+						<code className="mt-0.5 block truncate font-mono text-[0.75rem] text-[#0369A1] dark:text-[#7DD3FC]">
 							{log.resource}
 						</code>
 					</div>
@@ -845,14 +845,14 @@ function AuditCard({ log }: { log: UnifiedLog }) {
 				{log.errorMessage && (
 					<div className="rounded-md border border-red-200 px-2.5 py-2 dark:border-red-500/25">
 						<FieldLabel>Error</FieldLabel>
-						<p className="mt-0.5 text-[12.5px] leading-relaxed text-red-700 dark:text-red-400">
+						<p className="mt-0.5 text-[0.7812rem] leading-relaxed text-red-700 dark:text-red-400">
 							{log.errorMessage}
 						</p>
 					</div>
 				)}
 			</div>
 
-			<div className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-[12px] text-slate-500 dark:border-white/[0.07] dark:text-slate-400">
+			<div className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-[0.75rem] text-slate-500 dark:border-white/[0.07] dark:text-slate-400">
 				<span className="font-mono">#{log.id.toString()}</span>
 				<span>Click row for details</span>
 			</div>
@@ -862,7 +862,7 @@ function AuditCard({ log }: { log: UnifiedLog }) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
 	return (
-		<p className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400">{children}</p>
+		<p className="text-[0.7188rem] font-medium text-slate-500 dark:text-slate-400">{children}</p>
 	);
 }
 
@@ -879,12 +879,12 @@ function AuditField({
 }) {
 	return (
 		<div className="min-w-0">
-			<p className="flex items-center gap-1 text-[11.5px] font-medium text-slate-500 dark:text-slate-400">
+			<p className="flex items-center gap-1 text-[0.7188rem] font-medium text-slate-500 dark:text-slate-400">
 				{icon}
 				{label}
 			</p>
 			<p
-				className={`mt-0.5 truncate text-[12.5px] text-slate-700 dark:text-slate-300 ${
+				className={`mt-0.5 truncate text-[0.7812rem] text-slate-700 dark:text-slate-300 ${
 					mono ? "font-mono" : ""
 				}`}
 			>
@@ -918,10 +918,10 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 							{ACTION_ICON[log.action] ?? <Info className="h-4 w-4" />}
 						</span>
 						<div>
-							<h2 className="text-[15px] font-semibold tracking-[-0.008em] text-slate-900 dark:text-white">
+							<h2 className="text-[0.9375rem] font-semibold tracking-[-0.008em] text-slate-900 dark:text-white">
 								{log.action} Event
 							</h2>
-							<p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
+							<p className="mt-0.5 text-[0.8125rem] text-slate-500 dark:text-slate-400">
 								Detailed audit log record
 							</p>
 						</div>
@@ -936,7 +936,7 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 				</div>
 
 				<div className="settings-scroll flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
-					<p className="text-[15px] leading-relaxed text-slate-800 dark:text-slate-200">
+					<p className="text-[0.9375rem] leading-relaxed text-slate-800 dark:text-slate-200">
 						{log.details}
 					</p>
 
@@ -966,7 +966,7 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 					{log.resource && (
 						<div>
 							<FieldLabel>Target Resource</FieldLabel>
-							<code className="mt-1 block font-mono text-[13px] break-all text-[#0369A1] dark:text-[#7DD3FC]">
+							<code className="mt-1 block font-mono text-[0.8125rem] break-all text-[#0369A1] dark:text-[#7DD3FC]">
 								{log.resource}
 							</code>
 						</div>
@@ -975,7 +975,7 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 					{log.userAgent && (
 						<div>
 							<FieldLabel>User Agent</FieldLabel>
-							<code className="mt-1 block font-mono text-[12px] leading-relaxed break-all text-slate-500 dark:text-slate-400">
+							<code className="mt-1 block font-mono text-[0.75rem] leading-relaxed break-all text-slate-500 dark:text-slate-400">
 								{log.userAgent}
 							</code>
 						</div>
@@ -998,10 +998,10 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 
 					{log.errorMessage && (
 						<div className="rounded-md border border-red-200 px-4 py-3 dark:border-red-500/25">
-							<p className="flex items-center gap-1.5 text-[11.5px] font-medium text-red-600 dark:text-red-400">
+							<p className="flex items-center gap-1.5 text-[0.7188rem] font-medium text-red-600 dark:text-red-400">
 								<AlertCircle className="h-3.5 w-3.5" /> Error Details
 							</p>
-							<p className="mt-1.5 text-[13px] leading-relaxed whitespace-pre-wrap text-red-700 dark:text-red-400">
+							<p className="mt-1.5 text-[0.8125rem] leading-relaxed whitespace-pre-wrap text-red-700 dark:text-red-400">
 								{log.errorMessage}
 							</p>
 						</div>
@@ -1009,12 +1009,12 @@ function AuditDetail({ log, onClose }: { log: UnifiedLog; onClose: () => void })
 				</div>
 
 				<div className="flex flex-none items-center justify-between border-t border-slate-200 px-6 py-3 dark:border-white/[0.07]">
-					<span className="font-mono text-[12px] text-slate-500 dark:text-slate-400">
+					<span className="font-mono text-[0.75rem] text-slate-500 dark:text-slate-400">
 						#{log.id.toString()}
 					</span>
 					<button
 						onClick={onClose}
-						className="inline-flex h-8 items-center rounded-md bg-slate-900 px-3 text-[13px] font-medium text-white transition-colors hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+						className="inline-flex h-8 items-center rounded-md bg-slate-900 px-3 text-[0.8125rem] font-medium text-white transition-colors hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
 					>
 						Close
 					</button>
@@ -1036,10 +1036,10 @@ function DetailField({
 }) {
 	return (
 		<div className="min-w-0">
-			<dt className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400">{label}</dt>
+			<dt className="text-[0.7188rem] font-medium text-slate-500 dark:text-slate-400">{label}</dt>
 			<dd
-				className={`mt-1 truncate text-[13px] text-slate-800 dark:text-slate-200 ${
-					mono ? "font-mono text-[12.5px]" : ""
+				className={`mt-1 truncate text-[0.8125rem] text-slate-800 dark:text-slate-200 ${
+					mono ? "font-mono text-[0.7812rem]" : ""
 				}`}
 				title={typeof value === "string" ? value : undefined}
 			>

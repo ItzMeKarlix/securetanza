@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { hash } from 'bcryptjs';
 import { z } from 'zod';
@@ -9,7 +10,6 @@ import { randomBytes } from 'crypto';
 // Validation schema for user creation/update
 const userSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
   permissionIds: z.array(z.number().int().positive()).min(1, 'At least one permission is required'),
 });
 
@@ -105,11 +105,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = userSchema.parse(body);
 
+    const selected = await prisma.permission.findMany({
+      where: { id: { in: validatedData.permissionIds } },
+    });
+    if (selected.length !== new Set(validatedData.permissionIds).size) {
+      return NextResponse.json({ error: 'Unknown permission selected' }, { status: 400 });
+    }
+    const roleError = validateRolePermissions(selected.map(p => p.permissionName));
+    if (roleError) {
+      return NextResponse.json({ error: roleError }, { status: 400 });
+    }
+
     // Automatically generate next account number
     const accountNumber = await generateNextAccountNumber();
 
-    // Auto-generate temporary password if none provided
-    const tempPassword = validatedData.password || generateSecurePassword();
+    // Always a generated temporary password; the user sets their own on first sign-in
+    const tempPassword = generateSecurePassword();
 
     // Hash password
     const passwordHash = await hash(tempPassword, 10);

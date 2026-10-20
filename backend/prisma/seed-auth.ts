@@ -26,6 +26,7 @@ async function main() {
   // 1. Create Granular Permissions
   const permissionsData = [
     { name: 'admin_operational_officer', desc: 'Full administrative and operational control over the system.' },
+    { name: 'operational_officer', desc: 'Member: day-to-day operations (map, cases, analytics, uploads, exports) without audit logs, security or backups.' },
     { name: 'privileged_map_view', desc: 'Authorized to view and interact with the Interactive Tanza Map and analytics.' },
     { name: 'privileged_analytics_view', desc: 'Access to analytics dashboards, visualizations, and trend analysis.' },
     { name: 'privileged_cases_view', desc: 'Access to the Cases Dashboard for searching and filtering records.' },

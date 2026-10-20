@@ -61,7 +61,12 @@ export default function RootLayout({
                 document.documentElement.setAttribute('data-color-palette', palette === 'colorful' ? 'colorful' : 'original');
 
                 var ts = localStorage.getItem('a11y-text-size');
-                document.documentElement.setAttribute('data-text-size', (ts === 'large' || ts === 'larger') ? ts : 'default');
+                // Mirrors normalizeTextScale() in context/AccessibilityContext.tsx.
+                var scale = ts === 'large' ? 110 : ts === 'larger' ? 125 : Number(ts);
+                if (isFinite(scale) && ts !== null) {
+                  scale = Math.min(150, Math.max(90, Math.round(scale / 5) * 5));
+                  if (scale !== 100) document.documentElement.style.fontSize = scale + '%';
+                }
               } catch (_) {}
             `,
 					}}

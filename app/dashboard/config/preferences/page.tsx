@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
-import { useAccessibility, type TextSize } from "@/context/AccessibilityContext";
+import { useAccessibility, TEXT_SCALE } from "@/context/AccessibilityContext";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -11,24 +11,26 @@ import {
 	Section,
 	Row,
 	Rows,
-	btnPrimary,
 	PAGE_FORM,
 	SplitLayout,
 } from "../_components/settings-ui";
 import { cn } from "@/lib/utils";
+import { UnsavedChangesBar } from "../_components/unsaved-changes";
 import { landingOptions, themes } from "../_components/preview-thumbnails";
 import { hasMapAccess, hasCasesAccess, hasAnalyticsAccess } from "@/lib/auth-routes";
 
-const TEXT_SIZES: { id: TextSize; label: string }[] = [
-	{ id: "default", label: "Default" },
-	{ id: "large", label: "Large" },
-	{ id: "larger", label: "Larger" },
+/** Quick picks along the scale; the slider covers every step in between. */
+const TEXT_SCALE_PRESETS = [
+	{ value: 100, label: "Default" },
+	{ value: 115, label: "Large" },
+	{ value: 130, label: "Larger" },
+	{ value: 150, label: "Largest" },
 ];
 
 export default function PreferencesPage() {
 	const { theme, setTheme } = useTheme();
 	const { user, refreshSession } = useAuth();
-	const { reduceMotion, setReduceMotion, highContrast, setHighContrast, dataColorPalette, setDataColorPalette, textSize, setTextSize } =
+	const { reduceMotion, setReduceMotion, highContrast, setHighContrast, dataColorPalette, setDataColorPalette, textScale, setTextScale } =
 		useAccessibility();
 	const [savedSync, setSavedSync] = useState(false);
 	const [draftSync, setDraftSync] = useState(false);
@@ -219,7 +221,7 @@ export default function PreferencesPage() {
 					<Rows>
 						<Row label="Map and graph palette" description="Original keeps the current colors. Colorful adds distinct crime colors, teal charts, and purple heatmaps." htmlFor="data-color-palette">
 							<Select value={dataColorPalette} onValueChange={(value) => setDataColorPalette(value === "colorful" ? "colorful" : "original")}>
-								<SelectTrigger id="data-color-palette" aria-label="Map and graph palette" className="w-[220px] max-w-full">
+								<SelectTrigger id="data-color-palette" aria-label="Map and graph palette" className="w-[13.75rem] max-w-full">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -265,27 +267,7 @@ export default function PreferencesPage() {
 					</div>
 
 					<div data-tour="a11y-text-size" className="mt-5">
-						<span className="block text-[13px] font-medium text-slate-700 dark:text-slate-300">
-							Text Size
-						</span>
-						<div role="radiogroup" aria-label="Text size" className="mt-2 flex max-w-[380px] gap-1.5">
-							{TEXT_SIZES.map(({ id, label }) => (
-								<button
-									key={id}
-									type="button"
-									role="radio"
-									aria-checked={textSize === id}
-									onClick={() => setTextSize(id)}
-									className={`h-9 flex-1 rounded-md border text-[13px] font-medium transition-colors ${
-										textSize === id
-											? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900"
-											: "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-white/[0.12] dark:text-slate-300 dark:hover:border-white/25"
-									}`}
-								>
-									{label}
-								</button>
-							))}
-						</div>
+						<TextScaleControl value={textScale} onChange={setTextScale} />
 					</div>
 				</Section>
 			</div>
@@ -317,22 +299,11 @@ export default function PreferencesPage() {
 
 			</SplitLayout>
 
-			{hasUnsavedChanges && (
-				<div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-					<div className="flex items-center gap-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-full py-2 pl-6 pr-2">
-						<span className="text-[14px] font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-							Unsaved changes
-						</span>
-						<button
-							onClick={handleSave}
-							disabled={landingState === "saving"}
-							className={cn(btnPrimary, "rounded-full h-9 px-6 shadow-sm text-[13.5px] font-semibold")}
-						>
-							{landingState === "saving" ? "Saving..." : "Save Changes"}
-						</button>
-					</div>
-				</div>
-			)}
+			<UnsavedChangesBar
+				show={hasUnsavedChanges}
+				saving={landingState === "saving"}
+				onSave={handleSave}
+			/>
 		</div>
 	);
 }
@@ -375,7 +346,7 @@ function PickerTile({
 					}`}
 				/>
 				<span
-					className={`truncate text-[13px] font-medium ${
+					className={`truncate text-[0.8125rem] font-medium ${
 						selected
 							? "text-[#0369A1] dark:text-[#7DD3FC]"
 							: "text-slate-700 dark:text-slate-200"
@@ -384,7 +355,95 @@ function PickerTile({
 					{label}
 				</span>
 			</div>
-			<p className="mt-0.5 pl-3 text-[12.5px] text-slate-500 dark:text-slate-400">{caption}</p>
+			<p className="mt-0.5 pl-3 text-[0.7812rem] text-slate-500 dark:text-slate-400">{caption}</p>
 		</button>
+	);
+}
+
+/**
+ * Granular text scale: a stepped slider with -/+ for precise nudges and a few
+ * presets. Every value is clamped by the context, so nothing here can push
+ * the interface past the range the layouts are built to hold.
+ */
+function TextScaleControl({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+	const { min, max, step } = TEXT_SCALE;
+	const stepBtn =
+		"inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-35 dark:border-white/[0.12] dark:text-slate-300 dark:hover:border-white/25 dark:hover:text-white";
+
+	return (
+		<div className="max-w-[30rem]">
+			<div className="flex items-baseline justify-between gap-3">
+				<label
+					htmlFor="a11y-text-scale"
+					className="text-[0.8125rem] font-medium text-slate-700 dark:text-slate-300"
+				>
+					Text Size
+				</label>
+				<span className="text-[0.8125rem] font-medium tabular-nums text-slate-900 dark:text-white">
+					{value}%
+				</span>
+			</div>
+
+			<div className="mt-2 flex items-center gap-2">
+				<button
+					type="button"
+					onClick={() => onChange(value - step)}
+					disabled={value <= min}
+					aria-label="Decrease text size"
+					className={stepBtn}
+				>
+					<span aria-hidden="true" className="text-[0.75rem] font-semibold">A</span>
+				</button>
+				<input
+					id="a11y-text-scale"
+					type="range"
+					min={min}
+					max={max}
+					step={step}
+					value={value}
+					onChange={(e) => onChange(Number(e.target.value))}
+					aria-valuetext={`${value} percent`}
+					className="h-9 min-w-0 flex-1 cursor-pointer accent-[#0EA5E9]"
+				/>
+				<button
+					type="button"
+					onClick={() => onChange(value + step)}
+					disabled={value >= max}
+					aria-label="Increase text size"
+					className={stepBtn}
+				>
+					<span aria-hidden="true" className="text-[1.0625rem] font-semibold">A</span>
+				</button>
+			</div>
+
+			<div role="group" aria-label="Text size presets" className="mt-2.5 flex flex-wrap gap-1.5">
+				{TEXT_SCALE_PRESETS.map((preset) => {
+					const active = value === preset.value;
+					return (
+						<button
+							key={preset.value}
+							type="button"
+							aria-pressed={active}
+							onClick={() => onChange(preset.value)}
+							className={cn(
+								"h-8 rounded-md border px-2.5 text-[0.78125rem] font-medium transition-colors",
+								active
+									? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900"
+									: "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-white/[0.12] dark:text-slate-300 dark:hover:border-white/25"
+							)}
+						>
+							{preset.label}
+							<span className={cn("ml-1 tabular-nums", active ? "opacity-70" : "text-slate-400 dark:text-slate-500")}>
+								{preset.value}%
+							</span>
+						</button>
+					);
+				})}
+			</div>
+
+			<p className="mt-2 text-[0.78125rem] leading-relaxed text-slate-500 dark:text-slate-400">
+				Scales text and controls together across the app, from {min}% to {max}%.
+			</p>
+		</div>
 	);
 }

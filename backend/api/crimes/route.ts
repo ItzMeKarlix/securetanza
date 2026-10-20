@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CrimeService } from '@/backend/services/crime.service';
 import { prisma } from '@/backend/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession, canOperateSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 
 // Validation schema for crime incident
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verify administrative authorization for crime incident creation
     const session = await getSession();
-    if (!session || (!session.permissions.includes('admin_operational_officer') && !session.permissions.includes('admin'))) {
+    if (!canOperateSession(session)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Administrative access required' },
         { status: 403 }

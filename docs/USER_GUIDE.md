@@ -356,7 +356,7 @@ Located at `/dashboard/config/preferences`, these settings allow officers and ad
 - **Accessibility Suite:**
   - *Reduce Motion:* Suppresses UI animations, sliding transitions, and interactive transform effects across cards, map panels, and dialogs.
   - *High Contrast:* Intensifies border borders, heightens text contrast, and adds prominent focus outlines around buttons and interactive elements for tactile control on ruggedized touchscreens.
-  - *Dynamic Text Size:* Choose between **Default**, **Large**, or **Larger** typographic scaling to ensure effortless readability on patrol vehicles, tablets, and distant monitors.
+  - *Dynamic Text Size:* Scale text from **90% to 150%** in 5% steps (slider, -/+ buttons, or the Default / Large / Larger / Largest presets) to ensure effortless readability on patrol vehicles, tablets, and distant monitors.
 - **Default Landing Page:**
   - Choose which interface opens automatically upon authentication: **GIS Crime Map**, **Executive Overview**, or **Case Blotter**.
 

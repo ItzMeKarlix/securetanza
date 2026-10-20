@@ -700,6 +700,18 @@ html[data-reduce-motion="true"] *::after {
   }
 }
 
+/* Held leave attempt with unsaved edits: a short horizontal nudge on the
+   "Unsaved changes" bar. Reduce Motion collapses it like every animation. */
+.unsaved-nudge {
+  animation: unsaved-nudge 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes unsaved-nudge {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+
 .settings-dialog {
   animation: settings-dialog-in 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -738,15 +750,9 @@ html[data-reduce-motion="true"] .settings-surface * {
    component reacts automatically without a per-component opt-in.
    ───────────────────────────────────────────────────────────── */
 
-/* Text size: a straight root font-size scale. Nearly everything in this
-   app sizes type in rem, so this alone reaches the whole app — no
-   per-component change needed. */
-html[data-text-size="large"] {
-  font-size: 112.5%; /* 16px -> 18px base */
-}
-html[data-text-size="larger"] {
-  font-size: 125%; /* 16px -> 20px base */
-}
+/* Text size is a root font-size percentage set inline on <html> by
+   AccessibilityContext (and the pre-hydration script in app/layout.tsx).
+   Anything sized in rem follows it — keep type in rem, not px. */
 
 /* High contrast: strengthen focus visibility, hairline borders/dividers, and
    muted text — the things that actually carry meaning here — by overriding

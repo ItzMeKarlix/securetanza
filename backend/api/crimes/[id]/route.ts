@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CrimeService } from '@/backend/services/crime.service';
-import { getSession } from '@/lib/auth';
+import { getSession, canOperateSession } from '@/lib/auth';
 
 const updateCrimeSchema = z.object({
   barangay: z.string().min(1).optional(),
@@ -55,7 +55,7 @@ export async function PUT(
 ) {
   try {
     const session = await getSession();
-    if (!session || !session.permissions.some(p => p === 'admin' || p === 'admin_operational_officer')) {
+    if (!canOperateSession(session)) {
       return NextResponse.json({ success: false, error: 'Administrative access required' }, { status: 403 });
     }
     const { id } = await params;
@@ -105,7 +105,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSession();
-    if (!session || !session.permissions.some(p => p === 'admin' || p === 'admin_operational_officer')) {
+    if (!canOperateSession(session)) {
       return NextResponse.json({ success: false, error: 'Administrative access required' }, { status: 403 });
     }
     const { id } = await params;

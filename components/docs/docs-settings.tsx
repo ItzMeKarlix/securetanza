@@ -53,9 +53,9 @@ export function DocsSettings({ role, permissions: propPerms }: DocsSettingsProps
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
                   <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Permission / Feature</th>
-                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Admin</th>
-                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Operational Officer</th>
-                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Privileged User</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Administrator</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Member</th>
+                  <th className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">Privileged</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
@@ -95,6 +95,12 @@ export function DocsSettings({ role, permissions: propPerms }: DocsSettingsProps
                   <td className="py-2 px-3 text-slate-400">Restricted</td>
                   <td className="py-2 px-3 text-slate-400">Restricted</td>
                 </tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Audit Logs & Backups</td>
+                  <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                  <td className="py-2 px-3 text-slate-400">Restricted</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -117,7 +123,7 @@ export function DocsSettings({ role, permissions: propPerms }: DocsSettingsProps
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Access & Security (RBAC)</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                  Provision new accounts, assign officer badge or account numbers, and designate role levels (Admin, Officer, Privileged User).
+                  Provision new accounts, assign officer badge or account numbers, and designate role levels (Administrator, Member, Privileged).
                 </p>
               </div>
               <div>
@@ -138,7 +144,7 @@ export function DocsSettings({ role, permissions: propPerms }: DocsSettingsProps
               <li><strong className="text-slate-800 dark:text-slate-200">Reduce Motion:</strong> Suppress UI animations and transitions for reduced vestibular motion.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">High Contrast:</strong> Strengthen border definitions and focus rings for maximum tactical visibility.</li>
               <li><strong className="text-slate-800 dark:text-slate-200">Data colors:</strong> Keep Original or choose Colorful for distinct crime colors, teal charts, and purple heatmaps.</li>
-              <li><strong className="text-slate-800 dark:text-slate-200">Dynamic Text Size:</strong> Choose between Default, Large, or Larger typographic scaling for optimal field readability.</li>
+              <li><strong className="text-slate-800 dark:text-slate-200">Dynamic Text Size:</strong> Scale text from 90% to 150% in 5% steps with the slider, or pick a preset (Default, Large, Larger, Largest).</li>
               <li><strong className="text-slate-800 dark:text-slate-200">Default Landing Page:</strong> Set whether login routes to the GIS Crime Map, Executive Overview, or Case Blotter.</li>
             </ul>
           </div>

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { createPortal } from "react-dom";
 import {
-	AlertCircle,
+	Check,
 	CheckCircle2,
 	Copy,
 	Edit,
@@ -21,7 +21,6 @@ import { AdminOnly } from "../_components/settings-shell";
 import {
 	EmptyState,
 	Field,
-	Notice,
 	PageHeader,
 	Panel,
 	Section,
@@ -33,7 +32,27 @@ import {
 	th,
 	PAGE_TABLE,
 } from "../_components/settings-ui";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+	ACCESS_ROLES,
+	MEMBER_PERMISSION,
+	MODULE_PRIVILEGES,
+	getAccessRole,
+	type AccessRole,
+} from "@/lib/auth-routes";
+
+const ADMIN_PERMISSION = "admin_operational_officer";
+const ROLE_ORDER: AccessRole[] = ["admin", "member", "privileged"];
+
+interface AccessForm {
+	fullName: string;
+	role: AccessRole;
+	/** Module privilege permission ids - only used when role is "privileged". */
+	privilegeIds: number[];
+}
+
+const EMPTY_FORM: AccessForm = { fullName: "", role: "privileged", privilegeIds: [] };
 
 interface Permission {
 	id: number;
@@ -76,8 +95,6 @@ function AccessSecurity() {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
-	const [mgmtError, setMgmtError] = useState("");
-	const [mgmtSuccess, setMgmtSuccess] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isCopied, setIsCopied] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
@@ -113,24 +130,41 @@ function AccessSecurity() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
 
-	const [formData, setFormData] = useState<{ fullName: string; permissionIds: number[] }>({
-		fullName: "",
-		permissionIds: [],
-	});
+	const [formData, setFormData] = useState<AccessForm>(EMPTY_FORM);
+
+	/** Turn the role + module picks into the permission ids the API stores. */
+	const resolvePermissionIds = (): number[] | null => {
+		const idFor = (name: string) => availablePermissions.find((p) => p.permissionName === name)?.id;
+		if (formData.role === "admin" || formData.role === "member") {
+			const id = idFor(formData.role === "admin" ? ADMIN_PERMISSION : MEMBER_PERMISSION);
+			if (id === undefined) {
+				toast.error(
+					`The ${ACCESS_ROLES[formData.role].label} role is not available yet. Ask a developer to run the latest database migration.`
+				);
+				return null;
+			}
+			return [id];
+		}
+		if (formData.privilegeIds.length === 0) {
+			toast.error("Select at least one module for a Privileged account.");
+			return null;
+		}
+		return formData.privilegeIds;
+	};
 
 	const fetchUsers = async () => {
 		setUsersLoading(true);
 		try {
 			const response = await fetch("/api/users");
 			if (!response.ok) {
-				setMgmtError("Failed to fetch users (unauthorized or network error)");
+				toast.error("Failed to fetch users (unauthorized or network error)");
 				return;
 			}
 			const data = await response.json();
 			if (data.success) setUsers(data.data);
-			else setMgmtError(data.error || "Failed to fetch users");
+			else toast.error(data.error || "Failed to fetch users");
 		} catch {
-			setMgmtError("Failed to fetch users");
+			toast.error("Failed to fetch users");
 		} finally {
 			setUsersLoading(false);
 		}
@@ -156,35 +190,31 @@ function AccessSecurity() {
 		e.preventDefault();
 		if (isSubmitting) return;
 
-		setMgmtError("");
-		setMgmtSuccess("");
 
-		if (formData.permissionIds.length === 0) {
-			setMgmtError("At least one permission role must be assigned.");
-			return;
-		}
+		const permissionIds = resolvePermissionIds();
+		if (!permissionIds) return;
 
 		setIsSubmitting(true);
 		try {
 			const response = await fetch("/api/users", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(formData),
+				body: JSON.stringify({ fullName: formData.fullName, permissionIds }),
 			});
 			const data = await response.json();
 			if (data.success) {
-				setMgmtSuccess("Privileged user account authorized");
+				toast.success("Account created");
 				setShowCreateModal(false);
-				setFormData({ fullName: "", permissionIds: [] });
+				setFormData(EMPTY_FORM);
 				if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
 				setIsCopied(false);
 				setShowPassword(false);
 				fetchUsers();
 				setNewAccount({ ...data.data, kind: "created" });
-			} else setMgmtError(data.error || "Failed to authorize user");
+			} else toast.error(data.error || "Failed to create account");
 
 		} catch {
-			setMgmtError("Failed to authorize user");
+			toast.error("Failed to create account");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -193,40 +223,36 @@ function AccessSecurity() {
 	const handleUpdateUser = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!selectedUser || isSubmitting) return;
-		setMgmtError("");
-		setMgmtSuccess("");
 
-		if (formData.permissionIds.length === 0) {
-			setMgmtError("At least one permission role must be assigned.");
-			return;
-		}
+		const permissionIds = resolvePermissionIds();
+		if (!permissionIds) return;
 
 		setIsSubmitting(true);
 		try {
 			const response = await fetch(`/api/users/${selectedUser.id}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(formData),
+				body: JSON.stringify({ fullName: formData.fullName, permissionIds }),
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
 				try {
 					const errorJson = JSON.parse(errorText);
-					setMgmtError(errorJson.error || "Failed to update access");
+					toast.error(errorJson.error || "Failed to update access");
 				} catch {
-					setMgmtError("Failed to update access");
+					toast.error("Failed to update access");
 				}
 				return;
 			}
 			const data = await response.json();
 			if (data.success) {
-				setMgmtSuccess("Privileged access levels updated");
+				toast.success("Access updated");
 				setShowEditModal(false);
 				setSelectedUser(null);
 				fetchUsers();
-			} else setMgmtError(data.error || "Failed to update access");
+			} else toast.error(data.error || "Failed to update access");
 		} catch {
-			setMgmtError("Failed to update access");
+			toast.error("Failed to update access");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -234,29 +260,27 @@ function AccessSecurity() {
 
 	const executeDelete = async (userId: number) => {
 		setIsDeleting(true);
-		setMgmtError("");
-		setMgmtSuccess("");
 		try {
 			const response = await fetch(`/api/users/${userId}`, { method: "DELETE" });
 			if (!response.ok) {
 				const errorText = await response.text();
 				try {
 					const errorJson = JSON.parse(errorText);
-					setMgmtError(errorJson.error || "Failed to revoke access");
+					toast.error(errorJson.error || "Failed to revoke access");
 				} catch {
-					setMgmtError("Failed to revoke access");
+					toast.error("Failed to revoke access");
 				}
 				return;
 			}
 			const data = await response.json();
 			if (data.success) {
-				setMgmtSuccess("Access revoked successfully");
+				toast.success("Access revoked successfully");
 				setUserToDelete(null);
 				setDeleteConfirmation("");
 				fetchUsers();
-			} else setMgmtError(data.error || "Failed to revoke access");
+			} else toast.error(data.error || "Failed to revoke access");
 		} catch {
-			setMgmtError("Failed to revoke access");
+			toast.error("Failed to revoke access");
 		} finally {
 			setIsDeleting(false);
 		}
@@ -265,8 +289,6 @@ function AccessSecurity() {
 	const executeUnlock = async (user: User) => {
 		if (isUnlocking) return;
 		setIsUnlocking(true);
-		setMgmtError("");
-		setMgmtSuccess("");
 		try {
 			const response = await fetch(`/api/users/${user.id}/unlock`, { method: "POST" });
 			const data = await response.json();
@@ -277,10 +299,10 @@ function AccessSecurity() {
 				setShowPassword(false);
 				fetchUsers();
 				setNewAccount({ ...data.data, kind: "unlocked" });
-			} else setMgmtError(data.error || "Failed to unlock account");
+			} else toast.error(data.error || "Failed to unlock account");
 
 		} catch {
-			setMgmtError("Failed to unlock account");
+			toast.error("Failed to unlock account");
 		} finally {
 			setIsUnlocking(false);
 		}
@@ -288,7 +310,11 @@ function AccessSecurity() {
 
 	const openEditModal = (user: User) => {
 		setSelectedUser(user);
-		setFormData({ fullName: user.fullName, permissionIds: user.permissions.map((p) => p.id) });
+		setFormData({
+			fullName: user.fullName,
+			role: getAccessRole(user.permissions.map((p) => p.name)),
+			privilegeIds: user.permissions.filter((p) => p.name.startsWith("privileged_")).map((p) => p.id),
+		});
 		setShowEditModal(true);
 	};
 
@@ -310,12 +336,12 @@ function AccessSecurity() {
 			<PageHeader title="Access & Security" />
 
 			<Section
-				title="Privileged Personnel"
-				description="Manage administrative access for system officers."
+				title="Personnel & Access"
+				description="Manage who can sign in and what each account can do."
 				actions={
 					<button
 						onClick={() => {
-							setFormData({ fullName: "", permissionIds: [] });
+							setFormData(EMPTY_FORM);
 							if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
 							setIsCopied(false);
 							setShowPassword(false);
@@ -330,25 +356,15 @@ function AccessSecurity() {
 				}
 			>
 				<div className="space-y-3">
-					{mgmtError && (
-						<Notice tone="error" icon={<AlertCircle className="h-4 w-4" />}>
-							{mgmtError}
-						</Notice>
-					)}
-					{mgmtSuccess && (
-						<Notice tone="success" icon={<CheckCircle2 className="h-4 w-4" />}>
-							{mgmtSuccess}
-						</Notice>
-					)}
 
 					<Panel>
 						<div className="overflow-x-auto">
-							<table className="w-full min-w-[680px] text-left">
+							<table className="w-full min-w-[42.5rem] text-left">
 								<thead>
 									<tr className="border-b border-slate-200 dark:border-white/[0.07]">
 										<th className={th}>Account No.</th>
 										<th className={th}>Full Name</th>
-										<th className={th}>Privileged Role</th>
+										<th className={th}>Role</th>
 										<th className={cn(th, "text-right")}>Actions</th>
 									</tr>
 								</thead>
@@ -357,14 +373,14 @@ function AccessSecurity() {
 										Array.from({ length: 5 }).map((_, i) => (
 											<tr key={i} aria-hidden="true">
 												<td colSpan={4} className="px-4 py-3">
-													<div className="h-[11px] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
+													<div className="h-[0.6875rem] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
 												</td>
 											</tr>
 										))
 									) : users.length === 0 ? (
 										<tr>
 											<td colSpan={4}>
-												<EmptyState title="No authorized personnel accounts found" />
+												<EmptyState title="No accounts found" />
 											</td>
 										</tr>
 									) : (
@@ -375,7 +391,7 @@ function AccessSecurity() {
 													key={user.id}
 													className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02]"
 												>
-													<td className={cn(td, "font-mono text-[12.5px] whitespace-nowrap")}>
+													<td className={cn(td, "font-mono text-[0.7812rem] whitespace-nowrap")}>
 														{user.accountNumber}
 													</td>
 													<td className={td}>
@@ -386,7 +402,7 @@ function AccessSecurity() {
 															{user.lockedAt && (
 																<span
 																	title={`Locked ${new Date(user.lockedAt).toLocaleString()} after ${user.failedLoginAttempts} failed sign-in attempts`}
-																	className="inline-flex items-center gap-1 rounded border border-red-200 px-1.5 py-0.5 text-[11.5px] font-medium text-red-600 dark:border-red-500/25 dark:text-red-400"
+																	className="inline-flex items-center gap-1 rounded border border-red-200 px-1.5 py-0.5 text-[0.7188rem] font-medium text-red-600 dark:border-red-500/25 dark:text-red-400"
 																>
 																	<Lock className="h-3 w-3" /> Locked
 																</span>
@@ -394,22 +410,8 @@ function AccessSecurity() {
 														</div>
 													</td>
 													<td className={td}>
-														<div className="flex flex-wrap gap-x-2 gap-y-1">
-															{user.permissions.map((p) => (
-																<span key={p.id} className="text-[12.5px] capitalize">
-																	{p.name
-																		.replace("privileged_", "")
-																		.replace("_view", "")
-																		.replace(/_/g, " ")}
-																</span>
-															))}
-															{user.permissions.length === 0 && (
-																<span className="text-[12.5px] text-slate-500 dark:text-slate-400">
-																	No Roles
-																</span>
-															)}
-														</div>
-													</td>
+															<RoleCell permissions={user.permissions} />
+														</td>
 													<td className={cn(td, "text-right")}>
 														<div className="flex justify-end gap-0.5">
 															{user.lockedAt && (
@@ -456,22 +458,22 @@ function AccessSecurity() {
 
 						{users.length > 0 && (
 							<div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 dark:border-white/[0.07]">
-								<span className="text-[12.5px] tabular-nums text-slate-500 dark:text-slate-400">
+								<span className="text-[0.7812rem] tabular-nums text-slate-500 dark:text-slate-400">
 									Showing {(validCurrentPage - 1) * itemsPerPage + 1} to{" "}
-									{Math.min(validCurrentPage * itemsPerPage, users.length)} of {users.length} officers
+									{Math.min(validCurrentPage * itemsPerPage, users.length)} of {users.length} accounts
 								</span>
 								<div className="flex gap-1.5">
 									<button
 										onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
 										disabled={validCurrentPage === 1}
-										className={cn(btnOutline, "h-7 px-2.5 text-[12.5px]")}
+										className={cn(btnOutline, "h-7 px-2.5 text-[0.7812rem]")}
 									>
 										Previous
 									</button>
 									<button
 										onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
 										disabled={validCurrentPage === totalPages}
-										className={cn(btnOutline, "h-7 px-2.5 text-[12.5px]")}
+										className={cn(btnOutline, "h-7 px-2.5 text-[0.7812rem]")}
 									>
 										Next
 									</button>
@@ -490,21 +492,21 @@ function AccessSecurity() {
 				>
 					<dl className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/[0.07] dark:border-white/[0.07]">
 						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[13px] text-slate-500 dark:text-slate-400">Full Name</dt>
-							<dd className="text-[14px] font-medium text-slate-900 dark:text-white">
+							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Full Name</dt>
+							<dd className="text-[0.875rem] font-medium text-slate-900 dark:text-white">
 								{newAccount.fullName}
 							</dd>
 						</div>
 						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[13px] text-slate-500 dark:text-slate-400">Account Number</dt>
-							<dd className="font-mono text-[13px] font-medium text-slate-900 dark:text-white">
+							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Account Number</dt>
+							<dd className="font-mono text-[0.8125rem] font-medium text-slate-900 dark:text-white">
 								{newAccount.accountNumber}
 							</dd>
 						</div>
 						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[13px] text-slate-500 dark:text-slate-400">Temporary Password</dt>
+							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Temporary Password</dt>
 							<dd className="flex items-center gap-1.5">
-								<span className="font-mono text-[13px] font-medium text-slate-900 dark:text-white">
+								<span className="font-mono text-[0.8125rem] font-medium text-slate-900 dark:text-white">
 									{showPassword ? newAccount.tempPassword : "••••••••••"}
 								</span>
 								<button
@@ -518,7 +520,7 @@ function AccessSecurity() {
 						</div>
 					</dl>
 
-					<p className="mt-4 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+					<p className="mt-4 text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 						{newAccount.kind === "unlocked"
 							? "The previous password no longer works. Hand these over — the officer must set a new password on their next sign-in."
 							: "Please sign in and change your password."}
@@ -550,97 +552,135 @@ function AccessSecurity() {
 			{/* ── Create / edit ── */}
 			{(showCreateModal || showEditModal) && !newAccount && (
 				<Modal
-					title={showCreateModal ? "Authorize Officer" : "Update Privileged Access"}
+					title={showCreateModal ? "Add Account" : "Edit Access"}
 					width="max-w-lg"
 					onClose={closeFormModal}
 				>
 					<form onSubmit={showCreateModal ? handleCreateUser : handleUpdateUser} className="space-y-5">
-						<Field label="Full Name" htmlFor="officer-name">
+						<Field label="Full Name" htmlFor="account-name">
 							<input
-								id="officer-name"
+								id="account-name"
 								className={inputBase}
-								placeholder="Officer Full Name"
+								placeholder="Full name"
 								value={formData.fullName}
 								onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
 								required
 							/>
 						</Field>
 
-						<Field label="Access Control">
-							<div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-								{availablePermissions.map((p) => {
-									const isSelected = formData.permissionIds.includes(p.id);
-									const isAdminRole =
-										p.permissionName === "admin" ||
-										p.permissionName === "admin_operational_officer";
-									const isPrivilegeRole = p.permissionName.startsWith("privileged_");
-
-									return (
-										<button
-											key={p.id}
-											type="button"
-											aria-pressed={isSelected}
-											title={p.description ?? undefined}
-											onClick={() => {
-												setFormData((prev) => {
-													if (isSelected) {
-														return {
-															...prev,
-															permissionIds: prev.permissionIds.filter((id) => id !== p.id),
-														};
-													}
-
-													let newIds = [...prev.permissionIds, p.id];
-
-													if (isAdminRole) {
-														const privilegeIds = availablePermissions
-															.filter((ap) => ap.permissionName.startsWith("privileged_"))
-															.map((ap) => ap.id);
-														newIds = newIds.filter((id) => !privilegeIds.includes(id));
-													} else if (isPrivilegeRole) {
-														const adminIds = availablePermissions
-															.filter(
-																(ap) =>
-																	ap.permissionName === "admin" ||
-																	ap.permissionName === "admin_operational_officer"
-															)
-															.map((ap) => ap.id);
-														newIds = newIds.filter((id) => !adminIds.includes(id));
-													}
-
-													return { ...prev, permissionIds: newIds };
-												});
-											}}
-											className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-left transition-colors ${
-												isSelected
-													? "border-[#0EA5E9] bg-[#0EA5E9]/[0.045] dark:bg-[#0EA5E9]/[0.07]"
-													: "border-slate-200 hover:border-slate-300 dark:border-white/[0.12] dark:hover:border-white/25"
-											}`}
-										>
-											<span
-												className={`text-[13px] capitalize ${
+						<Field label="Role">
+								<div role="radiogroup" aria-label="Role" className="space-y-1.5">
+									{ROLE_ORDER.map((role) => {
+										const meta = ACCESS_ROLES[role];
+										const isSelected = formData.role === role;
+										return (
+											<button
+												key={role}
+												type="button"
+												role="radio"
+												aria-checked={isSelected}
+												onClick={() => setFormData((prev) => ({ ...prev, role }))}
+												className={cn(
+													"flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition-colors",
 													isSelected
-														? "font-medium text-[#0369A1] dark:text-[#7DD3FC]"
-														: "text-slate-600 dark:text-slate-300"
-												}`}
+														? "border-[#0EA5E9] bg-[#0EA5E9]/[0.045] dark:bg-[#0EA5E9]/[0.07]"
+														: "border-slate-200 hover:border-slate-300 dark:border-white/[0.12] dark:hover:border-white/25"
+												)}
 											>
-												{p.permissionName.replace(/_/g, " ")}
-											</span>
-											{isSelected && (
-												<CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#0EA5E9]" />
-											)}
-										</button>
-									);
-								})}
-							</div>
-						</Field>
+												<span
+													aria-hidden="true"
+													className={cn(
+														"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+														isSelected
+															? "border-[#0EA5E9]"
+															: "border-slate-300 dark:border-white/25"
+													)}
+												>
+													{isSelected && <span className="h-2 w-2 rounded-full bg-[#0EA5E9]" />}
+												</span>
+												<span className="min-w-0">
+													<span
+														className={cn(
+															"block text-[0.8438rem] font-medium",
+															isSelected
+																? "text-[#0369A1] dark:text-[#7DD3FC]"
+																: "text-slate-900 dark:text-white"
+														)}
+													>
+														{meta.label}
+													</span>
+													<span className="mt-0.5 block text-[0.7812rem] leading-snug text-slate-500 dark:text-slate-400">
+														{meta.description}
+													</span>
+												</span>
+											</button>
+										);
+									})}
+								</div>
+							</Field>
+
+							{formData.role === "privileged" && (
+								<Field label="Module access">
+									<div className="space-y-1.5">
+										{MODULE_PRIVILEGES.map((module) => {
+											const permission = availablePermissions.find(
+												(p) => p.permissionName === module.permissionName
+											);
+											if (!permission) return null;
+											const isChecked = formData.privilegeIds.includes(permission.id);
+											return (
+												<button
+													key={permission.id}
+													type="button"
+													role="checkbox"
+													aria-checked={isChecked}
+													onClick={() =>
+														setFormData((prev) => ({
+															...prev,
+															privilegeIds: isChecked
+																? prev.privilegeIds.filter((id) => id !== permission.id)
+																: [...prev.privilegeIds, permission.id],
+														}))
+													}
+													className={cn(
+														"flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+														isChecked
+															? "border-[#0EA5E9] bg-[#0EA5E9]/[0.045] dark:bg-[#0EA5E9]/[0.07]"
+															: "border-slate-200 hover:border-slate-300 dark:border-white/[0.12] dark:hover:border-white/25"
+													)}
+												>
+													<span
+														aria-hidden="true"
+														className={cn(
+															"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+															isChecked
+																? "border-[#0EA5E9] bg-[#0EA5E9] text-white"
+																: "border-slate-300 dark:border-white/25"
+														)}
+													>
+														{isChecked && <Check className="h-3 w-3" strokeWidth={3} />}
+													</span>
+													<span className="min-w-0">
+														<span className="block text-[0.8125rem] font-medium text-slate-900 dark:text-white">
+															{module.label}
+														</span>
+														<span className="mt-0.5 block text-[0.7812rem] leading-snug text-slate-500 dark:text-slate-400">
+															{module.description}
+														</span>
+													</span>
+												</button>
+											);
+										})}
+									</div>
+								</Field>
+							)}
 
 						<div className="flex justify-end gap-2 pt-1">
 							<button type="button" onClick={closeFormModal} className={btnOutline}>
 								Cancel
 							</button>
 							<button type="submit" disabled={isSubmitting} className={btnPrimary}>
-								{showCreateModal ? "Authorize Account" : "Apply Changes"}
+								{showCreateModal ? "Create Account" : "Save Changes"}
 							</button>
 						</div>
 					</form>
@@ -650,11 +690,11 @@ function AccessSecurity() {
 			{/* ── Unlock ── */}
 			{userToUnlock && (
 				<Modal title="Unlock Account" onClose={() => setUserToUnlock(null)}>
-					<p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+					<p className="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">
 						<span className="font-medium text-slate-900 dark:text-white">
 							{userToUnlock.fullName}
 						</span>{" "}
-						<span className="font-mono text-[12.5px] text-slate-500 dark:text-slate-400">
+						<span className="font-mono text-[0.7812rem] text-slate-500 dark:text-slate-400">
 							({userToUnlock.accountNumber})
 						</span>{" "}
 						was locked out after {userToUnlock.failedLoginAttempts} failed sign-in attempts.
@@ -685,10 +725,13 @@ function AccessSecurity() {
 						setDeleteConfirmation("");
 					}}
 				>
-					<p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
-						This action is permanent and cannot be undone. All administrative privileges will be
-						revoked immediately. To confirm, please type{" "}
-						<code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12.5px] text-slate-900 dark:bg-white/[0.07] dark:text-white">
+					<p className="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">
+						<span className="font-medium text-red-600 dark:text-red-400">
+							This action is permanent and cannot be undone.
+						</span>
+						<br />
+						All administrative privileges will be revoked immediately. To confirm, please type{" "}
+						<code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.7812rem] text-slate-900 dark:bg-white/[0.07] dark:text-white">
 							{userToDelete.accountNumber}
 						</code>{" "}
 						below.
@@ -719,6 +762,37 @@ function AccessSecurity() {
 						</button>
 					</div>
 				</Modal>
+			)}
+		</div>
+	);
+}
+
+/** Role badge, plus the chosen modules when the account is Privileged. */
+function RoleCell({ permissions }: { permissions: Permission[] }) {
+	const names = permissions.map((p) => p.name);
+
+	if (names.length === 0) {
+		return <span className="text-[0.7812rem] text-slate-500 dark:text-slate-400">No role</span>;
+	}
+
+	const role = getAccessRole(names);
+	const meta = ACCESS_ROLES[role];
+	const modules = MODULE_PRIVILEGES.filter((m) => names.includes(m.permissionName));
+
+	return (
+		<div className="flex flex-col items-start gap-1">
+			<span
+				className={cn(
+					"inline-flex items-center rounded border px-1.5 py-0.5 text-[0.7188rem] font-medium",
+					meta.badgeClass
+				)}
+			>
+				{meta.label}
+			</span>
+			{role === "privileged" && (
+				<span className="text-[0.7812rem] text-slate-500 dark:text-slate-400">
+					{modules.length > 0 ? modules.map((m) => m.label).join(" · ") : "No modules"}
+				</span>
 			)}
 		</div>
 	);
@@ -759,7 +833,7 @@ function Modal({
 				className={`settings-surface w-full ${width} settings-dialog rounded-[10px] border border-slate-200 bg-white p-6 shadow-[0_16px_48px_-12px_rgba(15,23,42,0.28)] dark:border-white/[0.09] dark:bg-[#0F172A] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)]`}
 			>
 				<div className="mb-5 flex items-start justify-between gap-4">
-					<h2 className="text-[15px] font-semibold tracking-[-0.008em] text-slate-900 dark:text-white">
+					<h2 className="text-[0.9375rem] font-semibold tracking-[-0.008em] text-slate-900 dark:text-white">
 						{title}
 					</h2>
 					<button

@@ -4,6 +4,7 @@
 import { compare, hash } from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { canOperate, isAdminUser } from "@/lib/auth-routes";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-change-this-in-production");
 
@@ -242,4 +243,19 @@ export function hasAnyPermission(session: SessionPayload | null, permissions: st
 	if (!session) return false;
 	if (session.permissions.includes("admin")) return true;
 	return permissions.some((permission) => session.permissions.includes(permission));
+}
+
+/**
+ * True administrator session (user management, audit logs, backups, monitoring).
+ */
+export function isAdminSession(session: SessionPayload | null): session is SessionPayload {
+	return !!session && isAdminUser(session.permissions);
+}
+
+/**
+ * Administrator or Member session — allowed to do functional work
+ * (uploads, record edits, exports) but not the admin-only controls.
+ */
+export function canOperateSession(session: SessionPayload | null): session is SessionPayload {
+	return !!session && canOperate(session.permissions);
 }

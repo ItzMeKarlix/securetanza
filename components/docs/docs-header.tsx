@@ -101,8 +101,8 @@ export function DocsHeader({
                 className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer pr-1"
               >
                 <option value="admin">Administrator (Full)</option>
-                <option value="operational_officer">Operational Officer</option>
-                <option value="privileged_user">Privileged Analyst</option>
+                <option value="operational_officer">Member</option>
+                <option value="privileged_user">Privileged User</option>
               </select>
             </div>
           )}

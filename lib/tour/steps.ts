@@ -637,7 +637,7 @@ export const preferencesSteps: DriveStep[] = [
 		popover: {
 			title: "Dynamic Text Size",
 			description:
-				"Scale typography across Default, Large, and Larger sizing to ensure optimal legibility on mobile devices, tablets, and command monitors.",
+				"Drag the slider or use the presets to scale text anywhere from 90% to 150%, in 5% steps, for comfortable reading on tablets and command monitors.",
 			side: "top",
 			align: "start",
 		},

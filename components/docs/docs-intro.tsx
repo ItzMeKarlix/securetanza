@@ -23,15 +23,15 @@ interface WalkthroughConfig {
 const ROLE_WALKTHROUGHS: Partial<Record<UserRoleType, WalkthroughConfig>> = {
   operational_officer: {
     role: "operational_officer",
-    title: "Operational Officer Walkthrough",
-    badge: "Operational Officer",
+    title: "Member Walkthrough",
+    badge: "Member",
     description:
       "Tactical workflows including GIS mapping, dual-period map comparison, overview KPIs, blotter dossiers, PDF reporting, and account preferences with accessibility controls.",
   },
   privileged_user: {
     role: "privileged_user",
-    title: "Privileged Analyst / Viewer Walkthrough",
-    badge: "Analyst / Viewer",
+    title: "Privileged User Walkthrough",
+    badge: "Privileged",
     description:
       "Analytical tools including side-by-side map comparison, 24-hour radar time patterns, crime matrix heatmaps, case dossiers, and display accessibility settings.",
   },

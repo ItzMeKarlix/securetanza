@@ -9,7 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { AdminOnly } from "../_components/settings-shell";
+import { OperatorOnly } from "../_components/settings-shell";
 import {
 	Field,
 	PageHeader,
@@ -17,20 +17,20 @@ import {
 	Rows,
 	SaveState,
 	Section,
-	btnPrimary,
 	PAGE_FORM,
 	SplitLayout,
 } from "../_components/settings-ui";
 import { cn } from "@/lib/utils";
+import { UnsavedChangesBar } from "../_components/unsaved-changes";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, i) => i + 1);
 
 export default function DataExportsPage() {
 	return (
-		<AdminOnly>
+		<OperatorOnly>
 			<DataExports />
-		</AdminOnly>
+		</OperatorOnly>
 	);
 }
 
@@ -105,14 +105,14 @@ function DataExports() {
 
 										<div className="space-y-5 pt-6">
 						<Field label="Frequency">
-							<div className="flex max-w-[380px] gap-1.5">
+							<div className="flex max-w-[23.75rem] gap-1.5">
 								{["daily", "weekly", "monthly"].map((f) => (
 									<button
 										key={f}
 										type="button"
 										aria-pressed={frequency === f}
 										onClick={() => { setFrequency(f); setHasUnsavedChanges(true); }}
-										className={`h-9 flex-1 rounded-md border text-[13px] font-medium capitalize transition-colors ${
+										className={`h-9 flex-1 rounded-md border text-[0.8125rem] font-medium capitalize transition-colors ${
 											frequency === f
 												? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900"
 												: "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-white/[0.12] dark:text-slate-300 dark:hover:border-white/25"
@@ -126,11 +126,11 @@ function DataExports() {
 
 						{frequency === "weekly" && (
 							<Field label="Generate every" htmlFor="day-of-week">
-								<div className="max-w-[380px]">
+								<div className="max-w-[23.75rem]">
 									<Select value={dayOfWeek} onValueChange={(val) => { setDayOfWeek(val); setHasUnsavedChanges(true); }}>
 										<SelectTrigger
 											id="day-of-week"
-											className="h-9 border-slate-200 bg-white text-[14px] dark:border-white/[0.12] dark:bg-white/[0.03]"
+											className="h-9 border-slate-200 bg-white text-[0.875rem] dark:border-white/[0.12] dark:bg-white/[0.03]"
 										>
 											<SelectValue />
 										</SelectTrigger>
@@ -148,11 +148,11 @@ function DataExports() {
 
 						{frequency === "monthly" && (
 							<Field label="Generate on day" htmlFor="day-of-month">
-								<div className="max-w-[380px]">
+								<div className="max-w-[23.75rem]">
 									<Select value={dayOfMonth} onValueChange={(val) => { setDayOfMonth(val); setHasUnsavedChanges(true); }}>
 										<SelectTrigger
 											id="day-of-month"
-											className="h-9 border-slate-200 bg-white text-[14px] dark:border-white/[0.12] dark:bg-white/[0.03]"
+											className="h-9 border-slate-200 bg-white text-[0.875rem] dark:border-white/[0.12] dark:bg-white/[0.03]"
 										>
 											<SelectValue />
 										</SelectTrigger>
@@ -170,7 +170,7 @@ function DataExports() {
 						)}
 
 						<Field label="Generate at" htmlFor="time-of-day">
-							<div className="max-w-[380px]">
+							<div className="max-w-[23.75rem]">
 								<input
 									id="time-of-day"
 									type="time"
@@ -178,13 +178,13 @@ function DataExports() {
 									onChange={(e) => { setTimeOfDay(e.target.value); setHasUnsavedChanges(true); }}
 									// [color-scheme] themes the native clock picker itself, not just this
 									// field's own chrome — without it the popup ignores dark mode.
-									className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-[14px] text-slate-900 [color-scheme:light] focus:outline-none focus:ring-2 focus:ring-sky-500/40 dark:border-white/[0.12] dark:bg-white/[0.03] dark:text-slate-100 dark:[color-scheme:dark]"
+									className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-[0.875rem] text-slate-900 [color-scheme:light] focus:outline-none focus:ring-2 focus:ring-sky-500/40 dark:border-white/[0.12] dark:bg-white/[0.03] dark:text-slate-100 dark:[color-scheme:dark]"
 								/>
 							</div>
 						</Field>
 					</div>
 
-					<p className="pt-8 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+					<p className="pt-8 text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
 						Scheduled exports are saved in Settings → Backups. Open Backups to download them.
 					</p>
 
@@ -192,23 +192,11 @@ function DataExports() {
 			</Section>
 			</SplitLayout>
 
-			{hasUnsavedChanges && (
-				<div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-					<div className="flex items-center gap-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-full py-2 pl-6 pr-2">
-						<span className="text-[14px] font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-							Unsaved changes
-						</span>
-						<button
-							type="button"
-							onClick={handleSave}
-							disabled={saveState === "saving"}
-							className={cn(btnPrimary, "rounded-full h-9 px-6 shadow-sm text-[13.5px] font-semibold")}
-						>
-							{saveState === "saving" ? "Saving..." : "Save Changes"}
-						</button>
-					</div>
-				</div>
-			)}
+			<UnsavedChangesBar
+				show={hasUnsavedChanges}
+				saving={saveState === "saving"}
+				onSave={handleSave}
+			/>
 		</div>
 	);
 }

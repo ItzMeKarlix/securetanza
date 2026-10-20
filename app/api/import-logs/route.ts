@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession, canOperateSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || (!session.permissions.includes('admin_operational_officer') && !session.permissions.includes('admin'))) {
+    if (!canOperateSession(session)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Administrative access required' },
         { status: 403 }

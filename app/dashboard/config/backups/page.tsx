@@ -170,7 +170,7 @@ function Backups() {
 
 					<Panel>
 						<div className="overflow-x-auto">
-							<table className="w-full min-w-[760px] text-left">
+							<table className="w-full min-w-[47.5rem] text-left">
 								<thead>
 									<tr className="border-b border-slate-200 dark:border-white/[0.07]">
 										<th className={th}>Type</th>
@@ -188,7 +188,7 @@ function Backups() {
 										Array.from({ length: 4 }).map((_, i) => (
 											<tr key={i} aria-hidden="true">
 												<td colSpan={6} className="px-4 py-3">
-													<div className="h-[11px] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
+													<div className="h-[0.6875rem] w-full rounded-full bg-slate-100 dark:bg-white/[0.06]" />
 												</td>
 											</tr>
 										))
@@ -208,27 +208,27 @@ function Backups() {
 												className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02]"
 											>
 												<td className={td}>
-													<span className="text-[12.5px] text-slate-500 dark:text-slate-400">
+													<span className="text-[0.7812rem] text-slate-500 dark:text-slate-400">
 														{KIND_LABEL[backup.kind] ?? KIND_LABEL.crime_data}
 													</span>
 												</td>
 												<td className={td}>
 													<div
-														className="max-w-[260px] truncate font-medium text-slate-900 dark:text-white"
+														className="max-w-[16.25rem] truncate font-medium text-slate-900 dark:text-white"
 														title={backup.fileName}
 													>
 														{backup.fileName}
 													</div>
 													{backup.rowCount !== null && (
-														<div className="mt-0.5 text-[12.5px] tabular-nums text-slate-500 dark:text-slate-400">
+														<div className="mt-0.5 text-[0.7812rem] tabular-nums text-slate-500 dark:text-slate-400">
 															{backup.rowCount.toLocaleString()} incidents
 														</div>
 													)}
 												</td>
 												<td className={td}>
-													<div className="max-w-[200px] truncate">{backup.label || "—"}</div>
+													<div className="max-w-[12.5rem] truncate">{backup.label || "—"}</div>
 													{backup.periodLabel && (
-														<div className="mt-0.5 text-[12.5px] text-slate-500 dark:text-slate-400">
+														<div className="mt-0.5 text-[0.7812rem] text-slate-500 dark:text-slate-400">
 															{backup.periodLabel}
 														</div>
 													)}
@@ -240,7 +240,7 @@ function Backups() {
 													<div className="whitespace-nowrap tabular-nums">
 														{formatWhen(backup.createdAt)}
 													</div>
-													<div className="mt-0.5 font-mono text-[12px] text-slate-500 dark:text-slate-400">
+													<div className="mt-0.5 font-mono text-[0.75rem] text-slate-500 dark:text-slate-400">
 														{backup.createdBy}
 													</div>
 												</td>
@@ -277,7 +277,7 @@ function Backups() {
 						</div>
 
 						{backups.length > 0 && (
-							<div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 text-[12.5px] text-slate-500 dark:border-white/[0.07] dark:text-slate-400">
+							<div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 text-[0.7812rem] text-slate-500 dark:border-white/[0.07] dark:text-slate-400">
 								<span className="tabular-nums">
 									{backups.length} archived {backups.length === 1 ? "file" : "files"}
 								</span>

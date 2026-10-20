@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Activity } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { getDefaultRouteForUser } from "@/lib/auth-routes";
+import { UnsavedChangesProvider, useUnsavedChangesGuard } from "./unsaved-changes";
+import { canOperate, getDefaultRouteForUser, isAdminUser } from "@/lib/auth-routes";
 
 /* The nav is label-only. Each item's description lives on the title
    attribute rather than as a second rendered line — it explains on
@@ -14,7 +15,8 @@ type NavItem = {
 	href: string;
 	label: string;
 	description: string;
-	adminOnly: boolean;
+	/** "all" = any signed-in user, "operator" = Administrator or Member, "admin" = Administrator only. */
+	access: "all" | "operator" | "admin";
 	tour?: string;
 };
 
@@ -29,13 +31,13 @@ export const NAV_GROUPS: NavGroup[] = [
 				href: "/dashboard/config",
 				label: "My Profile",
 				description: "Account & credentials",
-				adminOnly: false,
+				access: "all",
 			},
 			{
 				href: "/dashboard/config/preferences",
 				label: "Account Preferences",
 				description: "Theme, accessibility & display settings",
-				adminOnly: false,
+				access: "all",
 				tour: "settings-account-preferences",
 			},
 		],
@@ -48,26 +50,26 @@ export const NAV_GROUPS: NavGroup[] = [
 				href: "/dashboard/config/access",
 				label: "Access & Security",
 				description: "Personnel & clearances",
-				adminOnly: true,
+				access: "admin",
 				tour: "settings-access-security",
 			},
 			{
 				href: "/dashboard/config/audit-logs",
 				label: "Audit Logs",
 				description: "Uploads & batch records",
-				adminOnly: true,
+				access: "admin",
 			},
 			{
 				href: "/dashboard/config/exports",
 				label: "Data Exports",
 				description: "Scheduled reports",
-				adminOnly: true,
+				access: "operator",
 			},
 			{
 				href: "/dashboard/config/backups",
 				label: "Backups",
 				description: "Retained data & reports",
-				adminOnly: true,
+				access: "admin",
 			},
 		],
 	},
@@ -75,11 +77,13 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export function useIsAdmin() {
 	const { user } = useAuth();
-	return Boolean(
-		user &&
-			(user.permissions.includes("admin_operational_officer") ||
-				user.permissions.includes("admin"))
-	);
+	return Boolean(user && isAdminUser(user.permissions));
+}
+
+/** Administrator or Member — the roles that do functional work. */
+export function useCanOperate() {
+	const { user } = useAuth();
+	return Boolean(user && canOperate(user.permissions));
 }
 
 /**
@@ -130,10 +134,20 @@ function landingPathFor(landingPage?: string) {
 }
 
 export default function SettingsShell({ children }: { children: React.ReactNode }) {
+	return (
+		<UnsavedChangesProvider>
+			<SettingsShellFrame>{children}</SettingsShellFrame>
+		</UnsavedChangesProvider>
+	);
+}
+
+function SettingsShellFrame({ children }: { children: React.ReactNode }) {
 	const { user, loading: authLoading } = useAuth();
+	const { requestLeave } = useUnsavedChangesGuard();
 	const router = useRouter();
 	const pathname = usePathname();
 	const isAdmin = useIsAdmin();
+	const canDoOperations = useCanOperate();
 
 	useEffect(() => {
 		if (!authLoading && !user) router.replace("/login");
@@ -177,15 +191,19 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
 
 	const groups = NAV_GROUPS.map((group) => ({
 		...group,
-		items: group.items.filter((item) => !item.adminOnly || isAdmin),
+		items: group.items.filter(
+			(item) =>
+				item.access === "all" ||
+				(item.access === "operator" ? canDoOperations : isAdmin)
+		),
 	})).filter((group) => group.items.length > 0);
 
 	return (
 		<div className="settings-surface flex h-screen flex-col overflow-hidden bg-white font-sans text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
 			<header className="z-30 flex h-14 flex-none items-center gap-4 border-b border-slate-200 px-4 sm:px-6 dark:border-white/[0.07]">
 				<button
-					onClick={exitSettings}
-					className="-ml-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
+					onClick={() => requestLeave(exitSettings)}
+					className="-ml-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					Back
@@ -195,8 +213,8 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
 					className="h-4 w-px bg-slate-200 dark:bg-white/[0.09]"
 				/>
 				{/* Quiet wayfinding label — the route's own h1 is the page title. */}
-				<span className="truncate text-[13px] text-slate-500 dark:text-slate-400">
-					{isAdmin ? "System Settings & Configuration" : "Account Settings & Preferences"}
+				<span className="truncate text-[0.8125rem] text-slate-500 dark:text-slate-400">
+					{canDoOperations ? "System Settings & Configuration" : "Account Settings & Preferences"}
 				</span>
 			</header>
 
@@ -260,7 +278,7 @@ function SettingsNav({
 					{groups.map((group, groupIndex) => (
 						<div key={group.id} className="contents lg:block">
 							<p
-								className={`hidden px-3 pb-1.5 text-[11px] font-semibold tracking-[0.07em] text-slate-500 uppercase lg:block dark:text-slate-400 ${
+								className={`hidden px-3 pb-1.5 text-[0.6875rem] font-semibold tracking-[0.07em] text-slate-500 uppercase lg:block dark:text-slate-400 ${
 									groupIndex > 0 ? "pt-6" : ""
 								}`}
 							>
@@ -272,21 +290,21 @@ function SettingsNav({
 										? pathname === "/dashboard/config"
 										: pathname.startsWith(item.href);
 								return (
-									<Link
+									<GuardedLink
 										key={item.href}
 										href={item.href}
 										title={item.description}
 										data-active={isActive}
 										data-tour={item.tour}
 										aria-current={isActive ? "page" : undefined}
-										className={`block shrink-0 rounded-md px-3 py-[7px] text-[13.5px] whitespace-nowrap transition-colors lg:whitespace-normal ${
+										className={`block shrink-0 rounded-md px-3 py-[0.4375rem] text-[0.8438rem] whitespace-nowrap transition-colors lg:whitespace-normal ${
 											isActive
 												? "bg-slate-100 font-medium text-slate-900 dark:bg-white/[0.07] dark:text-white"
 												: "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-100"
 										}`}
 									>
 										{item.label}
-									</Link>
+									</GuardedLink>
 								);
 							})}
 						</div>
@@ -295,14 +313,14 @@ function SettingsNav({
 
 				{isAdmin && (
 					<div className="flex-none border-slate-200 lg:mt-6 lg:border-t lg:pt-4 dark:border-white/[0.07]">
-						<Link
+						<GuardedLink
 							href="/dashboard/performance"
 							title="Telemetry & Diagnostics"
-							className="flex shrink-0 items-center gap-2 rounded-md px-3 py-[7px] text-[13.5px] whitespace-nowrap text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-100"
+							className="flex shrink-0 items-center gap-2 rounded-md px-3 py-[0.4375rem] text-[0.8438rem] whitespace-nowrap text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-100"
 						>
 							<Activity className="h-3.5 w-3.5 text-[#0EA5E9]" />
 							Process Monitor
-						</Link>
+						</GuardedLink>
 					</div>
 				)}
 			</div>
@@ -310,26 +328,71 @@ function SettingsNav({
 	);
 }
 
+/**
+ * A settings link that defers to the unsaved-changes guard: with pending
+ * edits, the first click is held and the second goes through. New-tab
+ * clicks (modifier keys, middle click) and the current page pass straight
+ * through, since they can't lose anything.
+ */
+function GuardedLink({ href, onClick, ...props }: React.ComponentProps<typeof Link> & { href: string }) {
+	const router = useRouter();
+	const pathname = usePathname();
+	const { requestLeave } = useUnsavedChangesGuard();
+
+	return (
+		<Link
+			href={href}
+			{...props}
+			onClick={(e) => {
+				onClick?.(e);
+				if (e.defaultPrevented) return;
+				if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+				if (href === pathname) return;
+				e.preventDefault();
+				requestLeave(() => router.push(href));
+			}}
+		/>
+	);
+}
+
 /** Admin routes are reachable by URL now, so each one re-checks the clearance. */
 export function AdminOnly({ children }: { children: React.ReactNode }) {
-	const { loading } = useAuth();
 	const isAdmin = useIsAdmin();
+	return <RoleGate allowed={isAdmin} audience="administrators">{children}</RoleGate>;
+}
+
+/** Routes that Administrators and Members can both use. */
+export function OperatorOnly({ children }: { children: React.ReactNode }) {
+	const canDoOperations = useCanOperate();
+	return <RoleGate allowed={canDoOperations} audience="administrators and members">{children}</RoleGate>;
+}
+
+function RoleGate({
+	allowed,
+	audience,
+	children,
+}: {
+	allowed: boolean;
+	audience: string;
+	children: React.ReactNode;
+}) {
+	const { loading } = useAuth();
 
 	if (loading) return null;
 
-	if (!isAdmin) {
+	if (!allowed) {
 		return (
-			<div className="mx-auto max-w-[720px]">
+			<div className="mx-auto max-w-[45rem]">
 				<h1 className="text-xl font-semibold tracking-[-0.011em] text-slate-900 dark:text-white">
 					Not authorized
 				</h1>
-				<p className="mt-1.5 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-					This section is limited to administrative officers. Ask a system administrator to
-					review your clearance if you need access.
+				<p className="mt-1.5 text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
+					This section is limited to {audience}. Ask a system administrator to review your
+					access if you need it.
 				</p>
 				<Link
 					href="/dashboard/config"
-					className="mt-5 inline-flex h-9 items-center rounded-md bg-slate-900 px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+					className="mt-5 inline-flex h-9 items-center rounded-md bg-slate-900 px-3.5 text-[0.8125rem] font-medium text-white transition-colors hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
 				>
 					Back to My Profile
 				</Link>

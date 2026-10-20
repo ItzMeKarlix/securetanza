@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ConfigService } from '@/backend/services/config.service';
-import { getSession } from '@/lib/auth';
+import { getSession, canOperateSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!canOperateSession(session)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const schedule = await ConfigService.getExportSchedule(session.userId);
@@ -23,6 +26,9 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!canOperateSession(session)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const data = await request.json();
