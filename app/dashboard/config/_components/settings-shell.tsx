@@ -52,13 +52,6 @@ export const NAV_GROUPS: NavGroup[] = [
 				tour: "settings-access-security",
 			},
 			{
-				href: "/dashboard/config/notifications",
-				label: "Notification Rules",
-				description: "Analytical alert engine",
-				adminOnly: true,
-				tour: "settings-notifications",
-			},
-			{
 				href: "/dashboard/config/audit-logs",
 				label: "Audit Logs",
 				description: "Uploads & batch records",

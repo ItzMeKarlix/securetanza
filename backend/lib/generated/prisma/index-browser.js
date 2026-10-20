@@ -225,36 +225,6 @@ exports.Prisma.AuditLogScalarFieldEnum = {
   errorMessage: 'errorMessage'
 };
 
-exports.Prisma.NotificationScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  message: 'message',
-  category: 'category',
-  severity: 'severity',
-  uploadLogId: 'uploadLogId',
-  metadata: 'metadata',
-  isRead: 'isRead',
-  readAt: 'readAt',
-  isArchived: 'isArchived',
-  archivedAt: 'archivedAt',
-  createdAt: 'createdAt'
-};
-
-exports.Prisma.NotificationRuleScalarFieldEnum = {
-  id: 'id',
-  ruleKey: 'ruleKey',
-  name: 'name',
-  description: 'description',
-  category: 'category',
-  conditionType: 'conditionType',
-  parameters: 'parameters',
-  severity: 'severity',
-  isEnabled: 'isEnabled',
-  updatedBy: 'updatedBy',
-  updatedAt: 'updatedAt',
-  createdAt: 'createdAt'
-};
-
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   accountNumber: 'accountNumber',
@@ -293,7 +263,6 @@ exports.Prisma.ExportScheduleScalarFieldEnum = {
   dayOfMonth: 'dayOfMonth',
   monthlyOn: 'monthlyOn',
   timeOfDay: 'timeOfDay',
-  deliveryMode: 'deliveryMode',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -321,10 +290,6 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
-exports.Prisma.JsonNullValueInput = {
-  JsonNull: Prisma.JsonNull
-};
-
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -340,26 +305,7 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
-exports.NotificationCategory = exports.$Enums.NotificationCategory = {
-  PEAK_HOUR: 'PEAK_HOUR',
-  CRIME_ACTIVITY: 'CRIME_ACTIVITY',
-  DATASET_PROCESSING: 'DATASET_PROCESSING',
-  SYSTEM: 'SYSTEM'
-};
 
-exports.NotificationSeverity = exports.$Enums.NotificationSeverity = {
-  INFO: 'INFO',
-  WARNING: 'WARNING',
-  CRITICAL: 'CRITICAL'
-};
-
-exports.RuleConditionType = exports.$Enums.RuleConditionType = {
-  HOURLY_PERCENT_EXCEEDS: 'HOURLY_PERCENT_EXCEEDS',
-  BARANGAY_INCREASE_PERCENT: 'BARANGAY_INCREASE_PERCENT',
-  HEINOUS_CRIME_DETECTED: 'HEINOUS_CRIME_DETECTED',
-  SPECIFIC_CRIME_THRESHOLD: 'SPECIFIC_CRIME_THRESHOLD',
-  UPLOAD_VALIDATION_ERROR_RATE: 'UPLOAD_VALIDATION_ERROR_RATE'
-};
 
 exports.Prisma.ModelName = {
   CrimeIncident: 'CrimeIncident',
@@ -367,8 +313,6 @@ exports.Prisma.ModelName = {
   OffenseDefinition: 'OffenseDefinition',
   Barangay: 'Barangay',
   AuditLog: 'AuditLog',
-  Notification: 'Notification',
-  NotificationRule: 'NotificationRule',
   User: 'User',
   Backup: 'Backup',
   ExportSchedule: 'ExportSchedule',

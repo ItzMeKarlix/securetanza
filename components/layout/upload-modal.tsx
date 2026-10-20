@@ -57,7 +57,6 @@ interface Receipt {
   skipped: number;
   duplicatesSkipped?: number;
   errors: string[];
-  findings: number;
 }
 
 const MICRO = "text-[11.5px] font-medium tracking-[0.09em] uppercase text-slate-500 dark:text-slate-400";
@@ -70,7 +69,7 @@ const PRIMARY =
   "flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#4e86fd] px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-[#3d74e8] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#0EA5E9] dark:hover:bg-[#0b8fcd]";
 const MONO_LIST = "mt-1.5 font-mono text-[12px] leading-relaxed break-words";
 
-/** Key/value line, borrowed verbatim from the notification centre's findings list. */
+/** Key/value line for the import receipt. */
 function LedgerRow({
   label,
   value,
@@ -273,7 +272,6 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
         skipped: Number(data.skipped ?? 0),
         duplicatesSkipped: Number(data.duplicatesSkipped ?? 0),
         errors: Array.isArray(data.errors) ? data.errors : [],
-        findings: Number(payload.notificationsGenerated ?? 0),
       });
       setPhase("done");
     } catch (err) {
@@ -355,7 +353,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
             </DialogTitle>
             <DialogDescription className="mt-1 max-w-xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               The header row is checked against the crime register before any row is written.
-              Analytical findings are generated once the entry is filed.
+              Imported records become available in the map, cases, and analytics.
             </DialogDescription>
           </div>
 
@@ -684,10 +682,6 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
                         : undefined
                     }
                   />
-                  <LedgerRow
-                    label="Findings generated"
-                    value={receipt.findings.toLocaleString("en-US")}
-                  />
                 </dl>
 
                 {receipt.errors.length > 0 && (
@@ -721,9 +715,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
                   >
                     upload history
                   </Link>
-                  {receipt.findings > 0
-                    ? ". The new findings are waiting in the notification bell."
-                    : "."}
+.
                 </p>
               </section>
             )}

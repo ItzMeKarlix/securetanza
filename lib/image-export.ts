@@ -178,9 +178,12 @@ function drawColumnChart(
     ctx.fillStyle = rgbToCss(isPeak ? RAMP_HI : rampColor(0.32 + (item.value / max) * 0.45));
     if (barH > 0) ctx.fillRect(x, baseline - barH, barW, barH);
 
-    if (isPeak) {
-      text(ctx, String(item.value), x + barW / 2, baseline - barH - 10, { size: 22, weight: 'bold', color: INK, align: 'center' });
-    }
+    text(ctx, String(item.value), x + barW / 2, baseline - barH - 10, {
+      size: 22,
+      weight: isPeak ? 'bold' : 'normal',
+      color: INK,
+      align: 'center',
+    });
 
     if (i % labelEvery === 0) {
       text(ctx, item.label, x + barW / 2, baseline + 28, {
@@ -415,7 +418,7 @@ export class ImageExporter {
         ctx,
         hours.map((count, hour) => ({ label: String(hour).padStart(2, '0'), value: count })),
         { x: PAD, y: bodyY, w: W - PAD * 2, h: H - bodyY - 100 },
-        { labelEvery: 3, highlight: peakHour }
+        { highlight: peakHour }
       );
       text(ctx, `Peak activity: ${hourBand(peakHour)} (${hours[peakHour] ?? 0} incidents)`, PAD, H - 30, { size: 22, color: INK_SOFT });
     }

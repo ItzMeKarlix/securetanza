@@ -71,9 +71,8 @@ function HelpTip({
   );
 }
 
-/** Column chart with no axis furniture and only the peak value labeled —
- *  mirrors lib/pdf-generator.ts's columnChart, used for both Monthly Trend
- *  and Hour of Day so every temporal chart on the page shares one shape. */
+/** Monthly and hourly columns with a persistent count above every bar.
+ *  Dense charts scroll horizontally so counts remain readable on mobile. */
 function ColumnChart({
   data,
   theme,
@@ -101,82 +100,87 @@ function ColumnChart({
     peakIndex ??
     data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
   const totalValue = data.reduce((sum, d) => sum + d.value, 0);
+  const minWidth = data.length * Math.max(18, String(max).length * 6 + 6);
   const { tooltip, bind, hide } = useChartTooltip(theme);
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <div
-      className="flex items-end"
-      style={{ height, gap: 3 }}
-      onMouseLeave={() => {
-        setHovered(null);
-        hide();
-      }}
-    >
-      {data.map((d, i) => {
-        const isPeak = i === peakIdx && d.value > 0;
-        const h = d.value > 0 ? Math.max((d.value / max) * 100, 4) : 2.5;
-        const dimmed = hovered !== null && hovered !== i;
-        const clickable = Boolean(onSelect) && d.value > 0;
-        const share =
-          totalValue > 0 ? Math.round((d.value / totalValue) * 100) : 0;
-        return (
-          // The whole column is the hover target, not just the bar — at 24
-          // columns the bars are only a few pixels wide and would be
-          // miserable to hit.
-          <div
-            key={i}
-            className={`flex-1 min-w-0 flex flex-col items-center justify-end h-full transition-opacity ${
-              clickable ? "cursor-pointer" : ""
-            }`}
-            style={{ opacity: dimmed ? 0.45 : 1 }}
-            {...bind(
-              {
-                title: d.fullLabel ?? d.label,
-                rows: [
-                  { label: "Incidents", value: String(d.value) },
-                  { label: "Share", value: `${share}%` },
-                  ...(isPeak ? [{ label: "Peak", value: "Yes" }] : []),
-                ],
-                hint: clickable
-                  ? "Click to see these incidents"
-                  : d.value === 0
-                    ? "No incidents recorded"
-                    : undefined,
-              },
-              () => setHovered(i),
-            )}
-            onClick={clickable ? () => onSelect?.(i) : undefined}
-          >
-            <span
-              className={`text-[10px] font-extrabold tabular-nums ${
-                isPeak || hovered === i ? "" : "opacity-0"
-              } ${theme === "dark" ? "text-white" : "text-slate-900"}`}
-              style={{ marginBottom: 3 }}
-            >
-              {d.value}
-            </span>
+    <div className="overflow-x-auto">
+      <div
+        className="flex items-end pt-[18px]"
+        style={{ height, gap: 3, minWidth }}
+        onMouseLeave={() => {
+          setHovered(null);
+          hide();
+        }}
+      >
+        {data.map((d, i) => {
+          const isPeak = i === peakIdx && d.value > 0;
+          const h = d.value > 0 ? Math.max((d.value / max) * 100, 4) : 2.5;
+          const dimmed = hovered !== null && hovered !== i;
+          const clickable = Boolean(onSelect) && d.value > 0;
+          const share =
+            totalValue > 0 ? Math.round((d.value / totalValue) * 100) : 0;
+          return (
+            // The whole column is the hover target, not just the bar — at 24
+            // columns the bars are only a few pixels wide and would be
+            // miserable to hit.
             <div
-              className="w-[62%] rounded-t-[2px]"
-              style={{
-                height: `${h}%`,
-                background: colorful && d.value === 0
-                  ? theme === "dark" ? "#334155" : "#e2e8f0"
-                  : isPeak ? ramp(1, colorKind) : ramp(0.3 + (d.value / max) * 0.4, colorKind),
-              }}
-            />
-            <span
-              className={`text-[9px] ${i % labelEvery === 0 || hovered === i ? "" : "opacity-0"} ${
-                isPeak || hovered === i ? "font-bold" : "font-normal"
-              } ${theme === "dark" ? (isPeak ? "text-white" : "text-slate-500") : isPeak ? "text-slate-900" : "text-slate-400"}`}
-              style={{ marginTop: 6 }}
+              key={i}
+              className={`flex-1 min-w-0 flex flex-col items-center justify-end h-full transition-opacity ${
+                clickable ? "cursor-pointer" : ""
+              }`}
+              style={{ opacity: dimmed ? 0.45 : 1 }}
+              {...bind(
+                {
+                  title: d.fullLabel ?? d.label,
+                  rows: [
+                    { label: "Incidents", value: String(d.value) },
+                    { label: "Share", value: `${share}%` },
+                    ...(isPeak ? [{ label: "Peak", value: "Yes" }] : []),
+                  ],
+                  hint: clickable
+                    ? "Click to see these incidents"
+                    : d.value === 0
+                      ? "No incidents recorded"
+                      : undefined,
+                },
+                () => setHovered(i),
+              )}
+              onClick={clickable ? () => onSelect?.(i) : undefined}
             >
-              {d.label}
-            </span>
-          </div>
-        );
-      })}
-      {tooltip}
+              <div className="relative flex flex-1 min-h-0 w-full items-end justify-center">
+                <span
+                  className={`absolute text-[10px] leading-3 tabular-nums ${
+                    isPeak ? "font-extrabold" : "font-semibold"
+                  } ${theme === "dark" ? "text-white" : "text-slate-900"}`}
+                  style={{ bottom: `calc(${h}% + 3px)` }}
+                >
+                  {d.value}
+                </span>
+                <div
+                  className="w-[62%] rounded-t-[2px]"
+                  style={{
+                    height: `${h}%`,
+                    background: colorful && d.value === 0
+                      ? theme === "dark" ? "#334155" : "#e2e8f0"
+                      : isPeak ? ramp(1, colorKind) : ramp(0.3 + (d.value / max) * 0.4, colorKind),
+                  }}
+                />
+              </div>
+              <span
+                className={`shrink-0 text-[9px] ${i % labelEvery === 0 || hovered === i ? "" : "opacity-0"} ${
+                  isPeak || hovered === i ? "font-bold" : "font-normal"
+                } ${theme === "dark" ? (isPeak ? "text-white" : "text-slate-500") : isPeak ? "text-slate-900" : "text-slate-400"}`}
+                style={{ marginTop: 6 }}
+              >
+                {d.label}
+              </span>
+            </div>
+          );
+        })}
+        {tooltip}
+      </div>
     </div>
   );
 }
@@ -465,6 +469,7 @@ function AnalyticsSkeleton({
             theme={theme}
             title="Monthly Trend"
             subtitle={`Incidents per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
+            className="min-w-0"
             bodyClassName="justify-center"
             footer={footer}
           >
@@ -474,6 +479,7 @@ function AnalyticsSkeleton({
             theme={theme}
             title="Hour of Day"
             subtitle="24-hour incident distribution"
+            className="min-w-0"
             bodyClassName="justify-center"
             footer={footer}
           >
@@ -1105,6 +1111,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
             theme={theme}
             title="Monthly Trend"
             subtitle={`Incidents per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
+            className="min-w-0"
             bodyClassName="justify-center"
             footer={
               detailsLoading ? (
@@ -1156,6 +1163,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
             theme={theme}
             title="Hour of Day"
             subtitle="24-hour incident distribution"
+            className="min-w-0"
             bodyClassName="justify-center"
             footer={
               detailsLoading ? null : (

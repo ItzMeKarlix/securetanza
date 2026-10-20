@@ -75,7 +75,7 @@ export function DocsIntro({ onReplayTour }: DocsIntroProps) {
                 System Administrator Walkthrough
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Full platform administration covering GIS mapping, map comparison, blotter dossiers, RBAC user provisioning, alert rule triggers, and account preferences with accessibility scaling.
+                Full platform administration covering GIS mapping, map comparison, blotter dossiers, RBAC user provisioning, audit logs, and account preferences with accessibility scaling.
               </p>
             </div>
             {onReplayTour && (
@@ -156,7 +156,7 @@ export function DocsIntro({ onReplayTour }: DocsIntroProps) {
               System Settings & Accessibility
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-              Manages personnel RBAC clearances, automated alert rules, upload audit logs, and account preferences including themes, reduced motion, high contrast, and dynamic text sizing.
+              Manages personnel RBAC clearances, scheduled exports, upload audit logs, and account preferences including themes, reduced motion, high contrast, and dynamic text sizing.
             </p>
           </div>
         </div>

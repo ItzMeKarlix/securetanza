@@ -26,20 +26,6 @@ import { cn } from "@/lib/utils";
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, i) => i + 1);
 
-const DELIVERY_MODES = [
-	{
-		id: "prompt" as const,
-		label: "Prompt me to download",
-		description: "Show a download prompt the next time you open the web app.",
-	},
-	{
-		id: "auto" as const,
-		label: "Auto-generate and notify me",
-		description:
-			"Automatically generate the report and show a notification in-app when it's ready.",
-	},
-];
-
 export default function DataExportsPage() {
 	return (
 		<AdminOnly>
@@ -55,7 +41,6 @@ function DataExports() {
 	const [dayOfMonth, setDayOfMonth] = useState("1");
 	const [monthlyOn, setMonthlyOn] = useState("1"); // day of year for annually
 	const [timeOfDay, setTimeOfDay] = useState("00:00");
-	const [deliveryMode, setDeliveryMode] = useState<"prompt" | "auto">("prompt");
 	const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -70,7 +55,6 @@ function DataExports() {
 					setDayOfMonth(data.schedule.dayOfMonth || "1");
 					setMonthlyOn(data.schedule.monthlyOn || "1");
 					setTimeOfDay(data.schedule.timeOfDay || "00:00");
-					setDeliveryMode(data.schedule.deliveryMode || "prompt");
 				}
 			})
 			.catch((err) => console.error("Failed to load schedule:", err));
@@ -82,7 +66,7 @@ function DataExports() {
 			const res = await fetch("/api/exports/schedule", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ enabled, frequency, dayOfWeek, dayOfMonth, monthlyOn, timeOfDay, deliveryMode }),
+				body: JSON.stringify({ enabled, frequency, dayOfWeek, dayOfMonth, monthlyOn, timeOfDay }),
 			});
 			if (!res.ok) throw new Error("Failed to save schedule");
 			setSaveState("saved");
@@ -200,46 +184,9 @@ function DataExports() {
 						</Field>
 					</div>
 
-					<div className="pt-8">
-						<p className="pb-3 text-[13px] font-medium text-slate-700 dark:text-slate-300">
-							When the report is ready...
-						</p>
-						<div role="radiogroup" aria-label="When the report is ready">
-							<Rows>
-								{DELIVERY_MODES.map((mode) => (
-									<button
-										key={mode.id}
-										type="button"
-										role="radio"
-										aria-checked={deliveryMode === mode.id}
-										onClick={() => { setDeliveryMode(mode.id as any); setHasUnsavedChanges(true); }}
-										className="flex w-full items-start gap-3 py-3.5 text-left"
-									>
-										<span
-											aria-hidden="true"
-											className={`mt-[3px] flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full border transition-colors ${
-												deliveryMode === mode.id
-													? "border-[#0EA5E9]"
-													: "border-slate-300 dark:border-white/25"
-											}`}
-										>
-											{deliveryMode === mode.id && (
-												<span className="h-[7px] w-[7px] rounded-full bg-[#0EA5E9]" />
-											)}
-										</span>
-										<span className="min-w-0">
-											<span className="block text-[14px] font-medium text-slate-900 dark:text-slate-100">
-												{mode.label}
-											</span>
-											<span className="mt-0.5 block text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
-												{mode.description}
-											</span>
-										</span>
-									</button>
-								))}
-							</Rows>
-						</div>
-					</div>
+					<p className="pt-8 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+						Scheduled exports are saved in Settings → Backups. Open Backups to download them.
+					</p>
 
 				</fieldset>
 			</Section>

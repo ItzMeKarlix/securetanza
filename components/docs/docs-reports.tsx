@@ -9,7 +9,7 @@ export function DocsReports() {
     { title: "Executive Summary", desc: "High-level overview and critical operational takeaways." },
     { title: "Current Statistics", desc: "Total incident volume and clearance rates." },
     { title: "Temporal Trends", desc: "12-month historical crime progression." },
-    { title: "Time Patterns (Radar)", desc: "24-hour peak incident hours analysis." },
+    { title: "Time Patterns", desc: "Hourly incident counts with all 24 hours labeled." },
     { title: "Crime Classification", desc: "Detailed breakdown of offense categories." },
     { title: "Barangay Comparison", desc: "Cross-barangay rankings and comparative metrics." },
     { title: "Crime Heatmap Matrix", desc: "Monthly distribution matrix across crime types." },
@@ -54,15 +54,18 @@ export function DocsReports() {
           <li>Navigate to <strong>Dashboard → Reports</strong>.</li>
           <li>Select the desired barangay scope (or General Dashboard for all barangays).</li>
           <li>Toggle sections on or off based on your briefing requirements.</li>
-          <li>Review the real-time publication cover preview in the side panel.</li>
-          <li>Click <strong>Export Report</strong> to generate the PDF with embedded vector charts and trigger automatic download.</li>
+          <li>Open <strong>Preview</strong> to review and edit the PDF.</li>
+          <li>Use the top toolbar for font family, font size, line spacing, and zoom. Click the title, subtitle, or narrative text directly on a report page to edit it.</li>
+          <li>The actual PDF pages stay visible with their charts and tables while you edit. Open the outline to jump between sections; press <strong>Escape</strong> to finish editing a text block.</li>
+          <li>Click <strong>Download PDF</strong> in the preview to save the displayed version. The main download and archive actions also use your edits.</li>
         </ol>
+        <p className="text-sm text-slate-600 dark:text-slate-400">Monthly and hourly charts show every numeric value, including zeros, in PDFs and exported PNGs. Narrative edits stay with the current report scope and are cleared when its filters change; formatting stays selected while the Reports page is open.</p>
       </section>
 
       {/* Next Steps */}
       <DocsCta
         title="Report Generation"
-        suggestion="Tailor PDF outputs for specific council briefings by omitting optional sections — for example, exporting an Executive Summary plus 24-Hour Time Radar for shift commanders."
+        suggestion="Tailor PDF outputs for specific council briefings by selecting sections and editing the preview — for example, an Executive Summary plus hourly incident distribution for shift commanders."
         actions={[
           {
             label: "Open Reports",

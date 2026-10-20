@@ -9,7 +9,7 @@ import { MapProvider } from "@/context/MapContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { getDefaultRouteForUser } from "@/lib/auth-routes";
-import { absoluteTime, isoTime, relativeTime } from "@/components/notifications/notification-meta";
+import { absoluteTime, isoTime, relativeTime } from "@/lib/date-format";
 import { formatFileSize, uploadStatusMeta } from "@/components/upload/upload-meta";
 
 interface UploadLog {

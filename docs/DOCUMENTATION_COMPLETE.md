@@ -27,10 +27,9 @@ Comprehensive, publication-grade user documentation has been deployed for the en
   5. Historical Crime Analytics & Formulas (Resolution Rate, Safety Index)
   6. Crime Cases Blotter Dossiers & EGO Tracking
   7. Institutional PDF Report Generator
-  8. Analytical Alert & Notification Rules Engine
-  9. System Settings, RBAC & Account Preferences (Accessibility Controls)
-  10. Batch Data Ingestion & Excel Column Schema
-  11. System Diagnostics, Troubleshooting & Operational Tips
+  8. System Settings, RBAC & Account Preferences (Accessibility Controls)
+  9. Batch Data Ingestion & Excel Column Schema
+  10. System Diagnostics, Troubleshooting & Operational Tips
 
 ### 3. Comprehensive Offline User Guide (`docs/USER_GUIDE.md`)
 - **Interactive Map Comparison Tool Section:** Complete operational breakdown of dual-pane comparison, synchronized zoom/pan controls, shared threat scaling, and bidirectional change ledger interactions.

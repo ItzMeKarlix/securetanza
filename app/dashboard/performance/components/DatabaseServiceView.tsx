@@ -36,7 +36,6 @@ interface Props {
         crimeIncidents: number;
         users: number;
         auditLogs: number;
-        notifications: number;
         exportSchedules: number;
       };
       totalRecords: number;
@@ -65,12 +64,6 @@ export default function DatabaseServiceView({
       label: "Crime Incidents",
       count: database.tables.crimeIncidents,
       description: "Police blotters, crime categories, geospatial coordinates, and case statuses.",
-    },
-    {
-      name: "notifications",
-      label: "Notifications & Alerts",
-      count: database.tables.notifications,
-      description: "Automated crime surge warnings, threshold triggers, and system dispatches.",
     },
     {
       name: "audit_logs",

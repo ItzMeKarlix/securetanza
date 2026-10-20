@@ -164,17 +164,6 @@ export const officerSystemSteps: DriveStep[] = [
 		},
 	},
 	{
-		element: '[data-tour="notification-bell"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Automated Intelligence Alerts",
-			description:
-				"Receive real-time alerts on peak-hour volume surges, barangay incident spikes, and critical heinous crime detections.",
-			side: "bottom",
-			align: "end",
-		},
-	},
-	{
 		element: '[data-tour="user-menu"]',
 		skipMissingElement: true,
 		popover: {
@@ -356,17 +345,6 @@ export const adminSystemSteps: DriveStep[] = [
 			title: "Batch Data Ingestion",
 			description:
 				"Upload bulk Excel blotter files (.xlsx) with automatic schema verification and geocoding.",
-			side: "bottom",
-			align: "end",
-		},
-	},
-	{
-		element: '[data-tour="notification-bell"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Alert & Notification Engine",
-			description:
-				"Review automated system alerts triggered by volume threshold rules and data import receipts.",
 			side: "bottom",
 			align: "end",
 		},
@@ -687,7 +665,7 @@ export const settingsSteps: DriveStep[] = [
 		popover: {
 			title: "System Configuration Hub",
 			description:
-				"Navigate administration and user preferences: manage profile credentials, security clearances, alert rules, and audit logs.",
+				"Navigate administration and user preferences: manage profile credentials, security clearances and audit logs.",
 			side: "right",
 			align: "start",
 		},
@@ -715,23 +693,12 @@ export const settingsSteps: DriveStep[] = [
 		},
 	},
 	{
-		element: '[data-tour="settings-notifications"]',
-		skipMissingElement: true,
-		popover: {
-			title: "Alert & Notification Engine",
-			description:
-				"Configure automated triggers for peak-hour volume spikes, barangay surges, and critical blotter incidents.",
-			side: "right",
-			align: "start",
-		},
-	},
-	{
 		element: '[data-tour="settings-workspace"]',
 		skipMissingElement: true,
 		popover: {
 			title: "Configuration Workspace",
 			description:
-				"Review credentials, adjust notification rules, audit batch data imports, and customize application preferences.",
+				"Review credentials, audit batch data imports, and customize application preferences.",
 			side: "left",
 			align: "start",
 		},

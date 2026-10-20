@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMapContext } from "@/context/MapContext";
 import { useTheme } from "@/context/ThemeContext";
-import NotificationBell from "@/components/notifications/notification-bell";
 
 interface HeaderProps {
   barangayName: string;
@@ -49,7 +48,6 @@ export default function DashboardHeader({ barangayName }: HeaderProps) {
             }`}
           />
         </div>
-        <NotificationBell />
       </div>
     </header>
   );

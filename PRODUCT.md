@@ -39,7 +39,7 @@ Law enforcement desktop and control-room environments where officers review crim
 
 - Real crime incident database (`crime_incidents` table with 1,900+ real records).
 - 41 barangays of Tanza, Cavite with real coordinates and polygon mapping data.
-- Live database audit logs, background export schedules, and automated notification engines.
+- Live database audit logs and background export schedules.
 
 ## Product Principles
 

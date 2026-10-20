@@ -1,38 +1,12 @@
 /**
  * Config Application Service (Polysyne Architecture)
- * Encapsulates notification rules and export schedule queries behind CacheService.
+ * Encapsulates export schedule queries behind CacheService.
  */
 
 import { prisma } from '@/backend/lib/prisma';
 import { cacheService, CacheKeys, TTL } from '@/backend/cache';
 
 export class ConfigService {
-  /**
-   * Get all notification intelligence rules (10-minute cache)
-   */
-  public static async getNotificationRules(): Promise<any[]> {
-    const cacheKey = CacheKeys.config.notificationRules();
-
-    return cacheService.getOrSet(cacheKey, TTL.CONFIG_RULES, async () => {
-      return prisma.notificationRule.findMany({
-        orderBy: { ruleKey: 'asc' },
-      });
-    });
-  }
-
-  /**
-   * Update notification rule and invalidate rules cache
-   */
-  public static async updateNotificationRule(id: string, updates: any): Promise<any> {
-    const updated = await prisma.notificationRule.update({
-      where: { id },
-      data: updates,
-    });
-
-    await cacheService.delete(CacheKeys.config.notificationRules());
-    return updated;
-  }
-
   /**
    * Get user export schedule (5-minute cache)
    */

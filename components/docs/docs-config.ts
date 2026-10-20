@@ -5,7 +5,6 @@ import {
   TrendingUp,
   FolderOpen,
   FileText,
-  Bell,
   ShieldCheck,
   Upload,
   AlertCircle,
@@ -17,7 +16,6 @@ import { DocsDashboard } from "./docs-dashboard";
 import { DocsAnalytics } from "./docs-analytics";
 import { DocsCases } from "./docs-cases";
 import { DocsReports } from "./docs-reports";
-import { DocsNotifications } from "./docs-notifications";
 import { DocsSettings } from "./docs-settings";
 import { DocsUpload } from "./docs-upload";
 import { DocsTroubleshooting } from "./docs-troubleshooting";
@@ -90,17 +88,6 @@ export const DOCS_SECTIONS: DocsSectionItem[] = [
     component: DocsReports,
   },
   {
-    id: "notifications",
-    title: "Notifications & Alerts",
-    icon: Bell,
-    tags: ["notifications", "alerts", "rules", "critical", "warning", "threshold", "heinous"],
-    subsections: [
-      { id: "severity-levels", title: "Alert Severity Levels", tags: ["critical", "warning", "info", "triggers"] },
-      { id: "rule-configuration", title: "Rule Configuration", tags: ["hourly", "threshold", "surge", "rules"] },
-    ],
-    component: DocsNotifications,
-  },
-  {
     id: "settings",
     title: "Settings & RBAC",
     icon: ShieldCheck,
@@ -162,7 +149,7 @@ export const DOCS_CATEGORIES: DocsCategoryItem[] = [
   {
     id: "system-administration",
     title: "System Administration",
-    description: "Alert triggers, batch ingestion, RBAC, and diagnostics",
-    sectionIds: ["notifications", "upload", "settings", "troubleshooting"],
+    description: "Batch ingestion, RBAC, and diagnostics",
+    sectionIds: ["upload", "settings", "troubleshooting"],
   },
 ];

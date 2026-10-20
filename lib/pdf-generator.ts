@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { normalizeReportEdits, type ReportEditOptions, type ReportEditRegion, type ReportOutlineEntry } from './report-editor';
 import {
   type ThreatLevel,
-  type ThreatThresholds,
   type GeoBounds,
   type BarangayShape,
   THREAT_RGB,
@@ -118,9 +118,65 @@ export class PDFReportGenerator {
   private geoFeatures: BarangayShape[] | null = null;
   private geoBounds: GeoBounds | null = null;
 
-  constructor() {
+  private readonly edits: ReportEditOptions;
+  private readonly T: Record<keyof typeof T, { size: number; lead: number }>;
+  private editableBlocks: Array<{ id: string; label: string; text: string }> = [];
+  private blockSection = 'Report';
+  private blockOrdinals = new Map<string, number>();
+  private editableRegions: ReportEditRegion[] = [];
+  private contentsInserted = false;
+
+  constructor(edits: Partial<ReportEditOptions> = {}) {
+    this.edits = normalizeReportEdits(edits);
+    const ratio = this.edits.fontSize / T.body.size;
+    this.T = Object.fromEntries(Object.entries(T).map(([key, scale]) => {
+      // Keep dense chart, table and page furniture legible without crowding it.
+      const factor = ['micro', 'small', 'caption'].includes(key) ? Math.min(ratio, 1.15) : ratio;
+      return [key, { size: scale.size * factor, lead: scale.lead * factor * this.edits.lineSpacing }];
+    })) as typeof this.T;
     this.doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
     this.y = CONTENT_TOP;
+  }
+
+  /** Original generated wording, even when an override is applied to the PDF. */
+  getEditableBlocks(): Array<{ id: string; label: string; text: string }> {
+    return this.editableBlocks.map((block) => ({ ...block }));
+  }
+
+  getEditableRegions(): ReportEditRegion[] {
+    return this.editableRegions.map(region => ({ ...region, page: region.page + (this.contentsInserted && region.page >= 2 ? 1 : 0) }));
+  }
+
+  getDocumentOutline(): ReportOutlineEntry[] {
+    return [{ id: 'cover', title: 'Title & details', page: 1 }, ...this.contents.map(entry => ({
+      id: entry.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      title: entry.title,
+      page: entry.page + (this.contentsInserted && entry.page >= 2 ? 1 : 0),
+    }))];
+  }
+
+  private captureEditableLine(id: string, value: string, target: ReportEditRegion['target'], x: number, baseline: number, width: number, scale: { size: number; lead: number }, weight: 'normal' | 'bold') {
+    const page = this.doc.getCurrentPageInfo().pageNumber;
+    const top = baseline - scale.size * 25.4 / 72 * 0.85;
+    const existing = this.editableRegions.find(region => region.id === id && region.page === page);
+    if (existing) {
+      existing.height = top + scale.lead - existing.y;
+      return;
+    }
+    this.editableRegions.push({ id, label: target === 'paragraph' ? this.editableBlocks.find(block => block.id === id)!.label : target === 'title' ? 'Report title' : 'Subtitle',
+      target, page, x, y: top, width, height: scale.lead, fontSize: scale.size, lineHeight: scale.lead,
+      fontFamily: this.edits.fontFamily, fontWeight: weight, value,
+      originalValue: target === 'paragraph' ? this.editableBlocks.find(block => block.id === id)!.text : value });
+  }
+
+  private editableText(text: string, kind: 'paragraph' | 'list-item'): string {
+    const section = this.blockSection.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const key = `${section}:${kind}`;
+    const ordinal = (this.blockOrdinals.get(key) ?? 0) + 1;
+    this.blockOrdinals.set(key, ordinal);
+    const id = `${key}:${ordinal}`;
+    this.editableBlocks.push({ id, label: `${this.blockSection} · ${kind === 'paragraph' ? 'Paragraph' : 'List item'} ${ordinal}`, text });
+    return Object.hasOwn(this.edits.paragraphOverrides, id) ? this.edits.paragraphOverrides[id] : text;
   }
 
   /* ── Primitives ─────────────────────────────────────────────────────────── */
@@ -143,7 +199,7 @@ export class PDFReportGenerator {
   }
 
   private type(scale: { size: number; lead: number }, weight: 'normal' | 'bold' = 'normal') {
-    this.doc.setFont('helvetica', weight);
+    this.doc.setFont(this.edits.fontFamily, weight);
     this.doc.setFontSize(scale.size);
   }
 
@@ -175,7 +231,7 @@ export class PDFReportGenerator {
   ) {
     const upper = text.toUpperCase();
     const tracking = 0.28;
-    this.type(T.micro, 'bold');
+    this.type(this.T.micro, 'bold');
     this.ink(color);
     this.doc.setCharSpace(tracking);
     let drawX = x;
@@ -192,7 +248,9 @@ export class PDFReportGenerator {
     text: string,
     opts: { scale?: { size: number; lead: number }; weight?: 'normal' | 'bold'; color?: RGB; width?: number; x?: number } = {}
   ) {
-    const scale = opts.scale ?? T.body;
+    text = this.editableText(text, 'paragraph');
+    const blockId = this.editableBlocks[this.editableBlocks.length - 1].id;
+    const scale = opts.scale ?? this.T.body;
     const width = opts.width ?? TEXT_COL;
     const x = opts.x ?? MARGIN_X;
     this.type(scale, opts.weight ?? 'normal');
@@ -202,38 +260,44 @@ export class PDFReportGenerator {
       this.ensure(scale.lead);
       this.type(scale, opts.weight ?? 'normal');
       this.ink(opts.color ?? INK_MID);
+      this.captureEditableLine(blockId, text, 'paragraph', x, this.y, width, scale, opts.weight ?? 'normal');
       this.doc.text(line, x, this.y);
       this.y += scale.lead;
     });
   }
 
   private subhead(text: string) {
-    this.ensure(T.sub.lead + 8);
+    this.ensure(this.T.sub.lead + 8);
     this.gap(4);
-    this.type(T.sub, 'bold');
+    this.type(this.T.sub, 'bold');
     this.ink(INK);
     this.doc.text(text, MARGIN_X, this.y);
-    this.y += T.sub.lead + 1.5;
+    this.y += this.T.sub.lead + 1.5;
   }
 
   /** Hanging-indent list item with a drawn accent dash for a marker. */
   private listItem(text: string, indent = 6) {
+    text = this.editableText(text, 'list-item');
+    const blockId = this.editableBlocks[this.editableBlocks.length - 1].id;
+    this.type(this.T.body);
     const lines = this.doc.splitTextToSize(text, TEXT_COL - indent) as string[];
     lines.forEach((line, i) => {
-      this.ensure(T.body.lead);
+      this.ensure(this.T.body.lead);
       if (i === 0) {
         this.fill(ACCENT);
         this.doc.rect(MARGIN_X, this.y - 1.4, 2.4, 0.5, 'F');
       }
-      this.type(T.body);
+      this.type(this.T.body);
       this.ink(INK_MID);
+      this.captureEditableLine(blockId, text, 'paragraph', MARGIN_X + indent, this.y, TEXT_COL - indent, this.T.body, 'normal');
       this.doc.text(line, MARGIN_X + indent, this.y);
-      this.y += T.body.lead;
+      this.y += this.T.body.lead;
     });
     this.y += 0.8;
   }
 
   private section(title: string, keepWith = 52) {
+    this.blockSection = title;
     const lead = this.y > CONTENT_TOP + 1 ? 12 : 0;
     // Keep the heading with enough of its first block that it never sits alone.
     if (this.y + lead + 22 + keepWith > CONTENT_BOTTOM) {
@@ -246,27 +310,28 @@ export class PDFReportGenerator {
     this.contents.push({ no: this.sectionNo, title, page: this.page });
 
     const label = String(this.sectionNo).padStart(2, '0');
-    this.type(T.section, 'bold');
+    this.type(this.T.section, 'bold');
     this.ink(ACCENT_DEEP);
     this.doc.text(label, MARGIN_X, this.y);
     const labelWidth = this.doc.getTextWidth(label);
     this.ink(INK);
-    this.doc.text(title, MARGIN_X + labelWidth + 4, this.y);
+    const headingLines = this.doc.splitTextToSize(title, MEASURE - labelWidth - 4) as string[];
+    headingLines.forEach((line, index) => this.doc.text(line, MARGIN_X + labelWidth + 4, this.y + index * this.T.section.lead));
 
-    this.y += 3.4;
+    this.y += (headingLines.length - 1) * this.T.section.lead + 3.4;
     this.rule(this.y, RULE, 0.4);
-    this.y += 8;
+    this.y += Math.max(8, this.T.body.lead);
   }
 
   private note(text: string) {
-    this.ensure(T.caption.lead * 2);
-    this.type(T.caption, 'normal');
+    this.ensure(this.T.caption.lead * 2);
+    this.type(this.T.caption, 'normal');
     this.ink(INK_SOFT);
     const lines = this.doc.splitTextToSize(text, TEXT_COL) as string[];
     lines.forEach((line) => {
-      this.ensure(T.caption.lead);
+      this.ensure(this.T.caption.lead);
       this.doc.text(line, MARGIN_X, this.y);
-      this.y += T.caption.lead;
+      this.y += this.T.caption.lead;
     });
     this.y += 2;
   }
@@ -274,10 +339,10 @@ export class PDFReportGenerator {
   private emptyNotice(what: string) {
     this.ensure(10);
     this.gap(1);
-    this.type(T.caption);
+    this.type(this.T.caption);
     this.ink(INK_SOFT);
     this.doc.text(`No ${what} was recorded for the selected period.`, MARGIN_X, this.y);
-    this.y += T.caption.lead + 3;
+    this.y += this.T.caption.lead + 3;
   }
 
   /* ── Figure band: three key numbers, hairline-delimited, no boxes ───────── */
@@ -295,12 +360,12 @@ export class PDFReportGenerator {
       const x = MARGIN_X + i * colW;
       this.capsLabel(figure.label, x, top + 4);
 
-      this.type(T.figure, 'bold');
+      this.type(this.T.figure, 'bold');
       this.ink(INK);
       this.doc.text(figure.value, x, top + 14);
 
       if (figure.caption) {
-        this.type(T.micro);
+        this.type(this.T.micro);
         this.ink(INK_SOFT);
         this.doc.text(figure.caption, x, top + 19.5);
       }
@@ -313,6 +378,16 @@ export class PDFReportGenerator {
 
     this.rule(top + bandH - 3, HAIR, 0.15);
     this.y = top + bandH + 3;
+  }
+
+  /** Fit labels using the active font's glyph widths, leaving room before data. */
+  private fittedLabel(text: string, width: number): string {
+    const line = text.replace(/\s+/g, ' ').trim();
+    if (this.doc.getTextWidth(line) <= width) return line;
+    const suffix = '...';
+    let end = line.length;
+    while (end > 0 && this.doc.getTextWidth(line.slice(0, end).trimEnd() + suffix) > width) end -= 1;
+    return line.slice(0, end).trimEnd() + suffix;
   }
 
   /* ── Charts, drawn as vectors so they stay sharp at any zoom ─────────────── */
@@ -340,9 +415,9 @@ export class PDFReportGenerator {
       const y = top + i * rowH;
       const w = Math.max((item.value / max) * trackW, item.value > 0 ? 0.6 : 0);
 
-      this.type(T.small);
+      this.type(this.T.small);
       this.ink(INK_MID);
-      this.doc.text(item.label, MARGIN_X, y + barH - 0.7);
+      this.doc.text(this.fittedLabel(item.label, labelW - 3), MARGIN_X, y + barH - 0.7);
 
       this.fill(mix(RAMP_LO, PAPER, 0.45));
       this.doc.rect(MARGIN_X + labelW, y, trackW, barH, 'F');
@@ -350,7 +425,7 @@ export class PDFReportGenerator {
       this.fill(rampColor(item.value / max));
       this.doc.rect(MARGIN_X + labelW, y, w, barH, 'F');
 
-      this.type(T.small, 'bold');
+      this.type(this.T.small, 'bold');
       this.ink(INK);
       this.doc.text(String(item.value), MARGIN_X + MEASURE, y + barH - 0.7, { align: 'right' });
     });
@@ -381,21 +456,23 @@ export class PDFReportGenerator {
     const barW = Math.min(slot * 0.62, 9);
 
     items.forEach((item, i) => {
-      const barH = (item.value / max) * h;
+      const barH = (item.value / max) * (h - 6);
       const x = MARGIN_X + i * slot + (slot - barW) / 2;
       const isPeak = opts.highlight === i;
       this.fill(isPeak ? RAMP_HI : rampColor(0.32 + (item.value / max) * 0.45));
       if (barH > 0) this.doc.rect(x, baseline - barH, barW, barH, 'F');
 
-      // Only the peak carries a value, so the chart needs no axis furniture.
-      if (isPeak) {
-        this.type(T.micro, 'bold');
+      // Persistent counts include zero-value columns, matching the image export.
+      {
+        this.type(this.T.micro, 'bold');
+        const valueWidth = this.doc.getTextWidth(String(item.value));
+        if (valueWidth > slot - 0.6) this.doc.setFontSize(this.T.micro.size * (slot - 0.6) / valueWidth);
         this.ink(INK);
         this.doc.text(String(item.value), x + barW / 2, baseline - barH - 1.8, { align: 'center' });
       }
 
       if (i % labelEvery === 0) {
-        this.type(T.micro, isPeak ? 'bold' : 'normal');
+        this.type(this.T.micro, isPeak ? 'bold' : 'normal');
         this.ink(isPeak ? INK : INK_SOFT);
         this.doc.text(item.label, x + barW / 2, baseline + 4, { align: 'center' });
       }
@@ -430,9 +507,9 @@ export class PDFReportGenerator {
       const y = top + r * cellH;
       const total = row.monthlyData.reduce((a, b) => a + b, 0);
 
-      this.type(T.small);
+      this.type(this.T.small);
       this.ink(INK_MID);
-      const label = row.crimeType.length > 30 ? `${row.crimeType.slice(0, 29)}…` : row.crimeType;
+      const label = this.fittedLabel(row.crimeType, labelW - 3);
       this.doc.text(label, MARGIN_X, y + cellH - 2.2);
 
       row.monthlyData.forEach((value, m) => {
@@ -441,8 +518,10 @@ export class PDFReportGenerator {
           const intensity = levels[levelOf(value)]?.intensity ?? 0.5;
           this.fill(rampColor(intensity));
           this.doc.rect(x + 0.35, y + 0.5, cellW - 0.7, cellH - 1.2, 'F');
-          this.type(T.micro, 'bold');
+          this.type(this.T.micro, 'bold');
           this.ink(intensity >= 0.6 ? PAPER : INK);
+          const valueWidth = this.doc.getTextWidth(String(value));
+          if (valueWidth > cellW - 1) this.doc.setFontSize(this.T.micro.size * (cellW - 1) / valueWidth);
           this.doc.text(String(value), x + cellW / 2, y + cellH - 2.4, { align: 'center' });
         } else {
           this.stroke(HAIR, 0.12);
@@ -450,7 +529,7 @@ export class PDFReportGenerator {
         }
       });
 
-      this.type(T.small, 'bold');
+      this.type(this.T.small, 'bold');
       this.ink(INK);
       this.doc.text(String(total), MARGIN_X + MEASURE, y + cellH - 2.2, { align: 'right' });
     });
@@ -467,7 +546,7 @@ export class PDFReportGenerator {
       const x = legendX + i * (swatchW + 1);
       this.fill(rampColor(level.intensity));
       this.doc.rect(x, this.y - 1.2, swatchW, 3, 'F');
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_SOFT);
       this.doc.text(levelRangeLabel(level), x + swatchW / 2, this.y + 4.2, { align: 'center' });
     });
@@ -540,7 +619,7 @@ export class PDFReportGenerator {
     items.forEach(([level, label]) => {
       this.fill(THREAT_RGB[level]);
       this.doc.rect(x, ly - 2.6, 3.2, 3.2, 'F');
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_MID);
       this.doc.text(label, x + 5.5, ly);
       ly += 5.6;
@@ -590,7 +669,7 @@ export class PDFReportGenerator {
 
     if (highlightUpper) {
       ly += 3;
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_SOFT);
       const lines = this.doc.splitTextToSize(
         `Outlined barangay is this report's scope.`,
@@ -598,7 +677,7 @@ export class PDFReportGenerator {
       ) as string[];
       lines.forEach((line) => {
         this.doc.text(line, legendX, ly);
-        ly += T.micro.lead;
+        ly += this.T.micro.lead;
       });
     }
 
@@ -634,10 +713,10 @@ export class PDFReportGenerator {
     this.fillRing(feature.ring, project, THREAT_RGB[level], { stroke: INK, strokeWidth: 0.4 });
 
     this.rule(y + mapH + 2, HAIR, 0.15, x, size);
-    this.type(T.small, 'bold');
+    this.type(this.T.small, 'bold');
     this.ink(INK);
     this.doc.text(feature.name, x, y + mapH + 7);
-    this.type(T.micro);
+    this.type(this.T.micro);
     this.ink(INK_SOFT);
     this.doc.text(`${count.toLocaleString()} incident${count === 1 ? '' : 's'} · ${this.titleCase(level)}`, x, y + mapH + 11.5);
   }
@@ -658,17 +737,17 @@ export class PDFReportGenerator {
       theme: 'plain',
       margin: { top: CONTENT_TOP, left: MARGIN_X, right: MARGIN_X, bottom: PAGE_H - CONTENT_BOTTOM },
       styles: {
-        font: 'helvetica',
-        fontSize: T.caption.size,
+        font: this.edits.fontFamily,
+        fontSize: this.T.caption.size,
         textColor: [INK[0], INK[1], INK[2]],
-        cellPadding: { top: 2, right: 2.5, bottom: 2, left: 0 },
+        cellPadding: { top: 2 * this.edits.lineSpacing, right: 2.5, bottom: 2 * this.edits.lineSpacing, left: 0 },
         valign: 'middle',
         lineWidth: 0,
         overflow: 'linebreak',
       },
       headStyles: {
         fontStyle: 'bold',
-        fontSize: T.micro.size,
+        fontSize: this.T.micro.size,
         textColor: [INK_SOFT[0], INK_SOFT[1], INK_SOFT[2]],
         cellPadding: { top: 0, right: 2.5, bottom: 2, left: 0 },
         lineWidth: { bottom: 0.4 },
@@ -717,31 +796,46 @@ export class PDFReportGenerator {
 
     this.capsLabel('Crime analytics case study', MARGIN_X, 52, ACCENT_DEEP);
 
-    this.type(T.title, 'bold');
-    this.ink(INK);
-    const titleLines = this.doc.splitTextToSize('Incident Pattern and Trend Report', 150) as string[];
-    let ty = 68;
-    titleLines.forEach((line) => {
-      this.doc.text(line, MARGIN_X, ty);
-      ty += T.title.lead;
-    });
-
-    ty += 4;
-    this.type(T.lead);
-    this.ink(INK_MID);
-    this.doc.text(scope, MARGIN_X, ty);
-    ty += T.lead.lead;
-    this.doc.text(`Reporting period: ${data.timeRange}`, MARGIN_X, ty);
-    if (data.crimeType) {
-      ty += T.lead.lead;
-      this.doc.text(`Crime type: ${data.crimeType}`, MARGIN_X, ty);
+    this.y = 68;
+    const coverText = (text: string, scale: { size: number; lead: number }, weight: 'normal' | 'bold', color: RGB, target?: 'title' | 'subtitle') => {
+      this.type(scale, weight);
+      const lines = this.doc.splitTextToSize(text, MEASURE) as string[];
+      lines.forEach((line) => {
+        this.ensure(scale.lead);
+        this.type(scale, weight);
+        this.ink(color);
+        if (target) this.captureEditableLine(target, text, target, MARGIN_X, this.y, MEASURE, scale, weight);
+        this.doc.text(line, MARGIN_X, this.y);
+        this.y += scale.lead;
+      });
+    };
+    // Fit ordinary long titles on the cover, and flow exceptionally long input
+    // onto another page rather than clipping or silently discarding text.
+    let titleScale = { ...this.T.title };
+    this.type(titleScale, 'bold');
+    while (this.doc.splitTextToSize(this.edits.title, MEASURE).length * titleScale.lead > 80 && titleScale.size > 18) {
+      titleScale = { size: titleScale.size * 0.95, lead: titleScale.lead * 0.95 };
+      this.type(titleScale, 'bold');
     }
+    coverText(this.edits.title, titleScale, 'bold', INK, 'title');
+    this.gap(4);
+    if (this.edits.subtitle) {
+      coverText(this.edits.subtitle, this.T.lead, 'normal', INK_MID, 'subtitle');
+      this.gap(3);
+    }
+    // User wording never replaces the source scope, reporting period or filter.
+    coverText(scope, this.T.lead, 'normal', INK_MID);
+    coverText(`Reporting period: ${data.timeRange}`, this.T.lead, 'normal', INK_MID);
+    if (data.crimeType) coverText(`Crime type: ${data.crimeType}`, this.T.lead, 'normal', INK_MID);
 
+    this.ensure(14);
     this.stroke(ACCENT, 1.4);
-    this.doc.line(MARGIN_X, ty + 12, MARGIN_X + 42, ty + 12);
+    this.doc.line(MARGIN_X, this.y + 8, MARGIN_X + 42, this.y + 8);
+    this.gap(20);
 
-    // Metadata ledger, foot of the cover
-    const metaTop = PAGE_H - 64;
+    // Keep the factual metadata together below the editable cover text.
+    this.ensure(42);
+    const metaTop = Math.max(this.y, PAGE_H - 64);
     this.rule(metaTop, RULE, 0.4);
 
     const meta: Array<[string, string]> = [
@@ -755,14 +849,14 @@ export class PDFReportGenerator {
     let my = metaTop + 8;
     meta.forEach(([label, value]) => {
       this.capsLabel(label, MARGIN_X, my);
-      this.type(T.caption, 'bold');
+      this.type(this.T.caption, 'bold');
       this.ink(INK);
       this.doc.text(value, MARGIN_X + 46, my);
       my += 5.4;
       this.rule(my - 2.2, HAIR, 0.12);
     });
 
-    this.type(T.micro);
+    this.type(this.T.micro);
     this.ink(INK_SOFT);
     this.doc.text(
       'Produced by the Secure Tanza crime analytics system. For official use in planning and deployment review.',
@@ -778,7 +872,7 @@ export class PDFReportGenerator {
     this.doc.setPage(2);
 
     let y = CONTENT_TOP + 6;
-    this.type(T.section, 'bold');
+    this.type(this.T.section, 'bold');
     this.ink(INK);
     this.doc.text('Contents', MARGIN_X, y);
     y += 3.6;
@@ -787,17 +881,17 @@ export class PDFReportGenerator {
 
     this.contents.forEach((entry) => {
       const label = String(entry.no).padStart(2, '0');
-      this.type(T.caption, 'bold');
+      this.type(this.T.caption, 'bold');
       this.ink(ACCENT_DEEP);
       this.doc.text(label, MARGIN_X, y);
 
-      this.type(T.body);
+      this.type(this.T.body);
       this.ink(INK);
       this.doc.text(entry.title, MARGIN_X + 10, y);
       const titleW = this.doc.getTextWidth(entry.title);
 
       const pageLabel = String(entry.page + 1);
-      this.type(T.caption, 'bold');
+      this.type(this.T.caption, 'bold');
       this.ink(INK_MID);
       this.doc.text(pageLabel, MARGIN_X + MEASURE, y, { align: 'right' });
       const pageW = this.doc.getTextWidth(pageLabel);
@@ -835,7 +929,7 @@ export class PDFReportGenerator {
         `${
           trends.trendDirection === 'improved' ? 'down from' : trends.trendDirection === 'worsened' ? 'up from' : 'unchanged against'
         } ${trends.previousThreatLevel.toLowerCase()} in the preceding quarter.`,
-      { scale: T.lead, color: INK, width: MEASURE }
+      { scale: this.T.lead, color: INK, width: MEASURE }
     );
     this.gap(3);
 
@@ -899,7 +993,7 @@ export class PDFReportGenerator {
     if (opts.includeCharts) {
       this.horizontalBars(
         byType.slice(0, 8).map((crime) => ({
-          label: crime.type.length > 24 ? `${crime.type.slice(0, 23)}…` : crime.type,
+          label: crime.type,
           value: crime.count,
         })),
         { caption: 'Leading incident types' }
@@ -973,7 +1067,7 @@ export class PDFReportGenerator {
     this.section('Temporal Analysis');
 
     const { timePatterns } = data.analyticsData;
-    const hours = timePatterns.hourlyDistribution ?? [];
+    const hours = Array.from({ length: 24 }, (_, hour) => timePatterns.hourlyDistribution?.[hour] ?? 0);
     const total = hours.reduce((a, b) => a + b, 0);
 
     if (!total) {
@@ -995,7 +1089,7 @@ export class PDFReportGenerator {
     if (opts.includeCharts) {
       this.columnChart(
         hours.map((count, hour) => ({ label: String(hour).padStart(2, '0'), value: count })),
-        { caption: 'Incidents by hour of day', height: 34, labelEvery: 3, highlight: timePatterns.peakHour }
+        { caption: 'Incidents by hour of day (00-23)', height: 38, highlight: timePatterns.peakHour }
       );
       this.gap(8);
     }
@@ -1092,7 +1186,7 @@ export class PDFReportGenerator {
     if (opts.includeCharts) {
       this.horizontalBars(
         byBarangay.slice(0, 8).map((item) => ({
-          label: item.barangay.length > 24 ? `${item.barangay.slice(0, 23)}…` : item.barangay,
+          label: item.barangay,
           value: item.count,
         })),
         { caption: 'Highest-volume barangays' }
@@ -1330,10 +1424,10 @@ export class PDFReportGenerator {
     this.rule(this.y, INK, 0.5);
     this.y += 7;
 
-    this.type(T.sub, 'bold');
+    this.type(this.T.sub, 'bold');
     this.ink(INK);
     this.doc.text('Method and definitions', MARGIN_X, this.y);
-    this.y += T.sub.lead + 1;
+    this.y += this.T.sub.lead + 1;
 
     this.note(
       `Figures are drawn from incident records held in the Secure Tanza system for ${data.timeRange}, filtered to the reporting scope stated on the cover${data.crimeType ? `, and limited to the crime type ${data.crimeType}. Quarterly threat ratings still use the thresholds set for all crime types combined, so they read lower for a single type or group` : ''}. Counts reflect records present at the time of generation and will move as cases are updated.`
@@ -1355,8 +1449,9 @@ export class PDFReportGenerator {
     const signatureBlockHeight = 10 + 26; // the gap() + ensure() the sign-off block below needs
 
     definitions.forEach(([term, meaning], i) => {
+      this.type(this.T.caption);
       const lines = this.doc.splitTextToSize(meaning, MEASURE - bulletIndent) as string[];
-      const entryHeight = T.caption.lead + lines.length * T.caption.lead + 2;
+      const entryHeight = this.T.caption.lead + lines.length * this.T.caption.lead + 2;
       const isLast = i === definitions.length - 1;
       // Reserve room for the sign-off block too when drawing the last entry,
       // so a break (if one is needed) happens before it — keeping "Prepared
@@ -1366,16 +1461,17 @@ export class PDFReportGenerator {
 
       this.fill(ACCENT);
       this.doc.rect(MARGIN_X, this.y - 1.4, 2.4, 0.5, 'F');
-      this.type(T.caption, 'bold');
+      this.type(this.T.caption, 'bold');
       this.ink(INK);
       this.doc.text(term, MARGIN_X + bulletIndent, this.y);
-      this.y += T.caption.lead;
+      this.y += this.T.caption.lead;
 
-      this.type(T.caption, 'normal');
+      this.type(this.T.caption, 'normal');
       this.ink(INK_SOFT);
       lines.forEach((line) => {
+        this.ensure(this.T.caption.lead);
         this.doc.text(line, MARGIN_X + bulletIndent, this.y);
-        this.y += T.caption.lead;
+        this.y += this.T.caption.lead;
       });
       this.y += 2;
     });
@@ -1390,7 +1486,7 @@ export class PDFReportGenerator {
       const x = MARGIN_X + i * (colW + 10);
       this.rule(this.y + 10, RULE, 0.3, x, colW);
       this.capsLabel(label, x, this.y + 14.5);
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_SOFT);
       this.doc.text(hint, x, this.y + 18.6);
     });
@@ -1404,7 +1500,7 @@ export class PDFReportGenerator {
       if (page === 1) continue; // cover carries its own furniture
       this.doc.setPage(page);
 
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_SOFT);
       this.doc.setCharSpace(0.2);
       this.doc.text(this.runningHead.toUpperCase(), MARGIN_X, 15.2);
@@ -1413,16 +1509,24 @@ export class PDFReportGenerator {
       this.rule(18, HAIR, 0.15);
 
       this.rule(PAGE_H - 16, HAIR, 0.15);
-      this.type(T.micro);
+      this.type(this.T.micro);
       this.ink(INK_SOFT);
       this.doc.text(this.reference, MARGIN_X, PAGE_H - 11.5);
       
-      const generationText = `Generated by ${data.generatedBy || 'System'} on ${stamp.toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })}`;
-      this.type(T.micro, 'normal');
-      this.doc.text(generationText, PAGE_W / 2, PAGE_H - 11.5, { align: 'center' });
-
       const label = contentsInserted && page === 2 ? 'Contents' : `Page ${page} of ${totalPages}`;
-      this.type(T.micro, contentsInserted && page === 2 ? 'normal' : 'bold');
+      const referenceW = this.doc.getTextWidth(this.reference);
+      this.type(this.T.micro, contentsInserted && page === 2 ? 'normal' : 'bold');
+      const labelW = this.doc.getTextWidth(label);
+      const generationLeft = MARGIN_X + referenceW + 3;
+      const generationRight = MARGIN_X + MEASURE - labelW - 3;
+      const generationText = `Generated by ${data.generatedBy || 'System'} on ${stamp.toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })}`;
+      this.type(this.T.micro, 'normal');
+      const generationWidth = this.doc.getTextWidth(generationText);
+      const generationRoom = generationRight - generationLeft;
+      if (generationWidth > generationRoom) this.doc.setFontSize(this.T.micro.size * generationRoom / generationWidth);
+      this.doc.text(generationText, (generationLeft + generationRight) / 2, PAGE_H - 11.5, { align: 'center' });
+
+      this.type(this.T.micro, contentsInserted && page === 2 ? 'normal' : 'bold');
       this.ink(contentsInserted && page === 2 ? INK_SOFT : INK_MID);
       this.doc.text(label, MARGIN_X + MEASURE, PAGE_H - 11.5, { align: 'right' });
     }
@@ -1443,6 +1547,15 @@ export class PDFReportGenerator {
   /* ── Entry point ────────────────────────────────────────────────────────── */
 
   async generateReport(config: ReportConfig, data: ReportData): Promise<Blob> {
+    this.doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    this.y = CONTENT_TOP;
+    this.sectionNo = 0;
+    this.contents = [];
+    this.editableBlocks = [];
+    this.editableRegions = [];
+    this.contentsInserted = false;
+    this.blockOrdinals.clear();
+    this.blockSection = 'Report';
     const sectionCount = Object.values(config).filter((opts) => opts.enabled).length;
     const stamp = new Date();
     const slug =
@@ -1459,7 +1572,7 @@ export class PDFReportGenerator {
     this.runningPeriod = data.timeRange;
 
     this.doc.setProperties({
-      title: `Incident Pattern and Trend Report — ${data.barangayName}`,
+      title: `${this.edits.title} — ${data.barangayName}`,
       subject: `Crime analytics case study · ${data.timeRange}${data.crimeType ? ` · ${data.crimeType}` : ''}`,
       author: 'Secure Tanza',
       creator: 'Secure Tanza crime analytics system',
@@ -1488,6 +1601,7 @@ export class PDFReportGenerator {
     this.closingNotes(data);
 
     const contentsInserted = this.contents.length >= 3;
+    this.contentsInserted = contentsInserted;
     if (contentsInserted) this.contentsPage();
 
     this.stampChrome(this.doc.getNumberOfPages(), contentsInserted, data, stamp);

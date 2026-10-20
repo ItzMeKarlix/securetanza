@@ -8,7 +8,6 @@ export * from "./docs-dashboard";
 export * from "./docs-analytics";
 export * from "./docs-cases";
 export * from "./docs-reports";
-export * from "./docs-notifications";
 export * from "./docs-settings";
 export * from "./docs-upload";
 export * from "./docs-troubleshooting";

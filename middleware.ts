@@ -14,7 +14,6 @@ const publicApiRoutes = [
   '/api/auth/login',
   '/api/auth/session',
   '/api/auth/logout',
-  '/api/notifications',
   '/api/crimes',
   '/api/barangays',
 ];

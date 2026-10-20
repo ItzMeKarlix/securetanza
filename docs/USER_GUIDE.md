@@ -16,13 +16,12 @@
 7. [Historical Crime Analytics & Intelligence](#7-historical-crime-analytics--intelligence)
 8. [Crime Cases & Blotter Dossier Management](#8-crime-cases--blotter-dossier-management)
 9. [Institutional PDF Report Generator](#9-institutional-pdf-report-generator)
-10. [Analytical Alert & Notification Rules Engine](#10-analytical-alert--notification-rules-engine)
-11. [System Settings, Security & Configuration](#11-system-settings-security--configuration)
-12. [Batch Data Ingestion & Excel Schema](#12-batch-data-ingestion--excel-schema)
-13. [Interactive Guided Onboarding Tour](#13-interactive-guided-onboarding-tour)
-14. [Role-Based Operational Playbooks](#14-role-based-operational-playbooks)
-15. [Diagnostics & Troubleshooting Matrix](#15-diagnostics--troubleshooting-matrix)
-16. [Glossary of Terms](#16-glossary-of-terms)
+10. [System Settings, Security & Configuration](#10-system-settings-security--configuration)
+11. [Batch Data Ingestion & Excel Schema](#11-batch-data-ingestion--excel-schema)
+12. [Interactive Guided Onboarding Tour](#12-interactive-guided-onboarding-tour)
+13. [Role-Based Operational Playbooks](#13-role-based-operational-playbooks)
+14. [Diagnostics & Troubleshooting Matrix](#14-diagnostics--troubleshooting-matrix)
+15. [Glossary of Terms](#15-glossary-of-terms)
 
 ---
 
@@ -40,7 +39,6 @@
 - **Tactical Spatial-Temporal Analytics:** 24-hour polar radar time patterns, modus operandi breakdown, location type categorizations, and full-spectrum monthly heatmap matrix.
 - **Comprehensive Blotter Dossiers:** Incident tracking with Heinous/Sensational flags, Elected/Government Official (EGO) victim/suspect tags, investigator assignments, and legal status tracking.
 - **Publication-Ready PDF Reports:** Institutional black-and-white reports with embedded vector chart captures and strategic recommendations for Peace and Order Councils.
-- **Automated Intelligence Alerts:** Threshold-based rule engine detecting hourly volume spikes, barangay surges, and heinous crime events.
 - **Role-Based Security & Accessibility:** Tiered clearances for Administrators, Operational Officers, and Privileged Users, coupled with immediate app-wide accessibility customization (reduced motion, high contrast, text scaling).
 
 ```
@@ -49,7 +47,7 @@
 +-------------------------------------------------------------------------------+
 |  Presentation: Next.js 14 App Router, Tailwind CSS, Leaflet/Mapbox, Driver.js |
 |  API Layer: Next.js API Routes (REST), Jose JWT Auth Middleware               |
-|  Database: PostgreSQL via Prisma ORM (CrimeIncidents, Users, Notifications)  |
+|  Database: PostgreSQL via Prisma ORM (CrimeIncidents, Users, AuditLogs)  |
 +-------------------------------------------------------------------------------+
 ```
 
@@ -89,7 +87,6 @@ SecureTanza enforces role-based clearance levels to protect sensitive blotter in
 | **PDF Report Compilation** | Full Custom Export | Full Custom Export | Basic Summary |
 | **Batch Excel Ingestion** | Authorized | Authorized | Restricted |
 | **User Administration & RBAC** | Exclusive Access | Restricted | Restricted |
-| **Notification Rules Engine** | Exclusive Access | Restricted | Restricted |
 | **Audit Logs Inspection** | Exclusive Access | Read-Only | Restricted |
 | **Account Preferences & Accessibility** | Full Access | Full Access | Full Access |
 | **Role-Based Guided Walkthrough** | 9-Stage Tour | 8-Stage Tour | 6-Stage Tour |
@@ -99,7 +96,7 @@ SecureTanza enforces role-based clearance levels to protect sensitive blotter in
 SecureTanza provides tailored, multi-stage interactive tours (powered by Driver.js) dynamically adapted to the user's clearance level:
 
 1. **Operational Officer Walkthrough (8 Stages):**
-   - *Stage 1 (Map):* Tactical GIS layers, Excel blotter ingestion (`.xlsx`), peak-hour automated alerts, and officer badge clearance.
+   - *Stage 1 (Map):* Tactical GIS layers, Excel blotter ingestion (`.xlsx`) and officer badge clearance.
    - *Stage 2 (Compare):* Dual-pane synchronized map comparison (Period A vs Period B), linked pan/zoom controls, shared threat color scaling, and live Change Ledger.
    - *Stage 3 (Overview):* Municipality KPI snapshots, monthly volume trends, and recent blotter activity.
    - *Stage 4 (Cases):* Case blotter search filters, incident dossiers, and modus operandi analysis.
@@ -112,7 +109,7 @@ SecureTanza provides tailored, multi-stage interactive tours (powered by Driver.
    - *Stages:* Tailored according to granted permissions (`privileged_map_view`, `privileged_cases_view`, `privileged_analytics_view`) across Map, Compare, Overview, Cases, Analytics, Reports, Account Preferences & Accessibility, and Docs.
 
 3. **System Administrator Walkthrough (9 Stages):**
-   - *Full Platform:* Includes all operational modules: Map, Compare, Overview, Cases, Analytics, Reports, System Settings (RBAC user provisioning, role assignments, automated alert rules, and upload audit logs), Account Preferences & Accessibility, and Docs.
+   - *Full Platform:* Includes all operational modules: Map, Compare, Overview, Cases, Analytics, Reports, System Settings (RBAC user provisioning, role assignments and upload audit logs), Account Preferences & Accessibility, and Docs.
 
 Users can relaunch their role walkthrough at any time from the **User Menu** or the **Documentation Hub** (`/docs`).
 
@@ -324,44 +321,22 @@ Users can toggle individual analytical sections on or off:
 
 ---
 
-## 10. Analytical Alert & Notification Rules Engine
-
-**Route:** Header Bell Icon & `/dashboard/config/notifications` *(Notification Rules Tab)*
-
-SecureTanza monitors incident streams and notifies personnel of statistical anomalies and high-priority crimes.
-
-### 10.1 Alert Severity Tiers
-
-- 🔴 **CRITICAL:** Heinous crimes detected, sudden surge in violent crimes, or severe data pipeline validation errors.
-- 🟡 **WARNING:** Hourly peak threshold exceedances (>25% of daily volume in one hour) or rapid barangay percentage increases.
-- 🔵 **INFO:** Batch upload completion summaries, scheduled exports, and system login audit logs.
-
-### 10.2 Notification Categories
-
-- `PEAK_HOUR`: Extreme volume concentration during specific hours.
-- `CRIME_ACTIVITY`: Significant shifts in crime categories or hotspot emergence.
-- `DATASET_PROCESSING`: Validation results and record counts from batch imports.
-- `SYSTEM`: User role modifications and administrative actions.
-
----
-
-## 11. System Settings, Security & Configuration
+## 10. System Settings, Security & Configuration
 
 **Route:** `/dashboard/config`
 
 The System Configuration Hub provides comprehensive administrative oversight, security enforcement, and individual user environment customization.
 
-### 11.1 Sub-Modules & Navigation Hub
+### 10.1 Sub-Modules & Navigation Hub
 
 1. **My Profile (`/dashboard/config`):** Update full name, account password, and inspect security clearance tags.
 2. **Account Preferences (`/dashboard/config/preferences`):** Customize appearance, interface themes, immediate app-wide accessibility options, and landing page routing.
 3. **Access & Security (RBAC) (`/dashboard/config/access`):** Provision personnel accounts, assign administrative roles, and enforce granular security clearances.
-4. **Notification Rules (`/dashboard/config/notifications`):** Configure alert thresholds, enable/disable rule keys (e.g., `HOURLY_PERCENT_EXCEEDS`, `HEINOUS_CRIME_DETECTED`), and adjust sensitivity parameters.
-5. **Audit Logs (`/dashboard/config/audit-logs`):** Full history of dataset batch imports, record counts, user attribution, and validation traces.
-6. **Data Exports (`/dashboard/config/exports`):** Automated schedules for CSV and Excel bulk exports.
-7. **Backups (`/dashboard/config/backups`):** Retained dataset archives and system restoration points.
+4. **Audit Logs (`/dashboard/config/audit-logs`):** Full history of dataset batch imports, record counts, user attribution, and validation traces.
+5. **Data Exports (`/dashboard/config/exports`):** Recurring Excel dataset snapshots, available in Settings → Backups.
+6. **Backups (`/dashboard/config/backups`):** Retained dataset archives and system restoration points.
 
-### 11.2 Account Preferences & Accessibility Controls
+### 10.2 Account Preferences & Accessibility Controls
 
 Located at `/dashboard/config/preferences`, these settings allow officers and administrators to tailor their interface experience for diverse field conditions. All accessibility settings are **applied immediately app-wide** without requiring a page reload:
 
@@ -378,13 +353,13 @@ Located at `/dashboard/config/preferences`, these settings allow officers and ad
 
 ---
 
-## 12. Batch Data Ingestion & Excel Schema
+## 11. Batch Data Ingestion & Excel Schema
 
 **Route:** Main Navigation → Upload Button (`/api/crimes/upload`)
 
 SecureTanza accepts Excel spreadsheets (`.xlsx` or `.xls`) for bulk blotter data ingestion.
 
-### 12.1 Column Header Specification
+### 11.1 Column Header Specification
 
 | Column Header | Type | Requirement | Description & Valid Examples |
 | :--- | :---: | :---: | :--- |
@@ -406,7 +381,7 @@ SecureTanza accepts Excel spreadsheets (`.xlsx` or `.xls`) for bulk blotter data
 
 ---
 
-## 13. Interactive Guided Onboarding Tour
+## 12. Interactive Guided Onboarding Tour
 
 SecureTanza features a multi-stage interactive tour powered by **Driver.js**, providing automated step-by-step guidance tailored to the user's role:
 
@@ -418,18 +393,18 @@ SecureTanza features a multi-stage interactive tour powered by **Driver.js**, pr
   4. **Stage 4 — Case Blotter (`/dashboard/cases`):** Search suite, case directory, and investigation dossiers.
   5. **Stage 5 — Historical Analytics (`/dashboard/analytics`):** 24-hour polar radar, modus breakdown, and crime matrix heatmap.
   6. **Stage 6 — PDF Reports (`/dashboard/reports`):** Section selector, cover preview, and institutional export.
-  7. **Stage 7 — System Settings (`/dashboard/config`):** Configuration hub, RBAC user provisioning, and alert rules engine *(Admin only)*.
+  7. **Stage 7 — System Settings (`/dashboard/config`):** Configuration hub, RBAC user provisioning, and audit logs *(Admin only)*.
   8. **Stage 8 — Account Preferences & Accessibility (`/dashboard/config/preferences`):** Interface themes, reduced motion, high contrast, and dynamic typographic scaling.
   9. **Stage 9 — Documentation Hub (`/docs`):** Complete user manuals, playbooks, and tour replay controls.
 - **Replay Anytime:** Personnel can relaunch their role-specific tour at any point by clicking **User Menu → Replay Tour** or the **Start Tour** button in `/docs`.
 
 ---
 
-## 14. Role-Based Operational Playbooks
+## 13. Role-Based Operational Playbooks
 
 ### Playbook A: Chief of Police / Station Commander (Daily Briefing)
 1. **08:00 Hours — Review Municipal Snapshot:** Open `/dashboard/overview`. Inspect 24-hour total incident volume and critical hotspot barangays.
-2. **Review Incident Spikes & Alerts:** Check the Notification Bell for any `CRITICAL` heinous crime alerts or `WARNING` peak-hour flags.
+2. **Review Priority Cases:** Open the case blotter to inspect heinous cases and their investigation status.
 3. **Compare Periods:** Open `/compare` to examine current-month incidents against the previous month, noting any barangays exhibiting incident surges.
 4. **Analyze Time Patterns:** Open `/dashboard/analytics`. Check the 24-Hour Radar Plot to allocate police roving patrol shifts for the evening.
 5. **Export Briefing Report:** Navigate to `/dashboard/reports`, select *Executive Summary*, *Trends*, *Radar Time Patterns*, and *Recommendations*, then export the PDF briefing for the Mayor's peace-and-order briefing.
@@ -449,12 +424,12 @@ SecureTanza features a multi-stage interactive tour powered by **Driver.js**, pr
 
 ### Playbook D: IT & Security Administrator (System Maintenance)
 1. **User Provisioning:** Access `/dashboard/config/access`. Issue new user accounts with designated role clearances.
-2. **Rule Configuration:** Fine-tune threshold triggers in Notification Rules (`/dashboard/config/notifications`).
+2. **Export Scheduling:** Set a recurring snapshot in Data Exports (`/dashboard/config/exports`) and retrieve completed files from Backups.
 3. **Audit Log Review:** Regularly inspect upload logs and system audit trails for unauthorized access or corrupted batch imports.
 
 ---
 
-## 15. Diagnostics & Troubleshooting Matrix
+## 14. Diagnostics & Troubleshooting Matrix
 
 | Symptom | Probable Cause | Corrective Action |
 | :--- | :--- | :--- |
@@ -467,7 +442,7 @@ SecureTanza features a multi-stage interactive tour powered by **Driver.js**, pr
 
 ---
 
-## 16. Glossary of Terms
+## 15. Glossary of Terms
 
 - **Barangay:** Smallest administrative division in the Philippines (Tanza has 41 barangays).
 - **Blotter:** Official police record of crime incidents and complaints.

@@ -69,12 +69,6 @@ export function DocsSettings() {
                 <td className="py-2 px-3 text-slate-400">Restricted</td>
                 <td className="py-2 px-3 text-slate-400">Restricted</td>
               </tr>
-              <tr>
-                <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Notification Alert Configuration</td>
-                <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Authorized</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-                <td className="py-2 px-3 text-slate-400">Restricted</td>
-              </tr>
             </tbody>
           </table>
         </div>

@@ -1,7 +1,6 @@
 /**
  * Shared vocabulary for the ingestion surfaces — the upload dialog and the upload
- * register. Mirrors the shape of components/notifications/notification-meta.tsx so both
- * ledgers speak the same language: a word for every status, a spine for position, and
+ * register. Both ledgers use a word for every status, a spine for position, and
  * never colour on its own.
  */
 
@@ -63,10 +62,9 @@ export const EXPECTED_COLUMNS = [
 ];
 
 /**
- * Without these a row cannot be placed on the map or the clock, so the analytical
- * engine has nothing to evaluate. Stricter than the row-level check in the backend,
- * which only refuses rows missing barangay, date_reported, date_committed and
- * incident_type — the time columns are what the peak-hour rule reads.
+ * Required headers keep rows usable on the map and in temporal analytics.
+ * The row-level backend check requires barangay, date_reported, date_committed
+ * and incident_type; time headers are checked here for the upload preview.
  */
 export const REQUIRED_COLUMNS = [
   "barangay",
@@ -176,7 +174,7 @@ export interface ColumnCheck {
   recognised: string[];
   /** Not blocking: headers spelled differently from the register, read as the column they name. */
   renamed: HeaderRename[];
-  /** Blocking: the engine cannot evaluate rows without these. */
+  /** Blocking: the upload preview requires these columns. */
   missingRequired: string[];
   /** Not blocking: rows import without them. */
   missingOptional: string[];

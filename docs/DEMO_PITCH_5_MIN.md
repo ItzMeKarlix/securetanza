@@ -59,7 +59,7 @@ The timings below total five minutes. Read only the quoted text aloud. Screen in
 
 ## 2:50–3:40 — Produce a briefing and preserve accountability
 
-**Action:** open **Reports** (`/dashboard/reports`), point to section selection, then show the prepared PDF. If time permits, briefly display one existing notification.
+**Action:** open **Reports** (`/dashboard/reports`), point to section selection, then show the prepared PDF.
 
 > SecureTanza also prepares a PDF briefing with selected statistics, charts, and barangay comparisons. This provides a common reference for command conferences and peace-and-order discussions.
 >
@@ -151,7 +151,7 @@ The repository's deployment guide runs the web app and export worker on a Debian
 It summarizes recorded incidents and compares periods. Patrol decisions and causal conclusions require officer judgment and additional evidence.
 
 **“How current is the information?”**  
-It reflects records uploaded into the system. Pattern notifications are evaluated during dataset ingestion; freshness depends on the station's update process.
+It reflects records uploaded into the system; freshness depends on the station's update process.
 
 **“Can we use it without internet?”**  
 The documented app can run on the station LAN, but a Supabase cloud database needs internet connectivity. Map tiles also use external services. Offline operation is not established by this review.
@@ -161,7 +161,7 @@ Compare the imported records with the approved source, time a recurring briefing
 
 ## Evidence and rehearsal limits
 
-The demo sequence was checked against source files and routes, not a live authenticated session. Before presenting, confirm the chosen records, charts, notifications, and PDF on the running app. Do not quote incident totals or claim measured time savings without checking them.
+The demo sequence was checked against source files and routes, not a live authenticated session. Before presenting, confirm the chosen records, charts, and PDF on the running app. Do not quote incident totals or claim measured time savings without checking them.
 
 | Pitch point | Source in this repository |
 | --- | --- |
@@ -171,7 +171,6 @@ The demo sequence was checked against source files and routes, not a live authen
 | Time patterns and underlying cases | `components/dashboard/analytics-tab.tsx`, `components/dashboard/incidents-tab.tsx` |
 | Report selection and PDF export | `components/dashboard/reports-tab.tsx` |
 | Excel validation and duplicate handling | `backend/api/crimes/upload/route.ts` |
-| Import-triggered notifications | `backend/lib/notification-engine.ts` |
 | Database archive and export retention | `backend/prisma/schema.prisma`, `backend/services/backup.service.ts`, `backend/cron/worker.ts` |
 | Application hosting scope | `deploy/README.md` |
 

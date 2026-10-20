@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Archive, Check, CheckCircle2, ChevronDown, Download, Eye, FileText, Image as ImageIcon, Loader2, Minus, X } from "lucide-react";
+import { AlertCircle, Archive, Check, CheckCircle2, ChevronDown, Download, Eye, FileText, Image as ImageIcon, Loader2, Minus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMapContext } from "@/context/MapContext";
 import { extractCrimeType } from "@/hooks/useCrimeTypes";
 import { useAnalyticsData } from "@/hooks/useAnalyticsData";
@@ -13,6 +12,8 @@ import { PDFReportGenerator, type ReportData } from "@/lib/pdf-generator";
 import { ImageExporter, type ExportedImage } from "@/lib/image-export";
 import { useAuth } from "@/context/AuthContext";
 import BarangayMultiSelect from "@/components/dashboard/barangay-multi-select";
+import ReportPreviewEditor from "@/components/dashboard/report-preview-editor";
+import { DEFAULT_REPORT_EDITS, type ReportEditOptions } from "@/lib/report-editor";
 
 // Force fast refresh 1
 
@@ -171,10 +172,11 @@ const IMAGE_ITEMS: Array<{ key: ImageItemKey; label: string; desc: string }> = [
 
 export default function ReportsTab({ barangayName }: ReportsTabProps) {
   const { user } = useAuth();
-  const { selectedYear, timeRange, selectedCrimeType } = useMapContext();
+  const { selectedYear, timeRange, selectedCrimeType, selectedFelonyStage } = useMapContext();
   const [loading, setLoading] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<ReportData | null>(null);
+  const [reportEdits, setReportEdits] = useState<ReportEditOptions>({ ...DEFAULT_REPORT_EDITS, paragraphOverrides: {} });
+  const previewing = previewData !== null;
   const [step, setStep] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
@@ -193,6 +195,15 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
   const [selectedBarangayMaps, setSelectedBarangayMaps] = useState<Set<string>>(new Set());
   const [exportingImages, setExportingImages] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+
+  // Narrative edits belong to the data scope they were written for. Keep the
+  // typography when filters change, but do not carry edited findings across scopes.
+  useEffect(() => {
+    setPreviewData(null);
+    setReportEdits((current) => Object.keys(current.paragraphOverrides).length
+      ? { ...current, paragraphOverrides: {} }
+      : current);
+  }, [barangayName, timeRange, selectedCrimeType, selectedFelonyStage]);
 
   // Barangay list for the per-barangay map picker — independent of whatever
   // barangay this report itself is scoped to, so an admin can pull any map.
@@ -265,14 +276,14 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
   const selectedSections = SECTIONS.filter((section) => reportConfig[section.key].enabled);
   const selectedCount = selectedSections.length;
   const needsMatrix = reportConfig.includeCrimeMatrix.enabled;
-  const waitingForData = analyticsData.loading || (needsMatrix && matrixLoading);
-  const imagesWaitingForData = analyticsData.loading || (selectedImages.has("matrixHeatmap") && matrixLoading);
+  const waitingForData = analyticsData.loading || analyticsData.detailsLoading || (needsMatrix && matrixLoading);
+  const imagesWaitingForData = analyticsData.loading || analyticsData.detailsLoading || (selectedImages.has("matrixHeatmap") && matrixLoading);
   const fileName = today ? `Crime-Report-${locationSlug}${crimeTypeSlug}-${today}.pdf` : null;
 
   /** Same data the PDF is built from — shared with the image exporter below
    *  so a chart or map image reflects exactly the same numbers the report would. */
   const getReportData = (): ReportData => {
-    if (analyticsData.loading) {
+    if (analyticsData.loading || analyticsData.detailsLoading) {
       throw new Error('Analytics data is still loading. Please wait and try again.');
     }
     if (analyticsData.error) {
@@ -302,7 +313,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
     setStep("Checking data");
     const data = getReportData();
     setStep("Building document");
-    const pdfGenerator = new PDFReportGenerator();
+    const pdfGenerator = new PDFReportGenerator(reportEdits);
     return pdfGenerator.generateReport(reportConfig, data);
   };
 
@@ -404,29 +415,46 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
     }
   };
 
-  const handlePreviewReport = async () => {
-    setPreviewing(true);
+  const handlePreviewReport = () => {
     setError(null);
     setArchived(null);
 
     try {
-      const pdfBlob = await buildReportBlob();
-      setStep("Opening");
-      const url = URL.createObjectURL(pdfBlob);
-      setPreviewUrl(url);
+      setPreviewData(getReportData());
     } catch (err) {
       console.error('Error previewing report:', err);
       setError(err instanceof Error ? err.message : 'Failed to preview the report. Please try again.');
-    } finally {
-      setPreviewing(false);
-      setStep("");
     }
   };
 
-  const closePreview = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
+  const closePreview = () => setPreviewData(null);
+
+  const saveReportBlob = async (pdfBlob: Blob) => {
+    setStep("Saving");
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Crime-Report-${locationSlug}${crimeTypeSlug}-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Audit log — who/ip/session are derived server-side from the
+    // authenticated session now, not sent from here.
+    try {
+      await fetch('/api/audit-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'Export',
+          resource: `Report:${locationSlug}${crimeTypeSlug}`,
+          details: `Generated and downloaded PDF report for ${locationName}${crimeTypeLabel ? ` (${crimeTypeLabel})` : ''}`,
+          outcome: 'success',
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to log audit event', e);
     }
   };
 
@@ -438,32 +466,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
     try {
       const pdfBlob = await buildReportBlob();
 
-      setStep("Saving");
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Crime-Report-${locationSlug}${crimeTypeSlug}-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      // Audit log — who/ip/session are derived server-side from the
-      // authenticated session now, not sent from here.
-      try {
-        await fetch('/api/audit-logs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'Export',
-            resource: `Report:${locationSlug}${crimeTypeSlug}`,
-            details: `Generated and downloaded PDF report for ${locationName}${crimeTypeLabel ? ` (${crimeTypeLabel})` : ''}`,
-            outcome: 'success',
-          }),
-        });
-      } catch (e) {
-        console.error('Failed to log audit event', e);
-      }
+      await saveReportBlob(pdfBlob);
     } catch (err) {
       console.error('Error exporting report:', err);
       setError(err instanceof Error ? err.message : 'Failed to export the report. Please try again.');
@@ -780,9 +783,10 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
                 <p className="text-[6px] font-bold uppercase tracking-[0.2em] text-[#0369a1]">
                   Crime analytics case study
                 </p>
-                <p className="mt-2 font-heading text-[15px] font-bold leading-[1.12] tracking-tight text-[#0f172a]">
-                  Incident Pattern and Trend Report
+                <p className="mt-2 line-clamp-4 font-heading text-[15px] font-bold leading-[1.12] tracking-tight text-[#0f172a]">
+                  {reportEdits.title.trim() || DEFAULT_REPORT_EDITS.title}
                 </p>
+                {reportEdits.subtitle.trim() && <p className="mt-1 line-clamp-2 text-[7px] text-slate-600">{reportEdits.subtitle.trim()}</p>}
                 <p className="mt-2 text-[7px] leading-relaxed text-slate-600">
                   {isGeneralDashboard
                     ? "Tanza, Cavite — all barangays"
@@ -1121,26 +1125,16 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
       </div>
       )}
 
-      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && closePreview()}>
-        <DialogContent showCloseButton={false} className="max-w-none sm:max-w-none w-screen h-[100dvh] flex flex-col p-0 gap-0 overflow-hidden rounded-none border-0">
-          <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-white/[0.06] shrink-0">
-            <DialogTitle className="text-lg font-bold">Report Preview</DialogTitle>
-            <Button variant="ghost" onClick={closePreview}>
-              <X className="h-5 w-5 mr-2" />
-              Close Preview
-            </Button>
-          </div>
-          <div className="flex-1 min-h-0 bg-slate-100 dark:bg-black">
-            {previewUrl && (
-              <iframe
-                src={previewUrl}
-                className="w-full h-full border-0"
-                title="Report Preview"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {previewData && (
+        <ReportPreviewEditor
+          data={previewData}
+          config={reportConfig}
+          edits={reportEdits}
+          onChange={setReportEdits}
+          onClose={closePreview}
+          onDownload={saveReportBlob}
+        />
+      )}
     </div>
   );
 }

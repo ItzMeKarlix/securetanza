@@ -493,7 +493,7 @@ body {
 
 /* Better modal/drawer sizing on mobile */
 @media (max-width: 640px) {
-  [role="dialog"] {
+  [role="dialog"]:not([data-report-editor]) {
     max-width: 95vw !important;
     max-height: 90vh !important;
   }
@@ -555,6 +555,12 @@ html[data-reduce-motion="true"] *::after {
   input[type="search"],
   textarea {
     font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* The writing canvas stays legible without triggering iOS input zoom.
+     This display minimum does not change the exported PDF's chosen size. */
+  [data-report-editor] .report-document-field {
+    font-size: max(16px, var(--report-field-size, 16px)) !important;
   }
 }
 

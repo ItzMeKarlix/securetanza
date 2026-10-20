@@ -62,7 +62,6 @@ interface TelemetryPayload {
         crimeIncidents: number;
         users: number;
         auditLogs: number;
-        notifications: number;
         exportSchedules: number;
       };
       totalRecords: number;

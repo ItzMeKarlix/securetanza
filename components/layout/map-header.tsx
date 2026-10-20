@@ -10,7 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useTour } from "@/context/TourContext";
 import UploadModal from "./upload-modal";
 import UserMenu from "./user-menu";
-import NotificationBell from "@/components/notifications/notification-bell";
 import { getDefaultRouteForUser } from "@/lib/auth-routes";
 
 interface MapHeaderProps {
@@ -171,8 +170,6 @@ export default function MapHeader({ isVisible }: MapHeaderProps) {
             </button>
           )}
 
-          {/* Notification Bell */}
-          {user && <NotificationBell />}
 
           {/* User Menu or Public Actions */}
           {user ? (

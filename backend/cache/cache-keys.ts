@@ -49,7 +49,6 @@ export const TTL = {
   PERMISSIONS_ALL: 600, // 10 minutes
 
   // Configuration and security
-  CONFIG_RULES: 600, // 10 minutes
   EXPORT_SCHEDULE: 300, // 5 minutes
   USER_SESSION: 30, // 30 seconds
 } as const;
@@ -85,7 +84,6 @@ export const CacheKeys = {
     pattern: () => `app:auth:*`,
   },
   config: {
-    notificationRules: () => `app:config:notification-rules:all`,
     exportSchedule: (userId: number | string) =>
       `app:config:export-schedule:${userId}`,
     pattern: () => `app:config:*`,

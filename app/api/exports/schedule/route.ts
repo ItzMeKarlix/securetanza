@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    const { enabled, frequency, dayOfWeek, dayOfMonth, monthlyOn, timeOfDay, deliveryMode } = data;
+    const { enabled, frequency, dayOfWeek, dayOfMonth, monthlyOn, timeOfDay } = data;
 
     const updatedSchedule = await ConfigService.saveExportSchedule(session.userId, {
       enabled,
@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
       dayOfMonth,
       monthlyOn,
       timeOfDay,
-      deliveryMode,
     });
 
     return NextResponse.json({ success: true, schedule: updatedSchedule });

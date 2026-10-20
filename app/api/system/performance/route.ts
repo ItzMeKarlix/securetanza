@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
       crimeCount,
       userCount,
       auditLogCount,
-      notificationCount,
       activeSchedules,
       totalSchedules,
       recentImports,
@@ -54,7 +53,6 @@ export async function GET(request: NextRequest) {
       prisma.crimeIncident.count(),
       prisma.user.count(),
       prisma.auditLog.count(),
-      prisma.notification.count(),
       prisma.exportSchedule.count({ where: { enabled: true } }),
       prisma.exportSchedule.count(),
       prisma.auditLog.findMany({
@@ -165,10 +163,9 @@ export async function GET(request: NextRequest) {
             crimeIncidents: crimeCount,
             users: userCount,
             auditLogs: auditLogCount,
-            notifications: notificationCount,
             exportSchedules: totalSchedules,
           },
-          totalRecords: crimeCount + userCount + auditLogCount + notificationCount + totalSchedules,
+          totalRecords: crimeCount + userCount + auditLogCount + totalSchedules,
         },
         background: {
           cronSchedule: '* * * * * (Every minute)',

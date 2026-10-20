@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/backend/lib/prisma";
 import * as XLSX from "xlsx";
-import {
-  NotificationEngine,
-  BatchRecordItem,
-} from "@/backend/lib/notification-engine";
 import { getSession } from "@/lib/auth";
 import { getClientIp, getUserAgent } from "@/lib/request-context";
 import { cacheService, CacheKeys } from "@/backend/cache";
@@ -97,7 +93,6 @@ export async function POST(request: NextRequest) {
       errors: [] as string[],
     };
 
-    const insertedBatchRecords: BatchRecordItem[] = [];
     const seenInFileFingerprints = new Set<string>();
     const candidateRows: Array<{
       rowIndex: number;
@@ -175,9 +170,6 @@ export async function POST(request: NextRequest) {
       const chunk = validRowsToInsert.slice(b, b + BATCH_SIZE);
       try {
         const created = await insertCrimeRecords(chunk, prisma);
-        insertedBatchRecords.push(
-          ...created.map((row) => ({ ...row, incidentType: row.crimeType })),
-        );
         results.inserted += created.length;
         const concurrentDuplicates = chunk.length - created.length;
         results.skipped += concurrentDuplicates;
@@ -191,12 +183,6 @@ export async function POST(request: NextRequest) {
         for (const row of chunk) {
           try {
             const created = await insertCrimeRecords([row], prisma);
-            insertedBatchRecords.push(
-              ...created.map((record) => ({
-                ...record,
-                incidentType: record.crimeType,
-              })),
-            );
             results.inserted += created.length;
             if (!created.length) {
               results.skipped++;
@@ -223,7 +209,7 @@ export async function POST(request: NextRequest) {
       await cacheService.deleteByPattern(CacheKeys.crimes.pattern());
     }
 
-    // 1. Record AuditLog
+    // Record the upload audit entry
     const auditDetails =
       results.duplicatesSkipped > 0
         ? `Imported ${results.inserted} records from ${file.name} (${results.duplicatesSkipped} duplicate(s) rejected)`
@@ -262,22 +248,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 2. Trigger Post-Ingestion Notification Engine
-    let generatedNotifsCount = 0;
-    if (insertedBatchRecords.length > 0) {
-      generatedNotifsCount = await NotificationEngine.evaluateBatch({
-        uploadLogId: uploadLog.id,
-        fileName: file.name,
-        totalRows: jsonData.length,
-        insertedRecords: insertedBatchRecords,
-        skippedRows: results.skipped,
-        errors: results.errors,
-      });
-    }
-
     const responseMsg =
       results.inserted > 0
-        ? `Successfully uploaded ${results.inserted} record(s)${results.duplicatesSkipped > 0 ? ` (${results.duplicatesSkipped} duplicate(s) rejected)` : ""}. Generated ${generatedNotifsCount} analytical notification(s).`
+        ? `Successfully uploaded ${results.inserted} record(s)${results.duplicatesSkipped > 0 ? ` (${results.duplicatesSkipped} duplicate(s) rejected)` : ""}.`
         : results.duplicatesSkipped > 0
           ? `Upload skipped: All ${results.duplicatesSkipped} record(s) in this file already exist in the crime register.`
           : `No valid records found to import.`;
@@ -287,7 +260,6 @@ export async function POST(request: NextRequest) {
       message: responseMsg,
       data: results,
       uploadLogId: uploadLog.id,
-      notificationsGenerated: generatedNotifsCount,
     });
   } catch (error) {
     console.error("Error uploading file:", error);

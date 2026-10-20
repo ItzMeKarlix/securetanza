@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { IdleSessionTimer, idleTimeoutMs, isIdleProtectedPath, onceAsync } from "@/lib/idle-session";
+import { IdleLogoutWarning } from "@/components/layout/idle-logout-warning";
 
 interface User {
   id: number;
@@ -16,6 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  loggingOut: boolean;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -28,14 +31,42 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const pathname = usePathname();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [idleRemainingSeconds, setIdleRemainingSeconds] = useState<number | null>(null);
+  const loggingOutRef = useRef(false);
+  const idleTimerRef = useRef<IdleSessionTimer | null>(null);
+  const protectedView = isIdleProtectedPath(pathname);
+  const authenticatedUserId = user?.id;
+  const timeoutMs = idleTimeoutMs(user?.autoLogoutTimer);
+
+  // All logout triggers share one terminal request. In-flight session checks cannot
+  // restore the user after logout begins.
+  const logoutForReason = useMemo(() => onceAsync(async (reason?: "idle" | "tab") => {
+    loggingOutRef.current = true;
+    setLoggingOut(true);
+    idleTimerRef.current?.dispose();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+      window.location.replace(reason ? `/login?reason=${reason}` : "/login");
+    }
+  }), []);
+
+  const logout = useCallback(() => logoutForReason(), [logoutForReason]);
+  const staySignedIn = useCallback(() => {
+    if (!loggingOutRef.current) idleTimerRef.current?.activity();
+  }, []);
 
   // Track if user was ever loaded in this browser session
   const userRef = useRef<User | null>(null);
   userRef.current = user;
 
   const checkSession = useCallback(async () => {
+    if (loggingOutRef.current) return null;
     try {
       const response = await fetch("/api/auth/session", {
         cache: "no-store",
@@ -46,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
+        if (loggingOutRef.current) return null;
         if (data.success && data.user && Array.isArray(data.user.permissions) && data.user.permissions.length > 0) {
           setUser(data.user);
           return data.user;
@@ -53,13 +85,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If user session is invalid, account was deleted, or all permissions were revoked
+      if (loggingOutRef.current) return null;
       const hadPriorSession = userRef.current !== null;
       setUser(null);
 
       if (typeof window !== "undefined") {
         const currentPath = window.location.pathname;
         // If user was logged in previously OR is currently on any protected page:
-        if (hadPriorSession || currentPath.startsWith("/dashboard") || currentPath === "/") {
+        if (hadPriorSession || isIdleProtectedPath(currentPath)) {
           if (currentPath !== "/login") {
             console.warn("🔒 User access revoked or account removed. Automatically redirecting to auth page...");
             window.location.replace("/login?reason=expired");
@@ -107,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Heartbeat check ONLY when user is logged in and not on login page
   useEffect(() => {
-    if (!user || pathname === "/login") {
+    if (authenticatedUserId === undefined || pathname === "/login") {
       return;
     }
 
@@ -119,79 +152,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       clearInterval(interval);
     };
-  }, [user, pathname, checkSession]);
+  }, [authenticatedUserId, pathname, checkSession]);
 
-  // Idle timeout (auto logout if not used for configured minutes)
+  // Track input independently of session refreshes and route changes within the
+  // protected app. Only warning state updates once a second.
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    const IDLE_TIMEOUT_MS = (user?.autoLogoutTimer ?? 15) * 60 * 1000;
-    let lastActivity = Date.now();
-
-    const handleIdleLogout = async () => {
-      try {
-        await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/login?reason=idle";
-      } catch (error) {
-        console.error("Idle logout error:", error);
-      }
+    if (authenticatedUserId === undefined || !protectedView || loggingOutRef.current) return;
+    const timer = new IdleSessionTimer({
+      now: Date.now,
+      schedule: (callback, delay) => window.setTimeout(callback, delay),
+      cancel: (handle) => window.clearTimeout(handle as number),
+      onWarning: setIdleRemainingSeconds,
+      onExpire: () => { void logoutForReason("idle"); },
+    });
+    idleTimerRef.current = timer;
+    // A separate effect applies the preference without resetting last activity.
+    const updateActivity = (event: Event) => {
+      // Keep the warning's actions available while pointing at or navigating them.
+      // The Stay signed in action records activity explicitly.
+      if (event.target instanceof Element && event.target.closest("[data-idle-logout-warning]")) return;
+      if (!loggingOutRef.current) timer.activity();
     };
-
-    // Extremely lightweight activity recorder (avoids constant clearTimeout/setTimeout churn)
-    let throttleTimeout: NodeJS.Timeout | null = null;
-    const updateActivity = () => {
-      if (!throttleTimeout) {
-        lastActivity = Date.now();
-        throttleTimeout = setTimeout(() => {
-          throttleTimeout = null;
-        }, 1000);
-      }
+    const checkVisibility = () => {
+      if (document.visibilityState === "visible") timer.check();
     };
-
-    // Check for idle timeout periodically instead of resetting a timer constantly
-    const intervalId = setInterval(() => {
-      if (Date.now() - lastActivity >= IDLE_TIMEOUT_MS) {
-        clearInterval(intervalId);
-        handleIdleLogout();
-      }
-    }, 30000); // Check every 30 seconds
-
     const events = ["mousemove", "keydown", "scroll", "click", "touchstart"];
     events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+    window.addEventListener("focus", timer.check);
+    document.addEventListener("visibilitychange", checkVisibility);
 
     return () => {
-      clearInterval(intervalId);
-      if (throttleTimeout) clearTimeout(throttleTimeout);
+      timer.dispose();
+      idleTimerRef.current = null;
       events.forEach((event) => window.removeEventListener(event, updateActivity));
+      window.removeEventListener("focus", timer.check);
+      document.removeEventListener("visibilitychange", checkVisibility);
     };
-  }, [user?.autoLogoutTimer]);
+  }, [authenticatedUserId, protectedView, logoutForReason]);
+
+  useEffect(() => {
+    idleTimerRef.current?.configure(timeoutMs);
+  }, [timeoutMs, authenticatedUserId, protectedView]);
 
   // Tab-Session Enforcer (Logout on tab close / new tab isolation)
   useEffect(() => {
-    if (user && typeof window !== "undefined" && window.location.pathname !== "/login") {
+    if (authenticatedUserId !== undefined && typeof window !== "undefined" && window.location.pathname !== "/login") {
       const hasTabSession = sessionStorage.getItem("tabSessionActive");
 
       if (!hasTabSession) {
         // This is a new tab or the session was lost (tab closed previously).
         // We explicitly log out to destroy the persistent cookie session.
-        fetch("/api/auth/logout", { method: "POST" }).finally(() => {
-          window.location.href = "/login?reason=tab";
-        });
+        void logoutForReason("tab");
       }
     }
-  }, [user]);
-
-  const logout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setUser(null);
-      router.push("/login");
-      router.refresh();
-    } catch (error) {
-      console.error("Logout error:", error);
-      setUser(null);
-      window.location.replace("/login");
-    }
-  };
+  }, [authenticatedUserId, logoutForReason]);
 
   const hasPermission = (permission: string): boolean => {
     if (!user || !user.permissions) return false;
@@ -213,6 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        loggingOut,
         logout,
         refreshSession: checkSession,
         hasPermission,
@@ -221,6 +236,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      {protectedView && authenticatedUserId !== undefined && (
+        <IdleLogoutWarning
+          remainingSeconds={idleRemainingSeconds}
+          loggingOut={loggingOut}
+          onStaySignedIn={staySignedIn}
+          onLogout={logout}
+        />
+      )}
     </AuthContext.Provider>
   );
 }
