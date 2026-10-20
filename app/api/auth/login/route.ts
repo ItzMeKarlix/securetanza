@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { verifyPassword, createSession, primeSessionCache } from '@/lib/auth';
+import { verifyPassword } from '@/lib/auth';
+import { completeSignIn, mfaStage } from '@/lib/mfa/sign-in';
+import { isTrustedBrowser, trustDays } from '@/lib/mfa/trusted-device';
+import { isAdminUser } from '@/lib/auth-routes';
+import { startChallenge } from '@/lib/mfa/challenge';
+import { emailCodeRefusal } from '@/lib/mfa/second-factor';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { normalizeEmail } from '@/lib/email-address';
 
@@ -8,7 +13,7 @@ import { normalizeEmail } from '@/lib/email-address';
 const MAX_FAILED_ATTEMPTS = 3;
 
 const LOCKED_MESSAGE =
-  'This account is locked after 3 failed sign-in attempts. Contact your system administrator to have it unlocked.';
+  'This account is locked after too many failed sign-in attempts. Contact your system administrator to have it unlocked.';
 
 export async function POST(request: NextRequest) {
   try {
@@ -149,59 +154,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
-    const sessionId = await createSession({
-      id: user.id,
-      accountNumber: user.accountNumber,
-      email: user.email,
-      sessionVersion: user.sessionVersion,
-      fullName: user.fullName,
-      permissions,
-      mustChangePassword: user.mustChangePassword,
-      defaultLandingPage: user.defaultLandingPage,
-      autoLogoutTimer: user.autoLogoutTimer,
-    });
+    // Password is right, so the run of password failures is over.
+    if (user.failedLoginAttempts > 0) {
+      await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0 } });
+      user.failedLoginAttempts = 0;
+    }
 
-    // The password was right, so the run of failures is over. This, the audit
-    // entry and priming the session cache are independent — do them together.
-    await Promise.all([
-      user.failedLoginAttempts > 0
-        ? prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0 } })
-        : null,
-      prisma.auditLog.create({
-        data: {
-          action: 'Auth',
-          user: user.accountNumber,
-          ip,
-          session: sessionId,
-          userAgent,
-          details: 'User logged in successfully',
-          outcome: 'success',
-        },
-      }),
-      primeSessionCache(user.id, {
-        fullName: user.fullName,
-        permissions,
-        mustChangePassword: user.mustChangePassword,
-        defaultLandingPage: user.defaultLandingPage,
-        autoLogoutTimer: user.autoLogoutTimer,
-        accountNumber: user.accountNumber,
-        email: user.email,
-        sessionVersion: user.sessionVersion,
-      }),
-    ]);
+    // Second factor is required for every account. A browser the person chose
+    // to trust skips the code (never the password); everyone else continues to
+    // /api/auth/mfa/* with a short-lived challenge cookie — no session yet.
+    const stage = mfaStage(user);
+    if (stage === 'challenge' && (await isTrustedBrowser(user))) {
+      return NextResponse.json(await completeSignIn(user, request, 'password + trusted browser'));
+    }
+
+    await startChallenge({ userId: user.id, sessionVersion: user.sessionVersion, stage });
+    const emailRefusal = stage === 'challenge' ? await emailCodeRefusal(user) : 'no-email';
 
     return NextResponse.json({
       success: true,
-      mustChangePassword: user.mustChangePassword,
-      user: {
-        id: user.id,
-        accountNumber: user.accountNumber,
-        email: user.email,
-        fullName: user.fullName,
-        permissions,
-        defaultLandingPage: user.defaultLandingPage,
-      },
+      mfa: stage,
+      fullName: user.fullName,
+      // Hide "Email me a code" when it would be refused for policy reasons.
+      emailFallback: emailRefusal === null || emailRefusal === 'cooldown' || emailRefusal === 'too-many',
+      trustDays: trustDays(isAdminUser(permissions)),
     });
   } catch (error) {
     console.error('Login error:', error);

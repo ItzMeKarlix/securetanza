@@ -66,6 +66,10 @@ export async function POST(request: NextRequest) {
         emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
         mustChangePassword: false,
         failedLoginAttempts: 0,
+        mfaFailedAttempts: 0,
+        // Emailed 2FA codes stay off for 7 days after an emailed reset, so inbox
+        // access alone can't both reset the password and pass the second factor.
+        ...(peeked.token.purpose === 'reset' ? { passwordResetViaEmailAt: new Date() } : {}),
         lockedAt: null,
         sessionVersion: { increment: 1 },
       },

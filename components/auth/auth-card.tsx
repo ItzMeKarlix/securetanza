@@ -11,9 +11,9 @@ export function AuthCard({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4">
-			<div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10" />
-			<div className="relative w-full max-w-md">
+		<div className="h-screen overflow-y-auto flex bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4 py-8">
+			<div className="fixed inset-0 pointer-events-none bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10" />
+			<div className="relative w-full max-w-md mx-auto my-auto">
 				<div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
 					<div className="text-center mb-8">
 						<div className="flex justify-center mb-4">

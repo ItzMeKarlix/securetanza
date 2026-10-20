@@ -73,7 +73,18 @@
 
 **Forgot your password?** Select **Forgot password?** on the sign-in page and enter your email. If it belongs to an active account, a reset link (valid 1 hour) is emailed to you. Changing or resetting your password signs out your other sessions, and you get an email confirming the change.
 
-**Locked out?** Three consecutive wrong passwords lock the account. Ask an administrator to unlock it — the unlock emails you a link to choose a new password (valid 24 hours).
+**Locked out?** Three consecutive wrong passwords (or five wrong verification codes) lock the account. Ask an administrator to unlock it — the unlock emails you a link to choose a new password (valid 24 hours).
+
+#### Two-step verification (required)
+
+Every account needs a second step at sign-in, so a stolen password alone can't open case data.
+
+- **Setup (first sign-in):** install Google Authenticator, Microsoft Authenticator or Authy on your phone. After your password, scan the QR code shown, enter the 6-digit code, then **save your 10 backup codes** (copy, download or print) — they are shown only once.
+- **Each sign-in:** enter your password, then the current 6-digit code from the app.
+- **Trust this browser:** tick it to skip the code on that browser for 60 days (30 for administrators). Your password is still required. Only use it on a device you alone use — never on a shared station PC. Changing your password removes every trusted browser.
+- **No phone?** Choose **Use a backup code** (each works once) or **Email me a code instead**. Emailed codes are unavailable for 7 days after a password reset by email, as a safeguard.
+- **Manage it:** *Settings → My Profile → Two-Step Verification* — replace your authenticator app, generate new backup codes, or revoke trusted browsers. These ask for a fresh code first.
+- **Lost your phone and backup codes?** Ask an administrator to reset two-step verification (*Access & Security → Reset 2FA*); you set it up again at your next sign-in.
 
 ---
 

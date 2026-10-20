@@ -61,11 +61,11 @@ export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModal
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-4 py-8">
       {/* Background Decorative Elements */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0EA5E9]/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md mx-auto my-auto relative z-10 animate-in fade-in zoom-in-95 duration-200">
         <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
           
           {/* Header */}

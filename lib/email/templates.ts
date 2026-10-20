@@ -113,3 +113,47 @@ export function emailChangedEmail(to: string, fullName: string, newEmail: string
 		),
 	};
 }
+
+export function mfaCodeEmail(to: string, fullName: string, code: string, ttlMinutes: number): MailMessage {
+	return {
+		to,
+		subject: `${code} is your ${APP_NAME} sign-in code`,
+		...layout(
+			`Hi ${fullName}`,
+			[
+				`Your ${APP_NAME} verification code is: ${code}`,
+				`It expires in ${ttlMinutes} minutes and works once. Nobody from ${APP_NAME} will ever ask you for it.`,
+			],
+			undefined,
+			"If you didn't just try to sign in, someone may know your password. Change it and tell your administrator."
+		),
+	};
+}
+
+export function mfaEmailUsedEmail(to: string, fullName: string, when: Date, device: string): MailMessage {
+	return {
+		to,
+		subject: `New ${APP_NAME} sign-in using an emailed code`,
+		...layout(
+			`Hi ${fullName}`,
+			[
+				`Your account was signed into on ${when.toUTCString()} from ${device}, using a code sent to this email address instead of your authenticator app.`,
+			],
+			undefined,
+			"If this wasn't you, contact your system administrator immediately."
+		),
+	};
+}
+
+export function mfaChangedEmail(to: string, fullName: string, change: "enrolled" | "reset" | "backup-codes"): MailMessage {
+	const body = {
+		enrolled: `A new authenticator app was set up for your ${APP_NAME} account, and any trusted browsers were signed out.`,
+		reset: `An administrator reset two-factor authentication on your ${APP_NAME} account. You'll set up an authenticator app again the next time you sign in.`,
+		"backup-codes": `New backup codes were generated for your ${APP_NAME} account. Your old backup codes no longer work.`,
+	}[change];
+	return {
+		to,
+		subject: `Two-factor authentication changed on your ${APP_NAME} account`,
+		...layout(`Hi ${fullName}`, [body], undefined, "If you didn't expect this, contact your system administrator immediately."),
+	};
+}

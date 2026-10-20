@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { COMMON_PASSWORD_LABEL, passwordUserInputs } from "@/lib/password-policy";
 import { usePasswordCheck } from "@/hooks/usePasswordCheck";
 import { UnsavedChangesBar } from "./_components/unsaved-changes";
+import { TwoFactorSection } from "./_components/two-factor-section";
 import { getUserRole, getRoleBadge } from "@/components/docs/docs-permissions";
 
 export default function ProfilePage() {
@@ -172,6 +173,8 @@ export default function ProfilePage() {
 					<DataRow label="Staff ID" value={user?.accountNumber ?? "—"} mono />
 				</Rows>
 			</Section>
+
+			<TwoFactorSection />
 
 			<Section
 				title="Change Password"

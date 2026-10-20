@@ -18,6 +18,9 @@ const publicApiRoutes = [
   '/api/auth/forgot-password',
   '/api/auth/token',
   '/api/auth/reset-password',
+  // Second-factor steps: authorized by their own short-lived challenge cookie,
+  // and the Settings ones check the session themselves.
+  '/api/auth/mfa',
 ];
 
 export async function middleware(request: NextRequest) {

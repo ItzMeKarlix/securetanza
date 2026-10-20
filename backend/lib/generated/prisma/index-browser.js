@@ -243,6 +243,11 @@ exports.Prisma.UserScalarFieldEnum = {
   autoLogoutTimer: 'autoLogoutTimer',
   failedLoginAttempts: 'failedLoginAttempts',
   lockedAt: 'lockedAt',
+  totpSecretEnc: 'totpSecretEnc',
+  totpEnabledAt: 'totpEnabledAt',
+  totpLastStep: 'totpLastStep',
+  mfaFailedAttempts: 'mfaFailedAttempts',
+  passwordResetViaEmailAt: 'passwordResetViaEmailAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -299,6 +304,25 @@ exports.Prisma.UserPermissionScalarFieldEnum = {
   assignedAt: 'assignedAt'
 };
 
+exports.Prisma.MfaBackupCodeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  codeHash: 'codeHash',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.TrustedDeviceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  sessionVersion: 'sessionVersion',
+  label: 'label',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt',
+  lastUsedAt: 'lastUsedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -337,7 +361,9 @@ exports.Prisma.ModelName = {
   Backup: 'Backup',
   ExportSchedule: 'ExportSchedule',
   Permission: 'Permission',
-  UserPermission: 'UserPermission'
+  UserPermission: 'UserPermission',
+  MfaBackupCode: 'MfaBackupCode',
+  TrustedDevice: 'TrustedDevice'
 };
 
 /**

@@ -56,6 +56,7 @@ export async function POST(
         passwordHash: await unusablePasswordHash(),
         mustChangePassword: false,
         failedLoginAttempts: 0,
+        mfaFailedAttempts: 0,
         lockedAt: null,
         sessionVersion: { increment: 1 },
       },

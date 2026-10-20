@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { ForceChangePasswordModal } from "@/components/modals/ForceChangePasswordModal";
 import { getDefaultRouteForUser } from "@/lib/auth-routes";
+import { MfaChallenge, type SignInResult } from "@/components/auth/mfa-challenge";
+import { MfaEnroll } from "@/components/auth/mfa-enroll";
 
 type SignedOutReason = "idle" | "expired" | "tab";
 
@@ -35,6 +37,13 @@ export default function LoginPage() {
   const { refreshSession, user, loading: authLoading } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [notice, setNotice] = useState("");
+  // Set once the password is accepted and a second step is needed.
+  const [mfa, setMfa] = useState<{
+    stage: "challenge" | "enroll";
+    fullName: string;
+    emailFallback: boolean;
+    trustDays: number;
+  } | null>(null);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -81,6 +90,26 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router]);
 
+  /** Runs once a full session exists (trusted browser, or after the second step). */
+  const finishSignIn = async (data: SignInResult) => {
+    await refreshSession();
+    sessionStorage.setItem("tabSessionActive", "true");
+    if (data.mustChangePassword) {
+      setMfa(null);
+      setShowForceChange(true);
+      setLoading(false);
+    } else {
+      router.push(getDefaultRouteForUser(data.user ?? null));
+      router.refresh();
+    }
+  };
+
+  const restartSignIn = (message: string) => {
+    setMfa(null);
+    setError(message);
+    setNotice("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -103,18 +132,20 @@ export default function LoginPage() {
         return;
       }
 
-      await refreshSession();
-
-      if (data.mustChangePassword) {
-        sessionStorage.setItem("tabSessionActive", "true");
-        setShowForceChange(true);
+      if (data.mfa) {
+        // Password accepted; the session only starts after the second step.
+        setPassword("");
+        setMfa({
+          stage: data.mfa,
+          fullName: data.fullName ?? "",
+          emailFallback: Boolean(data.emailFallback),
+          trustDays: data.trustDays ?? 30,
+        });
         setLoading(false);
-      } else {
-        sessionStorage.setItem("tabSessionActive", "true");
-        const target = getDefaultRouteForUser(data.user);
-        router.push(target);
-        router.refresh();
+        return;
       }
+
+      await finishSignIn(data);
     } catch (error) {
       console.error("Login error:", error);
       setError("An error occurred. Please try again.");
@@ -123,16 +154,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4">
+    <div className="h-screen overflow-y-auto flex bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4 py-8">
+      {/* The body never scrolls in this app, so this page scrolls itself; my-auto on the card
+          centres it when it fits and lets it scroll from the top when it does not. */}
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10"></div>
+      <div className="fixed inset-0 pointer-events-none bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10"></div>
 
       {/* Login Card */}
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md mx-auto my-auto">
         <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
           {/* Logo and Title */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
+          <div className={mfa ? "text-center mb-4" : "text-center mb-8"}>
+            <div className={mfa ? "hidden" : "flex justify-center mb-4"}>
               <div className="w-20 h-20 bg-[#0EA5E9]/10 rounded-2xl flex items-center justify-center">
                 <Image
                   src="/SC LOGO W 1.png"
@@ -144,14 +177,28 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className={mfa ? "text-xl font-bold text-white" : "text-3xl font-bold text-white mb-2"}>
               SecureTanza
             </h1>
-            <p className="text-slate-400 text-sm">
+            <p className={mfa ? "hidden" : "text-slate-400 text-sm"}>
               Crime Mapping & Analytics System
             </p>
           </div>
 
+          {mfa ? (
+            mfa.stage === "enroll" ? (
+              <MfaEnroll fullName={mfa.fullName} onSuccess={(r) => void finishSignIn(r)} onRestart={restartSignIn} />
+            ) : (
+              <MfaChallenge
+                fullName={mfa.fullName}
+                emailFallback={mfa.emailFallback}
+                trustDays={mfa.trustDays}
+                onSuccess={(r) => void finishSignIn(r)}
+                onRestart={restartSignIn}
+              />
+            )
+          ) : (
+          <>
           {notice && !error && (
             <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
@@ -259,6 +306,8 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+          </>
+          )}
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-white/10">

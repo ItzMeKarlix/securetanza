@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       accountNumber: user.accountNumber,
       email: user.email,
+      mfaEnabled: Boolean(user.totpEnabledAt),
       status: accountStatus({ ...user, inviteCount: user._count.authTokens }),
       fullName: user.fullName,
       permissions: user.permissions.map(up => ({

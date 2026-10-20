@@ -2,20 +2,20 @@
 
 import React, { useEffect, useState } from "react";
 
-import { createPortal } from "react-dom";
 import {
 	Check,
 	Edit,
 	KeyRound,
+	ShieldOff,
 	Lock,
 	Send,
 	Trash2,
 	Unlock,
 	UserPlus,
-	X,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AdminOnly } from "../_components/settings-shell";
+import { Modal } from "../_components/settings-modal";
 import {
 	EmptyState,
 	Field,
@@ -66,6 +66,8 @@ interface User {
 	email: string | null;
 	/** invited = link not accepted yet; legacy = no email, signs in by account number. */
 	status: "locked" | "invited" | "legacy" | "active";
+	/** Two-step verification set up. */
+	mfaEnabled: boolean;
 	fullName: string;
 	permissions: Permission[];
 	createdAt: string;
@@ -100,6 +102,8 @@ function AccessSecurity() {
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [sendingFor, setSendingFor] = useState<number | null>(null);
+	const [userToResetMfa, setUserToResetMfa] = useState<User | null>(null);
+	const [isResettingMfa, setIsResettingMfa] = useState(false);
 
 	const [userToUnlock, setUserToUnlock] = useState<User | null>(null);
 	const [isUnlocking, setIsUnlocking] = useState(false);
@@ -309,6 +313,24 @@ function AccessSecurity() {
 		}
 	};
 
+	const executeMfaReset = async (user: User) => {
+		if (isResettingMfa) return;
+		setIsResettingMfa(true);
+		try {
+			const response = await fetch(`/api/users/${user.id}/mfa-reset`, { method: "POST" });
+			const data = await response.json().catch(() => ({}));
+			if (response.ok && data.success) {
+				toast.success(`Two-step verification reset. ${user.fullName} will set it up again at next sign-in.`);
+				setUserToResetMfa(null);
+				fetchUsers();
+			} else toast.error(data.error || "Couldn't reset two-step verification");
+		} catch {
+			toast.error("Couldn't reset two-step verification");
+		} finally {
+			setIsResettingMfa(false);
+		}
+	};
+
 	/** Re-sends a pending invite, or emails a reset link to an active account. */
 	const sendAccountEmail = async (user: User, kind: "invite" | "reset-link") => {
 		if (sendingFor !== null) return;
@@ -430,6 +452,14 @@ function AccessSecurity() {
 																	No email
 																</span>
 															)}
+															{user.status === "active" && !user.mfaEnabled && (
+																<span
+																	title="Two-step verification not set up yet — they will be asked to at their next sign-in."
+																	className="inline-flex items-center rounded border border-slate-200 px-1.5 py-0.5 text-[0.7188rem] font-medium text-slate-600 dark:border-white/15 dark:text-slate-300"
+																>
+																	2FA pending
+																</span>
+															)}
 															{user.lockedAt && (
 																<span
 																	title={`Locked ${new Date(user.lockedAt).toLocaleString()} after ${user.failedLoginAttempts} failed sign-in attempts`}
@@ -478,6 +508,16 @@ function AccessSecurity() {
 															>
 																<KeyRound className="h-4 w-4" />
 																<span className="sr-only">Send reset link to {user.fullName}</span>
+															</button>
+														)}
+														{user.mfaEnabled && !isSelf && (
+															<button
+																onClick={() => setUserToResetMfa(user)}
+																title="Reset two-step verification (lost phone)"
+																className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-white/[0.06] dark:hover:text-amber-400"
+															>
+																<ShieldOff className="h-4 w-4" />
+																<span className="sr-only">Reset two-step verification for {user.fullName}</span>
 															</button>
 														)}
 														<button
@@ -698,6 +738,31 @@ function AccessSecurity() {
 				</Modal>
 			)}
 
+			{/* ── Reset 2FA ── */}
+			{userToResetMfa && (
+				<Modal title="Reset Two-Step Verification" onClose={() => setUserToResetMfa(null)}>
+					<p className="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">
+						Use this when{" "}
+						<span className="font-medium text-slate-900 dark:text-white">{userToResetMfa.fullName}</span> has lost
+						their phone and their backup codes. Their authenticator, backup codes and trusted browsers are
+						removed and they are signed out everywhere; they set up a new authenticator at their next
+						sign-in. Confirm who is asking before you do this — it is how an attacker would try to get in.
+					</p>
+					<div className="mt-6 flex justify-end gap-2">
+						<button onClick={() => setUserToResetMfa(null)} className={btnOutline}>
+							Cancel
+						</button>
+						<button
+							disabled={isResettingMfa}
+							onClick={() => executeMfaReset(userToResetMfa)}
+							className={cn(btnPrimary, "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:text-white dark:hover:bg-amber-600")}
+						>
+							{isResettingMfa ? "Resetting…" : "Reset Two-Step Verification"}
+						</button>
+					</div>
+				</Modal>
+			)}
+
 			{/* ── Unlock ── */}
 			{userToUnlock && (
 				<Modal title="Unlock Account" onClose={() => setUserToUnlock(null)}>
@@ -807,58 +872,5 @@ function RoleCell({ permissions }: { permissions: Permission[] }) {
 				</span>
 			)}
 		</div>
-	);
-}
-
-/** One modal chrome for every dialog on this surface. */
-function Modal({
-	title,
-	width = "max-w-md",
-	onClose,
-	children,
-}: {
-	title: string;
-	width?: string;
-	onClose: () => void;
-	children: React.ReactNode;
-}) {
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onClose]);
-
-	if (typeof document === "undefined") return null;
-
-	return createPortal(
-		<div
-			className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px] dark:bg-black/60"
-			onClick={onClose}
-		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-label={title}
-				onClick={(e) => e.stopPropagation()}
-				className={`settings-surface w-full ${width} settings-dialog rounded-[10px] border border-slate-200 bg-white p-6 shadow-[0_16px_48px_-12px_rgba(15,23,42,0.28)] dark:border-white/[0.09] dark:bg-[#0F172A] dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)]`}
-			>
-				<div className="mb-5 flex items-start justify-between gap-4">
-					<h2 className="text-[0.9375rem] font-semibold tracking-[-0.008em] text-slate-900 dark:text-white">
-						{title}
-					</h2>
-					<button
-						onClick={onClose}
-						aria-label="Close"
-						className="-mt-1 -mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
-					>
-						<X className="h-4 w-4" />
-					</button>
-				</div>
-				{children}
-			</div>
-		</div>,
-		document.body
 	);
 }

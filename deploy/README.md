@@ -109,3 +109,29 @@ blocked, the breach check is skipped and the offline checks still apply.
    password through the emailed link.
 4. Once no account is left without an email, remove the account-number
    fallback in `app/api/auth/login/route.ts` (marked TRANSITION).
+
+## Two-step verification
+
+Every account must use an authenticator app (with an emailed-code fallback)
+in addition to the password. Set up once per deployment:
+
+- `MFA_ENCRYPTION_KEY` — `openssl rand -base64 32`. Encrypts the
+  authenticator secrets in the database. **Back it up with the database
+  credentials.** If it's lost or changed, nobody's authenticator code will
+  verify and every account has to be reset.
+- Optional: `MFA_TRUST_DAYS_ADMIN` (default 30) and `MFA_TRUST_DAYS_STAFF`
+  (default 60) — how long "Trust this browser" lasts.
+- Apply the migration `backend/prisma/migrations/20261021120000_mfa`.
+
+### Break-glass reset
+
+If the only administrator loses their phone *and* their backup codes, nobody
+can reset them from the app. From the server, with the app's environment:
+
+```bash
+pnpm mfa:reset admin@agency.gov.ph      # or an account number, e.g. ACC-000001
+```
+
+This removes their authenticator, backup codes and trusted browsers, clears
+any lockout, and writes a high-severity audit entry. They sign in with their
+password and set up a new authenticator.
