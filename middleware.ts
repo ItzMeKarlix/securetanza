@@ -1,19 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { PUBLIC_PAGES } from '@/lib/idle-session';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
 );
 
 // Routes that don't require authentication
-const publicRoutes = ['/login'];
+const publicRoutes = PUBLIC_PAGES;
 
 // API routes that don't require authentication
 const publicApiRoutes = [
   '/api/auth/login',
   '/api/auth/session',
   '/api/auth/logout',
+  '/api/auth/forgot-password',
+  '/api/auth/token',
+  '/api/auth/reset-password',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -53,10 +57,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Redirect to login for protected pages
+    // Redirect to login for protected pages. No cookie means they were never
+    // signed in (or signed out on purpose) — not an expiry, so no "expired" notice.
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    loginUrl.searchParams.set('reason', 'expired');
     return NextResponse.redirect(loginUrl);
   }
 

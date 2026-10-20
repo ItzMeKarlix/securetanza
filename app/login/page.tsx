@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Clock, Lock, User, AlertCircle, Loader2, Eye, EyeOff, ShieldOff } from "lucide-react";
+import Link from "next/link";
+import { Clock, Lock, Mail, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { ForceChangePasswordModal } from "@/components/modals/ForceChangePasswordModal";
@@ -32,7 +33,8 @@ const SIGNED_OUT_COPY: Record<SignedOutReason, { title: string; message: string;
 export default function LoginPage() {
   const router = useRouter();
   const { refreshSession, user, loading: authLoading } = useAuth();
-  const [accountNumber, setAccountNumber] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [notice, setNotice] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -45,9 +47,24 @@ export default function LoginPage() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const reason = params.get("reason");
+    let scrub = false;
     if (reason === "idle" || reason === "expired" || reason === "tab") {
       setSignedOutReason(reason);
       params.delete("reason");
+      scrub = true;
+    }
+    // Arriving from the set-password page.
+    const done = params.get("done");
+    if (done === "invite" || done === "reset") {
+      setNotice(
+        done === "invite"
+          ? "Your password is set. Sign in with your email address."
+          : "Your password was reset. Sign in with your new password."
+      );
+      params.delete("done");
+      scrub = true;
+    }
+    if (scrub) {
       const rest = params.toString();
       window.history.replaceState({}, "", `/login${rest ? `?${rest}` : ""}`);
     }
@@ -75,7 +92,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ accountNumber, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await response.json();
@@ -135,6 +152,13 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {notice && !error && (
+            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-emerald-300">{notice}</p>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
@@ -145,34 +169,50 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Account Number Field */}
+            {/* Email Field */}
             <div>
-              <label htmlFor="accountNumber" className="block text-sm font-medium text-slate-300 mb-2">
-                Account Number
+              <label htmlFor="identifier" className="block text-sm font-medium text-slate-300 mb-2">
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-slate-500" />
+                  <Mail className="h-5 w-5 text-slate-500" />
                 </div>
+                {/* type="text" (not "email") during the transition, so an older
+                    account's ACC- number is still accepted. */}
                 <input
-                  id="accountNumber"
+                  id="identifier"
                   type="text"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
+                  inputMode="email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent transition-all"
-                  placeholder="Enter your account number"
+                  placeholder="name@example.gov.ph"
                   required
                   autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   disabled={loading}
                 />
               </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                No email on your account yet? Use your account number (ACC-…).
+              </p>
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
+              <div className="mb-2 flex items-baseline justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC] transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-slate-500" />

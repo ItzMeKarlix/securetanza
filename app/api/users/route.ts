@@ -3,13 +3,15 @@ import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
-import { hash } from 'bcryptjs';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
+import { unusablePasswordHash } from '@/lib/auth-tokens';
+import { accountStatus, emailField, emailTaken, sendInvite } from '@/lib/account-emails';
 
 // Validation schema for user creation/update
 const userSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
+  fullName: z.string().trim().min(1, 'Full name is required'),
+  email: emailField,
   permissionIds: z.array(z.number().int().positive()).min(1, 'At least one permission is required'),
 });
 
@@ -28,15 +30,6 @@ async function generateNextAccountNumber() {
   return accountNum;
 }
 
-function generateSecurePassword() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 10; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return password;
-}
-
 // GET /api/users - Fetch all users (admin only)
 export async function GET(request: NextRequest) {
   try {
@@ -50,12 +43,14 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await prisma.user.findMany({
+      relationLoadStrategy: 'join',
       include: {
         permissions: {
           include: {
             permission: true,
           },
         },
+        _count: { select: { authTokens: { where: { purpose: 'invite' } } } },
       },
       orderBy: {
         createdAt: 'desc',
@@ -65,6 +60,8 @@ export async function GET(request: NextRequest) {
     const formattedUsers = users.map(user => ({
       id: user.id,
       accountNumber: user.accountNumber,
+      email: user.email,
+      status: accountStatus({ ...user, inviteCount: user._count.authTokens }),
       fullName: user.fullName,
       permissions: user.permissions.map(up => ({
         id: up.permission.id,
@@ -105,6 +102,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = userSchema.parse(body);
 
+    if (await emailTaken(validatedData.email)) {
+      return NextResponse.json({ error: 'Another account already uses that email address' }, { status: 409 });
+    }
+
     const selected = await prisma.permission.findMany({
       where: { id: { in: validatedData.permissionIds } },
     });
@@ -119,19 +120,14 @@ export async function POST(request: NextRequest) {
     // Automatically generate next account number
     const accountNumber = await generateNextAccountNumber();
 
-    // Always a generated temporary password; the user sets their own on first sign-in
-    const tempPassword = generateSecurePassword();
-
-    // Hash password
-    const passwordHash = await hash(tempPassword, 10);
-
-    // Create user
+    // No usable password until the person follows their invite link and sets one.
     const user = await prisma.user.create({
       data: {
         accountNumber,
+        email: validatedData.email,
         fullName: validatedData.fullName,
-        passwordHash,
-        mustChangePassword: true,
+        passwordHash: await unusablePasswordHash(),
+        mustChangePassword: false,
       },
     });
 
@@ -153,10 +149,12 @@ export async function POST(request: NextRequest) {
         session: session.sessionId,
         userAgent: getUserAgent(request),
         resource: `User:${user.accountNumber}`,
-        details: `Created new user account for ${user.fullName}`,
+        details: `Created new user account for ${user.fullName} and invited ${user.email}`,
         outcome: 'success',
       },
     });
+
+    const emailSent = await sendInvite(user, session.userId);
 
     return NextResponse.json({
       success: true,
@@ -164,14 +162,15 @@ export async function POST(request: NextRequest) {
       data: {
         id: user.id,
         accountNumber: user.accountNumber,
+        email: user.email,
         fullName: user.fullName,
-        tempPassword, // return so frontend can show to user
+        emailSent,
       },
     }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
+        { error: error.issues[0]?.message || 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

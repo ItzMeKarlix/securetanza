@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Shield, Eye, EyeOff, Lock, AlertCircle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Shield, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { COMMON_PASSWORD_LABEL, passwordUserInputs } from "@/lib/password-policy";
+import { passwordUserInputs } from "@/lib/password-policy";
+import { PasswordFields } from "@/components/auth/password-fields";
 import { usePasswordCheck } from "@/hooks/usePasswordCheck";
 
 interface ForceChangePasswordModalProps {
@@ -14,19 +13,15 @@ interface ForceChangePasswordModalProps {
 }
 
 export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModalProps) {
-  const router = useRouter();
   const { user, refreshSession } = useAuth();
   
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const passwordInputs = useMemo(() => passwordUserInputs(user), [user]);
   const passwordCheck = usePasswordCheck(newPassword, passwordInputs);
-  const { score } = passwordCheck;
   const isStrong = passwordCheck.allPassed;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,110 +90,14 @@ export function ForceChangePasswordModal({ onSuccess }: ForceChangePasswordModal
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 ml-1">New Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#0EA5E9] transition-colors">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <Input
-                  type={showNew ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="pl-11 pr-11 h-12 bg-slate-950/50 border-white/10 focus:border-[#0EA5E9] text-white transition-all rounded-xl"
-                  placeholder="Enter new password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-
-              {/* Password Strength Meter */}
-              {newPassword.length > 0 && (
-                <div className="pt-2 animate-in slide-in-from-top-1 opacity-100 duration-200">
-                  <div className="flex gap-1.5 h-1.5 w-full rounded-full overflow-hidden mb-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className={`flex-1 transition-colors duration-300 ${
-                          score >= i
-                            ? score <= 1
-                              ? "bg-red-500"
-                              : score <= 2
-                              ? "bg-amber-500"
-                              : score <= 3
-                              ? "bg-emerald-400"
-                              : "bg-emerald-500"
-                            : "bg-white/10"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="space-y-1.5">
-                    {passwordCheck.rules.map(({ label, passed }) => (
-                      <div key={label} className={`flex items-center gap-2 text-xs transition-colors duration-300 ${passed ? "text-emerald-400" : "text-slate-500"}`}>
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${passed ? "opacity-100" : "opacity-30"}`} />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                    <div
-                      className={`flex items-start gap-2 text-xs transition-colors duration-300 ${
-                        passwordCheck.common === "ok"
-                          ? "text-emerald-400"
-                          : passwordCheck.common === "weak"
-                          ? "text-red-400"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {passwordCheck.common === "checking" ? (
-                        <Loader2 className="mt-px w-3.5 h-3.5 shrink-0 animate-spin opacity-60" />
-                      ) : passwordCheck.common === "weak" ? (
-                        <XCircle className="mt-px w-3.5 h-3.5 shrink-0" />
-                      ) : (
-                        <CheckCircle2 className={`mt-px w-3.5 h-3.5 shrink-0 ${passwordCheck.common === "ok" ? "opacity-100" : "opacity-30"}`} />
-                      )}
-                      <span>
-                        {COMMON_PASSWORD_LABEL}
-                        {passwordCheck.warning && <span className="block text-slate-400">{passwordCheck.warning}</span>}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 ml-1">Confirm Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#0EA5E9] transition-colors">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <Input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-11 pr-11 h-12 bg-slate-950/50 text-white transition-all rounded-xl ${
-                    confirmPassword.length > 0 && newPassword !== confirmPassword
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-white/10 focus:border-[#0EA5E9]"
-                  }`}
-                  placeholder="Confirm new password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <PasswordFields
+              newPassword={newPassword}
+              onNewPassword={setNewPassword}
+              confirmPassword={confirmPassword}
+              onConfirmPassword={setConfirmPassword}
+              check={passwordCheck}
+              disabled={loading}
+            />
 
             <Button
               type="submit"

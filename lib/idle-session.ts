@@ -1,9 +1,19 @@
 const WARNING_MS = 60_000;
 const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 
-/** Keep page exclusions aligned with middleware's public routes. */
+/**
+ * Pages anyone can open without a session. middleware.ts imports this list, so
+ * the server and the client always agree on what is public.
+ */
+export const PUBLIC_PAGES = ["/login", "/forgot-password", "/set-password"];
+
+export function isPublicPage(pathname: string): boolean {
+  return PUBLIC_PAGES.includes(pathname);
+}
+
+/** Signed-in app pages: idle timeout, heartbeat and tab rules apply. */
 export function isIdleProtectedPath(pathname: string): boolean {
-  return pathname !== "/login" && pathname !== "/docs";
+  return !isPublicPage(pathname) && pathname !== "/docs";
 }
 
 export function idleTimeoutMs(minutes: number | undefined): number {

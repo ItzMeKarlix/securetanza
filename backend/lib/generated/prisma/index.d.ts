@@ -44,6 +44,14 @@ export type AuditLog = $Result.DefaultSelection<Prisma.$AuditLogPayload>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model AuthToken
+ * *
+ *  * One-time links emailed to staff: an invite to set a first password, or a
+ *  * password reset. Only the SHA-256 of the token is stored; the raw value
+ *  * exists solely in the email that was sent.
+ */
+export type AuthToken = $Result.DefaultSelection<Prisma.$AuthTokenPayload>
+/**
  * Model Backup
  * *
  *  * A retained copy of exported data, held in the database rather than on disk so it
@@ -107,7 +115,7 @@ export class PrismaClient<
    * Read more in our [docs](https://pris.ly/d/client).
    */
 
-  constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
+  constructor(optionsArg ?: Prisma.PrismaClientConstructorArgs<ClientOptions>);
   $on<V extends U>(eventType: V, callback: (event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent) => void): PrismaClient;
 
   /**
@@ -180,7 +188,7 @@ export class PrismaClient<
    * 
    * Read more in our [docs](https://www.prisma.io/docs/orm/prisma-client/queries/transactions).
    */
-  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
+  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => $Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<R>
 
@@ -247,6 +255,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.authToken`: Exposes CRUD operations for the **AuthToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AuthTokens
+    * const authTokens = await prisma.authToken.findMany()
+    * ```
+    */
+  get authToken(): Prisma.AuthTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.backup`: Exposes CRUD operations for the **Backup** model.
@@ -337,8 +355,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 7.7.0
-   * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
+   * Prisma Client JS version: 7.10.0
+   * Query Engine version: 0edf323efd1d98336f3f0a68684b56f689b900d3
    */
   export type PrismaVersion = {
     client: string
@@ -473,6 +491,19 @@ export namespace Prisma {
   };
 
   /**
+   * Resolved type of the argument passed to the `PrismaClient` constructor.
+   *
+   * When called without a narrower options type (the common case), this resolves
+   * to `PrismaClientOptions` directly, which produces a clear TypeScript error
+   * message (`not assignable to parameter of type 'PrismaClientOptions'`) when
+   * the argument is missing or incomplete. When the user supplies a narrower
+   * options type (e.g. via a literal), it falls back to `Subset` to keep
+   * filtering out unknown properties.
+   */
+  export type PrismaClientConstructorArgs<Options extends PrismaClientOptions> =
+    [PrismaClientOptions] extends [Options] ? PrismaClientOptions : Subset<Options, PrismaClientOptions>;
+
+  /**
    * SelectSubset
    * @desc From `T` pick properties that exist in `U`. Simple version of Intersection.
    * Additionally, it validates, if both select and include are present. If the case, it errors.
@@ -504,7 +535,7 @@ export namespace Prisma {
   type XOR<T, U> =
     T extends object ?
     U extends object ?
-      (Without<T, U> & U) | (Without<U, T> & T)
+      ((Without<T, U> & U) | (Without<U, T> & T)) & object
     : U : T
 
 
@@ -727,6 +758,7 @@ export namespace Prisma {
     Barangay: 'Barangay',
     AuditLog: 'AuditLog',
     User: 'User',
+    AuthToken: 'AuthToken',
     Backup: 'Backup',
     ExportSchedule: 'ExportSchedule',
     Permission: 'Permission',
@@ -746,7 +778,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "crimeIncident" | "incident" | "offenseDefinition" | "barangay" | "auditLog" | "user" | "backup" | "exportSchedule" | "permission" | "userPermission"
+      modelProps: "crimeIncident" | "incident" | "offenseDefinition" | "barangay" | "auditLog" | "user" | "authToken" | "backup" | "exportSchedule" | "permission" | "userPermission"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1194,6 +1226,80 @@ export namespace Prisma {
           }
         }
       }
+      AuthToken: {
+        payload: Prisma.$AuthTokenPayload<ExtArgs>
+        fields: Prisma.AuthTokenFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AuthTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AuthTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          findFirst: {
+            args: Prisma.AuthTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AuthTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          findMany: {
+            args: Prisma.AuthTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>[]
+          }
+          create: {
+            args: Prisma.AuthTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          createMany: {
+            args: Prisma.AuthTokenCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AuthTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>[]
+          }
+          delete: {
+            args: Prisma.AuthTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          update: {
+            args: Prisma.AuthTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          deleteMany: {
+            args: Prisma.AuthTokenDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AuthTokenUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AuthTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>[]
+          }
+          upsert: {
+            args: Prisma.AuthTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AuthTokenPayload>
+          }
+          aggregate: {
+            args: Prisma.AuthTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAuthToken>
+          }
+          groupBy: {
+            args: Prisma.AuthTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AuthTokenGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AuthTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<AuthTokenCountAggregateOutputType> | number
+          }
+        }
+      }
       Backup: {
         payload: Prisma.$BackupPayload<ExtArgs>
         fields: Prisma.BackupFieldRefs
@@ -1558,11 +1664,26 @@ export namespace Prisma {
       isolationLevel?: Prisma.TransactionIsolationLevel
     }
     /**
-     * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
+     * A driver adapter that PrismaClient uses to connect to your database, such as the ones provided by `@prisma/adapter-pg`, `@prisma/adapter-libsql`, `@prisma/adapter-planetscale`, etc.
+     * 
+     * A driver adapter is **required** unless you connect to your database through Prisma Accelerate (in which case use `accelerateUrl` instead).
+     * 
+     * Learn more: https://pris.ly/d/driver-adapters
+     * 
+     * @example
+     * ```ts
+     * import { PrismaPg } from '@prisma/adapter-pg'
+     * import { PrismaClient } from './generated/prisma/client'
+     * 
+     * const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+     * const prisma = new PrismaClient({ adapter })
+     * ```
      */
     adapter?: runtime.SqlDriverAdapterFactory
     /**
-     * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
+     * The Prisma Accelerate connection URL. Use this option to connect to your database through Prisma Accelerate instead of using a driver adapter to connect directly.
+     * 
+     * Learn more: https://pris.ly/d/accelerate
      */
     accelerateUrl?: string
     /**
@@ -1604,6 +1725,7 @@ export namespace Prisma {
     barangay?: BarangayOmit
     auditLog?: AuditLogOmit
     user?: UserOmit
+    authToken?: AuthTokenOmit
     backup?: BackupOmit
     exportSchedule?: ExportScheduleOmit
     permission?: PermissionOmit
@@ -1752,11 +1874,13 @@ export namespace Prisma {
   export type UserCountOutputType = {
     permissions: number
     exportSchedules: number
+    authTokens: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     permissions?: boolean | UserCountOutputTypeCountPermissionsArgs
     exportSchedules?: boolean | UserCountOutputTypeCountExportSchedulesArgs
+    authTokens?: boolean | UserCountOutputTypeCountAuthTokensArgs
   }
 
   // Custom InputTypes
@@ -1782,6 +1906,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountExportSchedulesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ExportScheduleWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAuthTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AuthTokenWhereInput
   }
 
 
@@ -2723,7 +2854,7 @@ export namespace Prisma {
   type CrimeIncidentGetPayload<S extends boolean | null | undefined | CrimeIncidentDefaultArgs> = $Result.GetResult<Prisma.$CrimeIncidentPayload, S>
 
   type CrimeIncidentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<CrimeIncidentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<CrimeIncidentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: CrimeIncidentCountAggregateInputType | true
     }
 
@@ -3222,6 +3353,7 @@ export namespace Prisma {
      * Filter, which CrimeIncident to fetch.
      */
     where: CrimeIncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3244,6 +3376,7 @@ export namespace Prisma {
      * Filter, which CrimeIncident to fetch.
      */
     where: CrimeIncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3296,6 +3429,7 @@ export namespace Prisma {
      * Filter by unique combinations of CrimeIncidents.
      */
     distinct?: CrimeIncidentScalarFieldEnum | CrimeIncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3348,6 +3482,7 @@ export namespace Prisma {
      * Filter by unique combinations of CrimeIncidents.
      */
     distinct?: CrimeIncidentScalarFieldEnum | CrimeIncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3400,6 +3535,7 @@ export namespace Prisma {
      * Filter by unique combinations of CrimeIncidents.
      */
     distinct?: CrimeIncidentScalarFieldEnum | CrimeIncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3422,6 +3558,7 @@ export namespace Prisma {
      * The data needed to create a CrimeIncident.
      */
     data: XOR<CrimeIncidentCreateInput, CrimeIncidentUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3482,6 +3619,7 @@ export namespace Prisma {
      * Choose, which CrimeIncident to update.
      */
     where: CrimeIncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3560,6 +3698,7 @@ export namespace Prisma {
      * In case the CrimeIncident was found with the provided `where` argument, update it with this data.
      */
     update: XOR<CrimeIncidentUpdateInput, CrimeIncidentUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3582,6 +3721,7 @@ export namespace Prisma {
      * Filter which CrimeIncident to delete.
      */
     where: CrimeIncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -3905,7 +4045,7 @@ export namespace Prisma {
   type IncidentGetPayload<S extends boolean | null | undefined | IncidentDefaultArgs> = $Result.GetResult<Prisma.$IncidentPayload, S>
 
   type IncidentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<IncidentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<IncidentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: IncidentCountAggregateInputType | true
     }
 
@@ -4354,6 +4494,7 @@ export namespace Prisma {
      * Filter, which Incident to fetch.
      */
     where: IncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4376,6 +4517,7 @@ export namespace Prisma {
      * Filter, which Incident to fetch.
      */
     where: IncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4428,6 +4570,7 @@ export namespace Prisma {
      * Filter by unique combinations of Incidents.
      */
     distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4480,6 +4623,7 @@ export namespace Prisma {
      * Filter by unique combinations of Incidents.
      */
     distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4532,6 +4676,7 @@ export namespace Prisma {
      * Filter by unique combinations of Incidents.
      */
     distinct?: IncidentScalarFieldEnum | IncidentScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4554,6 +4699,7 @@ export namespace Prisma {
      * The data needed to create a Incident.
      */
     data: XOR<IncidentCreateInput, IncidentUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4610,6 +4756,7 @@ export namespace Prisma {
      * Choose, which Incident to update.
      */
     where: IncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4684,6 +4831,7 @@ export namespace Prisma {
      * In case the Incident was found with the provided `where` argument, update it with this data.
      */
     update: XOR<IncidentUpdateInput, IncidentUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4706,6 +4854,7 @@ export namespace Prisma {
      * Filter which Incident to delete.
      */
     where: IncidentWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -4959,7 +5108,7 @@ export namespace Prisma {
   type OffenseDefinitionGetPayload<S extends boolean | null | undefined | OffenseDefinitionDefaultArgs> = $Result.GetResult<Prisma.$OffenseDefinitionPayload, S>
 
   type OffenseDefinitionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<OffenseDefinitionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<OffenseDefinitionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: OffenseDefinitionCountAggregateInputType | true
     }
 
@@ -5403,6 +5552,7 @@ export namespace Prisma {
      * Filter, which OffenseDefinition to fetch.
      */
     where: OffenseDefinitionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5425,6 +5575,7 @@ export namespace Prisma {
      * Filter, which OffenseDefinition to fetch.
      */
     where: OffenseDefinitionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5477,6 +5628,7 @@ export namespace Prisma {
      * Filter by unique combinations of OffenseDefinitions.
      */
     distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5529,6 +5681,7 @@ export namespace Prisma {
      * Filter by unique combinations of OffenseDefinitions.
      */
     distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5581,6 +5734,7 @@ export namespace Prisma {
      * Filter by unique combinations of OffenseDefinitions.
      */
     distinct?: OffenseDefinitionScalarFieldEnum | OffenseDefinitionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5603,6 +5757,7 @@ export namespace Prisma {
      * The data needed to create a OffenseDefinition.
      */
     data: XOR<OffenseDefinitionCreateInput, OffenseDefinitionUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5659,6 +5814,7 @@ export namespace Prisma {
      * Choose, which OffenseDefinition to update.
      */
     where: OffenseDefinitionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5733,6 +5889,7 @@ export namespace Prisma {
      * In case the OffenseDefinition was found with the provided `where` argument, update it with this data.
      */
     update: XOR<OffenseDefinitionUpdateInput, OffenseDefinitionUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -5755,6 +5912,7 @@ export namespace Prisma {
      * Filter which OffenseDefinition to delete.
      */
     where: OffenseDefinitionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6080,7 +6238,7 @@ export namespace Prisma {
   type BarangayGetPayload<S extends boolean | null | undefined | BarangayDefaultArgs> = $Result.GetResult<Prisma.$BarangayPayload, S>
 
   type BarangayCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<BarangayFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<BarangayFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: BarangayCountAggregateInputType | true
     }
 
@@ -6523,6 +6681,7 @@ export namespace Prisma {
      * Filter, which Barangay to fetch.
      */
     where: BarangayWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6541,6 +6700,7 @@ export namespace Prisma {
      * Filter, which Barangay to fetch.
      */
     where: BarangayWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6589,6 +6749,7 @@ export namespace Prisma {
      * Filter by unique combinations of Barangays.
      */
     distinct?: BarangayScalarFieldEnum | BarangayScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6637,6 +6798,7 @@ export namespace Prisma {
      * Filter by unique combinations of Barangays.
      */
     distinct?: BarangayScalarFieldEnum | BarangayScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6685,6 +6847,7 @@ export namespace Prisma {
      * Filter by unique combinations of Barangays.
      */
     distinct?: BarangayScalarFieldEnum | BarangayScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6703,6 +6866,7 @@ export namespace Prisma {
      * The data needed to create a Barangay.
      */
     data: XOR<BarangayCreateInput, BarangayUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6755,6 +6919,7 @@ export namespace Prisma {
      * Choose, which Barangay to update.
      */
     where: BarangayWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6825,6 +6990,7 @@ export namespace Prisma {
      * In case the Barangay was found with the provided `where` argument, update it with this data.
      */
     update: XOR<BarangayUpdateInput, BarangayUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -6843,6 +7009,7 @@ export namespace Prisma {
      * Filter which Barangay to delete.
      */
     where: BarangayWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7240,7 +7407,7 @@ export namespace Prisma {
   type AuditLogGetPayload<S extends boolean | null | undefined | AuditLogDefaultArgs> = $Result.GetResult<Prisma.$AuditLogPayload, S>
 
   type AuditLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<AuditLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<AuditLogFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: AuditLogCountAggregateInputType | true
     }
 
@@ -7691,6 +7858,7 @@ export namespace Prisma {
      * Filter, which AuditLog to fetch.
      */
     where: AuditLogWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7709,6 +7877,7 @@ export namespace Prisma {
      * Filter, which AuditLog to fetch.
      */
     where: AuditLogWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7757,6 +7926,7 @@ export namespace Prisma {
      * Filter by unique combinations of AuditLogs.
      */
     distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7805,6 +7975,7 @@ export namespace Prisma {
      * Filter by unique combinations of AuditLogs.
      */
     distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7853,6 +8024,7 @@ export namespace Prisma {
      * Filter by unique combinations of AuditLogs.
      */
     distinct?: AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7871,6 +8043,7 @@ export namespace Prisma {
      * The data needed to create a AuditLog.
      */
     data?: XOR<AuditLogCreateInput, AuditLogUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7923,6 +8096,7 @@ export namespace Prisma {
      * Choose, which AuditLog to update.
      */
     where: AuditLogWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -7993,6 +8167,7 @@ export namespace Prisma {
      * In case the AuditLog was found with the provided `where` argument, update it with this data.
      */
     update: XOR<AuditLogUpdateInput, AuditLogUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -8011,6 +8186,7 @@ export namespace Prisma {
      * Filter which AuditLog to delete.
      */
     where: AuditLogWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -8056,12 +8232,14 @@ export namespace Prisma {
 
   export type UserAvgAggregateOutputType = {
     id: number | null
+    sessionVersion: number | null
     autoLogoutTimer: number | null
     failedLoginAttempts: number | null
   }
 
   export type UserSumAggregateOutputType = {
     id: number | null
+    sessionVersion: number | null
     autoLogoutTimer: number | null
     failedLoginAttempts: number | null
   }
@@ -8069,6 +8247,9 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: number | null
     accountNumber: string | null
+    email: string | null
+    emailVerifiedAt: Date | null
+    sessionVersion: number | null
     fullName: string | null
     passwordHash: string | null
     mustChangePassword: boolean | null
@@ -8083,6 +8264,9 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: number | null
     accountNumber: string | null
+    email: string | null
+    emailVerifiedAt: Date | null
+    sessionVersion: number | null
     fullName: string | null
     passwordHash: string | null
     mustChangePassword: boolean | null
@@ -8097,6 +8281,9 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     accountNumber: number
+    email: number
+    emailVerifiedAt: number
+    sessionVersion: number
     fullName: number
     passwordHash: number
     mustChangePassword: number
@@ -8112,12 +8299,14 @@ export namespace Prisma {
 
   export type UserAvgAggregateInputType = {
     id?: true
+    sessionVersion?: true
     autoLogoutTimer?: true
     failedLoginAttempts?: true
   }
 
   export type UserSumAggregateInputType = {
     id?: true
+    sessionVersion?: true
     autoLogoutTimer?: true
     failedLoginAttempts?: true
   }
@@ -8125,6 +8314,9 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     accountNumber?: true
+    email?: true
+    emailVerifiedAt?: true
+    sessionVersion?: true
     fullName?: true
     passwordHash?: true
     mustChangePassword?: true
@@ -8139,6 +8331,9 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     accountNumber?: true
+    email?: true
+    emailVerifiedAt?: true
+    sessionVersion?: true
     fullName?: true
     passwordHash?: true
     mustChangePassword?: true
@@ -8153,6 +8348,9 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     accountNumber?: true
+    email?: true
+    emailVerifiedAt?: true
+    sessionVersion?: true
     fullName?: true
     passwordHash?: true
     mustChangePassword?: true
@@ -8254,6 +8452,9 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: number
     accountNumber: string
+    email: string | null
+    emailVerifiedAt: Date | null
+    sessionVersion: number
     fullName: string
     passwordHash: string
     mustChangePassword: boolean
@@ -8287,6 +8488,9 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     accountNumber?: boolean
+    email?: boolean
+    emailVerifiedAt?: boolean
+    sessionVersion?: boolean
     fullName?: boolean
     passwordHash?: boolean
     mustChangePassword?: boolean
@@ -8298,12 +8502,16 @@ export namespace Prisma {
     updatedAt?: boolean
     permissions?: boolean | User$permissionsArgs<ExtArgs>
     exportSchedules?: boolean | User$exportSchedulesArgs<ExtArgs>
+    authTokens?: boolean | User$authTokensArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     accountNumber?: boolean
+    email?: boolean
+    emailVerifiedAt?: boolean
+    sessionVersion?: boolean
     fullName?: boolean
     passwordHash?: boolean
     mustChangePassword?: boolean
@@ -8318,6 +8526,9 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     accountNumber?: boolean
+    email?: boolean
+    emailVerifiedAt?: boolean
+    sessionVersion?: boolean
     fullName?: boolean
     passwordHash?: boolean
     mustChangePassword?: boolean
@@ -8332,6 +8543,9 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     accountNumber?: boolean
+    email?: boolean
+    emailVerifiedAt?: boolean
+    sessionVersion?: boolean
     fullName?: boolean
     passwordHash?: boolean
     mustChangePassword?: boolean
@@ -8343,10 +8557,11 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "accountNumber" | "fullName" | "passwordHash" | "mustChangePassword" | "defaultLandingPage" | "autoLogoutTimer" | "failedLoginAttempts" | "lockedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "accountNumber" | "email" | "emailVerifiedAt" | "sessionVersion" | "fullName" | "passwordHash" | "mustChangePassword" | "defaultLandingPage" | "autoLogoutTimer" | "failedLoginAttempts" | "lockedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     permissions?: boolean | User$permissionsArgs<ExtArgs>
     exportSchedules?: boolean | User$exportSchedulesArgs<ExtArgs>
+    authTokens?: boolean | User$authTokensArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -8357,10 +8572,14 @@ export namespace Prisma {
     objects: {
       permissions: Prisma.$UserPermissionPayload<ExtArgs>[]
       exportSchedules: Prisma.$ExportSchedulePayload<ExtArgs>[]
+      authTokens: Prisma.$AuthTokenPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       accountNumber: string
+      email: string | null
+      emailVerifiedAt: Date | null
+      sessionVersion: number
       fullName: string
       passwordHash: string
       mustChangePassword: boolean
@@ -8377,7 +8596,7 @@ export namespace Prisma {
   type UserGetPayload<S extends boolean | null | undefined | UserDefaultArgs> = $Result.GetResult<Prisma.$UserPayload, S>
 
   type UserCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<UserFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<UserFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: UserCountAggregateInputType | true
     }
 
@@ -8766,6 +8985,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     permissions<T extends User$permissionsArgs<ExtArgs> = {}>(args?: Subset<T, User$permissionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserPermissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     exportSchedules<T extends User$exportSchedulesArgs<ExtArgs> = {}>(args?: Subset<T, User$exportSchedulesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExportSchedulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    authTokens<T extends User$authTokensArgs<ExtArgs> = {}>(args?: Subset<T, User$authTokensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8797,6 +9017,9 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'Int'>
     readonly accountNumber: FieldRef<"User", 'String'>
+    readonly email: FieldRef<"User", 'String'>
+    readonly emailVerifiedAt: FieldRef<"User", 'DateTime'>
+    readonly sessionVersion: FieldRef<"User", 'Int'>
     readonly fullName: FieldRef<"User", 'String'>
     readonly passwordHash: FieldRef<"User", 'String'>
     readonly mustChangePassword: FieldRef<"User", 'Boolean'>
@@ -8830,6 +9053,7 @@ export namespace Prisma {
      * Filter, which User to fetch.
      */
     where: UserWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -8852,6 +9076,7 @@ export namespace Prisma {
      * Filter, which User to fetch.
      */
     where: UserWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -8904,6 +9129,7 @@ export namespace Prisma {
      * Filter by unique combinations of Users.
      */
     distinct?: UserScalarFieldEnum | UserScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -8956,6 +9182,7 @@ export namespace Prisma {
      * Filter by unique combinations of Users.
      */
     distinct?: UserScalarFieldEnum | UserScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9008,6 +9235,7 @@ export namespace Prisma {
      * Filter by unique combinations of Users.
      */
     distinct?: UserScalarFieldEnum | UserScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9030,6 +9258,7 @@ export namespace Prisma {
      * The data needed to create a User.
      */
     data: XOR<UserCreateInput, UserUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9086,6 +9315,7 @@ export namespace Prisma {
      * Choose, which User to update.
      */
     where: UserWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9160,6 +9390,7 @@ export namespace Prisma {
      * In case the User was found with the provided `where` argument, update it with this data.
      */
     update: XOR<UserUpdateInput, UserUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9182,6 +9413,7 @@ export namespace Prisma {
      * Filter which User to delete.
      */
     where: UserWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -9247,6 +9479,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.authTokens
+   */
+  export type User$authTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    where?: AuthTokenWhereInput
+    orderBy?: AuthTokenOrderByWithRelationInput | AuthTokenOrderByWithRelationInput[]
+    cursor?: AuthTokenWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AuthTokenScalarFieldEnum | AuthTokenScalarFieldEnum[]
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9262,6 +9518,1159 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: UserInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model AuthToken
+   */
+
+  export type AggregateAuthToken = {
+    _count: AuthTokenCountAggregateOutputType | null
+    _avg: AuthTokenAvgAggregateOutputType | null
+    _sum: AuthTokenSumAggregateOutputType | null
+    _min: AuthTokenMinAggregateOutputType | null
+    _max: AuthTokenMaxAggregateOutputType | null
+  }
+
+  export type AuthTokenAvgAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    createdById: number | null
+  }
+
+  export type AuthTokenSumAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    createdById: number | null
+  }
+
+  export type AuthTokenMinAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    purpose: string | null
+    tokenHash: string | null
+    expiresAt: Date | null
+    usedAt: Date | null
+    createdAt: Date | null
+    createdById: number | null
+  }
+
+  export type AuthTokenMaxAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    purpose: string | null
+    tokenHash: string | null
+    expiresAt: Date | null
+    usedAt: Date | null
+    createdAt: Date | null
+    createdById: number | null
+  }
+
+  export type AuthTokenCountAggregateOutputType = {
+    id: number
+    userId: number
+    purpose: number
+    tokenHash: number
+    expiresAt: number
+    usedAt: number
+    createdAt: number
+    createdById: number
+    _all: number
+  }
+
+
+  export type AuthTokenAvgAggregateInputType = {
+    id?: true
+    userId?: true
+    createdById?: true
+  }
+
+  export type AuthTokenSumAggregateInputType = {
+    id?: true
+    userId?: true
+    createdById?: true
+  }
+
+  export type AuthTokenMinAggregateInputType = {
+    id?: true
+    userId?: true
+    purpose?: true
+    tokenHash?: true
+    expiresAt?: true
+    usedAt?: true
+    createdAt?: true
+    createdById?: true
+  }
+
+  export type AuthTokenMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    purpose?: true
+    tokenHash?: true
+    expiresAt?: true
+    usedAt?: true
+    createdAt?: true
+    createdById?: true
+  }
+
+  export type AuthTokenCountAggregateInputType = {
+    id?: true
+    userId?: true
+    purpose?: true
+    tokenHash?: true
+    expiresAt?: true
+    usedAt?: true
+    createdAt?: true
+    createdById?: true
+    _all?: true
+  }
+
+  export type AuthTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AuthToken to aggregate.
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuthTokens to fetch.
+     */
+    orderBy?: AuthTokenOrderByWithRelationInput | AuthTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AuthTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuthTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuthTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned AuthTokens
+    **/
+    _count?: true | AuthTokenCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: AuthTokenAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AuthTokenSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AuthTokenMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AuthTokenMaxAggregateInputType
+  }
+
+  export type GetAuthTokenAggregateType<T extends AuthTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregateAuthToken]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAuthToken[P]>
+      : GetScalarType<T[P], AggregateAuthToken[P]>
+  }
+
+
+
+
+  export type AuthTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AuthTokenWhereInput
+    orderBy?: AuthTokenOrderByWithAggregationInput | AuthTokenOrderByWithAggregationInput[]
+    by: AuthTokenScalarFieldEnum[] | AuthTokenScalarFieldEnum
+    having?: AuthTokenScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AuthTokenCountAggregateInputType | true
+    _avg?: AuthTokenAvgAggregateInputType
+    _sum?: AuthTokenSumAggregateInputType
+    _min?: AuthTokenMinAggregateInputType
+    _max?: AuthTokenMaxAggregateInputType
+  }
+
+  export type AuthTokenGroupByOutputType = {
+    id: number
+    userId: number
+    purpose: string
+    tokenHash: string
+    expiresAt: Date
+    usedAt: Date | null
+    createdAt: Date
+    createdById: number | null
+    _count: AuthTokenCountAggregateOutputType | null
+    _avg: AuthTokenAvgAggregateOutputType | null
+    _sum: AuthTokenSumAggregateOutputType | null
+    _min: AuthTokenMinAggregateOutputType | null
+    _max: AuthTokenMaxAggregateOutputType | null
+  }
+
+  type GetAuthTokenGroupByPayload<T extends AuthTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AuthTokenGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AuthTokenGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AuthTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], AuthTokenGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AuthTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    purpose?: boolean
+    tokenHash?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    createdAt?: boolean
+    createdById?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["authToken"]>
+
+  export type AuthTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    purpose?: boolean
+    tokenHash?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    createdAt?: boolean
+    createdById?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["authToken"]>
+
+  export type AuthTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    purpose?: boolean
+    tokenHash?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    createdAt?: boolean
+    createdById?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["authToken"]>
+
+  export type AuthTokenSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    purpose?: boolean
+    tokenHash?: boolean
+    expiresAt?: boolean
+    usedAt?: boolean
+    createdAt?: boolean
+    createdById?: boolean
+  }
+
+  export type AuthTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "purpose" | "tokenHash" | "expiresAt" | "usedAt" | "createdAt" | "createdById", ExtArgs["result"]["authToken"]>
+  export type AuthTokenInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AuthTokenIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AuthTokenIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $AuthTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "AuthToken"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      userId: number
+      purpose: string
+      tokenHash: string
+      expiresAt: Date
+      usedAt: Date | null
+      createdAt: Date
+      createdById: number | null
+    }, ExtArgs["result"]["authToken"]>
+    composites: {}
+  }
+
+  type AuthTokenGetPayload<S extends boolean | null | undefined | AuthTokenDefaultArgs> = $Result.GetResult<Prisma.$AuthTokenPayload, S>
+
+  type AuthTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AuthTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: AuthTokenCountAggregateInputType | true
+    }
+
+  export interface AuthTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['AuthToken'], meta: { name: 'AuthToken' } }
+    /**
+     * Find zero or one AuthToken that matches the filter.
+     * @param {AuthTokenFindUniqueArgs} args - Arguments to find a AuthToken
+     * @example
+     * // Get one AuthToken
+     * const authToken = await prisma.authToken.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AuthTokenFindUniqueArgs>(args: SelectSubset<T, AuthTokenFindUniqueArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one AuthToken that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AuthTokenFindUniqueOrThrowArgs} args - Arguments to find a AuthToken
+     * @example
+     * // Get one AuthToken
+     * const authToken = await prisma.authToken.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AuthTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, AuthTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AuthToken that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenFindFirstArgs} args - Arguments to find a AuthToken
+     * @example
+     * // Get one AuthToken
+     * const authToken = await prisma.authToken.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AuthTokenFindFirstArgs>(args?: SelectSubset<T, AuthTokenFindFirstArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AuthToken that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenFindFirstOrThrowArgs} args - Arguments to find a AuthToken
+     * @example
+     * // Get one AuthToken
+     * const authToken = await prisma.authToken.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AuthTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, AuthTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more AuthTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all AuthTokens
+     * const authTokens = await prisma.authToken.findMany()
+     * 
+     * // Get first 10 AuthTokens
+     * const authTokens = await prisma.authToken.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const authTokenWithIdOnly = await prisma.authToken.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AuthTokenFindManyArgs>(args?: SelectSubset<T, AuthTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a AuthToken.
+     * @param {AuthTokenCreateArgs} args - Arguments to create a AuthToken.
+     * @example
+     * // Create one AuthToken
+     * const AuthToken = await prisma.authToken.create({
+     *   data: {
+     *     // ... data to create a AuthToken
+     *   }
+     * })
+     * 
+     */
+    create<T extends AuthTokenCreateArgs>(args: SelectSubset<T, AuthTokenCreateArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many AuthTokens.
+     * @param {AuthTokenCreateManyArgs} args - Arguments to create many AuthTokens.
+     * @example
+     * // Create many AuthTokens
+     * const authToken = await prisma.authToken.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AuthTokenCreateManyArgs>(args?: SelectSubset<T, AuthTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many AuthTokens and returns the data saved in the database.
+     * @param {AuthTokenCreateManyAndReturnArgs} args - Arguments to create many AuthTokens.
+     * @example
+     * // Create many AuthTokens
+     * const authToken = await prisma.authToken.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many AuthTokens and only return the `id`
+     * const authTokenWithIdOnly = await prisma.authToken.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AuthTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, AuthTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a AuthToken.
+     * @param {AuthTokenDeleteArgs} args - Arguments to delete one AuthToken.
+     * @example
+     * // Delete one AuthToken
+     * const AuthToken = await prisma.authToken.delete({
+     *   where: {
+     *     // ... filter to delete one AuthToken
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AuthTokenDeleteArgs>(args: SelectSubset<T, AuthTokenDeleteArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one AuthToken.
+     * @param {AuthTokenUpdateArgs} args - Arguments to update one AuthToken.
+     * @example
+     * // Update one AuthToken
+     * const authToken = await prisma.authToken.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AuthTokenUpdateArgs>(args: SelectSubset<T, AuthTokenUpdateArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more AuthTokens.
+     * @param {AuthTokenDeleteManyArgs} args - Arguments to filter AuthTokens to delete.
+     * @example
+     * // Delete a few AuthTokens
+     * const { count } = await prisma.authToken.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AuthTokenDeleteManyArgs>(args?: SelectSubset<T, AuthTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AuthTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many AuthTokens
+     * const authToken = await prisma.authToken.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AuthTokenUpdateManyArgs>(args: SelectSubset<T, AuthTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AuthTokens and returns the data updated in the database.
+     * @param {AuthTokenUpdateManyAndReturnArgs} args - Arguments to update many AuthTokens.
+     * @example
+     * // Update many AuthTokens
+     * const authToken = await prisma.authToken.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more AuthTokens and only return the `id`
+     * const authTokenWithIdOnly = await prisma.authToken.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AuthTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, AuthTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one AuthToken.
+     * @param {AuthTokenUpsertArgs} args - Arguments to update or create a AuthToken.
+     * @example
+     * // Update or create a AuthToken
+     * const authToken = await prisma.authToken.upsert({
+     *   create: {
+     *     // ... data to create a AuthToken
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the AuthToken we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AuthTokenUpsertArgs>(args: SelectSubset<T, AuthTokenUpsertArgs<ExtArgs>>): Prisma__AuthTokenClient<$Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of AuthTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenCountArgs} args - Arguments to filter AuthTokens to count.
+     * @example
+     * // Count the number of AuthTokens
+     * const count = await prisma.authToken.count({
+     *   where: {
+     *     // ... the filter for the AuthTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends AuthTokenCountArgs>(
+      args?: Subset<T, AuthTokenCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AuthTokenCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a AuthToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AuthTokenAggregateArgs>(args: Subset<T, AuthTokenAggregateArgs>): Prisma.PrismaPromise<GetAuthTokenAggregateType<T>>
+
+    /**
+     * Group by AuthToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AuthTokenGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AuthTokenGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AuthTokenGroupByArgs['orderBy'] }
+        : { orderBy?: AuthTokenGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AuthTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAuthTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the AuthToken model
+   */
+  readonly fields: AuthTokenFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for AuthToken.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AuthTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the AuthToken model
+   */
+  interface AuthTokenFieldRefs {
+    readonly id: FieldRef<"AuthToken", 'Int'>
+    readonly userId: FieldRef<"AuthToken", 'Int'>
+    readonly purpose: FieldRef<"AuthToken", 'String'>
+    readonly tokenHash: FieldRef<"AuthToken", 'String'>
+    readonly expiresAt: FieldRef<"AuthToken", 'DateTime'>
+    readonly usedAt: FieldRef<"AuthToken", 'DateTime'>
+    readonly createdAt: FieldRef<"AuthToken", 'DateTime'>
+    readonly createdById: FieldRef<"AuthToken", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * AuthToken findUnique
+   */
+  export type AuthTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which AuthToken to fetch.
+     */
+    where: AuthTokenWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken findUniqueOrThrow
+   */
+  export type AuthTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which AuthToken to fetch.
+     */
+    where: AuthTokenWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken findFirst
+   */
+  export type AuthTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which AuthToken to fetch.
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuthTokens to fetch.
+     */
+    orderBy?: AuthTokenOrderByWithRelationInput | AuthTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AuthTokens.
+     */
+    cursor?: AuthTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuthTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuthTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AuthTokens.
+     */
+    distinct?: AuthTokenScalarFieldEnum | AuthTokenScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken findFirstOrThrow
+   */
+  export type AuthTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which AuthToken to fetch.
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuthTokens to fetch.
+     */
+    orderBy?: AuthTokenOrderByWithRelationInput | AuthTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AuthTokens.
+     */
+    cursor?: AuthTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuthTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuthTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AuthTokens.
+     */
+    distinct?: AuthTokenScalarFieldEnum | AuthTokenScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken findMany
+   */
+  export type AuthTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter, which AuthTokens to fetch.
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AuthTokens to fetch.
+     */
+    orderBy?: AuthTokenOrderByWithRelationInput | AuthTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing AuthTokens.
+     */
+    cursor?: AuthTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AuthTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AuthTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AuthTokens.
+     */
+    distinct?: AuthTokenScalarFieldEnum | AuthTokenScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken create
+   */
+  export type AuthTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * The data needed to create a AuthToken.
+     */
+    data: XOR<AuthTokenCreateInput, AuthTokenUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken createMany
+   */
+  export type AuthTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many AuthTokens.
+     */
+    data: AuthTokenCreateManyInput | AuthTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AuthToken createManyAndReturn
+   */
+  export type AuthTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * The data used to create many AuthTokens.
+     */
+    data: AuthTokenCreateManyInput | AuthTokenCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AuthToken update
+   */
+  export type AuthTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * The data needed to update a AuthToken.
+     */
+    data: XOR<AuthTokenUpdateInput, AuthTokenUncheckedUpdateInput>
+    /**
+     * Choose, which AuthToken to update.
+     */
+    where: AuthTokenWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken updateMany
+   */
+  export type AuthTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update AuthTokens.
+     */
+    data: XOR<AuthTokenUpdateManyMutationInput, AuthTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which AuthTokens to update
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * Limit how many AuthTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AuthToken updateManyAndReturn
+   */
+  export type AuthTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * The data used to update AuthTokens.
+     */
+    data: XOR<AuthTokenUpdateManyMutationInput, AuthTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which AuthTokens to update
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * Limit how many AuthTokens to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AuthToken upsert
+   */
+  export type AuthTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * The filter to search for the AuthToken to update in case it exists.
+     */
+    where: AuthTokenWhereUniqueInput
+    /**
+     * In case the AuthToken found by the `where` argument doesn't exist, create a new AuthToken with this data.
+     */
+    create: XOR<AuthTokenCreateInput, AuthTokenUncheckedCreateInput>
+    /**
+     * In case the AuthToken was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AuthTokenUpdateInput, AuthTokenUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken delete
+   */
+  export type AuthTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
+    /**
+     * Filter which AuthToken to delete.
+     */
+    where: AuthTokenWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AuthToken deleteMany
+   */
+  export type AuthTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AuthTokens to delete
+     */
+    where?: AuthTokenWhereInput
+    /**
+     * Limit how many AuthTokens to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * AuthToken without action
+   */
+  export type AuthTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AuthToken
+     */
+    select?: AuthTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AuthToken
+     */
+    omit?: AuthTokenOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AuthTokenInclude<ExtArgs> | null
   }
 
 
@@ -9595,7 +11004,7 @@ export namespace Prisma {
   type BackupGetPayload<S extends boolean | null | undefined | BackupDefaultArgs> = $Result.GetResult<Prisma.$BackupPayload, S>
 
   type BackupCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<BackupFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<BackupFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: BackupCountAggregateInputType | true
     }
 
@@ -10043,6 +11452,7 @@ export namespace Prisma {
      * Filter, which Backup to fetch.
      */
     where: BackupWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10061,6 +11471,7 @@ export namespace Prisma {
      * Filter, which Backup to fetch.
      */
     where: BackupWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10109,6 +11520,7 @@ export namespace Prisma {
      * Filter by unique combinations of Backups.
      */
     distinct?: BackupScalarFieldEnum | BackupScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10157,6 +11569,7 @@ export namespace Prisma {
      * Filter by unique combinations of Backups.
      */
     distinct?: BackupScalarFieldEnum | BackupScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10205,6 +11618,7 @@ export namespace Prisma {
      * Filter by unique combinations of Backups.
      */
     distinct?: BackupScalarFieldEnum | BackupScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10223,6 +11637,7 @@ export namespace Prisma {
      * The data needed to create a Backup.
      */
     data: XOR<BackupCreateInput, BackupUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10275,6 +11690,7 @@ export namespace Prisma {
      * Choose, which Backup to update.
      */
     where: BackupWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10345,6 +11761,7 @@ export namespace Prisma {
      * In case the Backup was found with the provided `where` argument, update it with this data.
      */
     update: XOR<BackupUpdateInput, BackupUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10363,6 +11780,7 @@ export namespace Prisma {
      * Filter which Backup to delete.
      */
     where: BackupWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -10710,7 +12128,7 @@ export namespace Prisma {
   type ExportScheduleGetPayload<S extends boolean | null | undefined | ExportScheduleDefaultArgs> = $Result.GetResult<Prisma.$ExportSchedulePayload, S>
 
   type ExportScheduleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<ExportScheduleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<ExportScheduleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: ExportScheduleCountAggregateInputType | true
     }
 
@@ -11161,6 +12579,7 @@ export namespace Prisma {
      * Filter, which ExportSchedule to fetch.
      */
     where: ExportScheduleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11183,6 +12602,7 @@ export namespace Prisma {
      * Filter, which ExportSchedule to fetch.
      */
     where: ExportScheduleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11235,6 +12655,7 @@ export namespace Prisma {
      * Filter by unique combinations of ExportSchedules.
      */
     distinct?: ExportScheduleScalarFieldEnum | ExportScheduleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11287,6 +12708,7 @@ export namespace Prisma {
      * Filter by unique combinations of ExportSchedules.
      */
     distinct?: ExportScheduleScalarFieldEnum | ExportScheduleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11339,6 +12761,7 @@ export namespace Prisma {
      * Filter by unique combinations of ExportSchedules.
      */
     distinct?: ExportScheduleScalarFieldEnum | ExportScheduleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11361,6 +12784,7 @@ export namespace Prisma {
      * The data needed to create a ExportSchedule.
      */
     data: XOR<ExportScheduleCreateInput, ExportScheduleUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11421,6 +12845,7 @@ export namespace Prisma {
      * Choose, which ExportSchedule to update.
      */
     where: ExportScheduleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11499,6 +12924,7 @@ export namespace Prisma {
      * In case the ExportSchedule was found with the provided `where` argument, update it with this data.
      */
     update: XOR<ExportScheduleUpdateInput, ExportScheduleUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11521,6 +12947,7 @@ export namespace Prisma {
      * Filter which ExportSchedule to delete.
      */
     where: ExportScheduleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -11784,7 +13211,7 @@ export namespace Prisma {
   type PermissionGetPayload<S extends boolean | null | undefined | PermissionDefaultArgs> = $Result.GetResult<Prisma.$PermissionPayload, S>
 
   type PermissionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<PermissionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<PermissionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: PermissionCountAggregateInputType | true
     }
 
@@ -12228,6 +13655,7 @@ export namespace Prisma {
      * Filter, which Permission to fetch.
      */
     where: PermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12250,6 +13678,7 @@ export namespace Prisma {
      * Filter, which Permission to fetch.
      */
     where: PermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12302,6 +13731,7 @@ export namespace Prisma {
      * Filter by unique combinations of Permissions.
      */
     distinct?: PermissionScalarFieldEnum | PermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12354,6 +13784,7 @@ export namespace Prisma {
      * Filter by unique combinations of Permissions.
      */
     distinct?: PermissionScalarFieldEnum | PermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12406,6 +13837,7 @@ export namespace Prisma {
      * Filter by unique combinations of Permissions.
      */
     distinct?: PermissionScalarFieldEnum | PermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12428,6 +13860,7 @@ export namespace Prisma {
      * The data needed to create a Permission.
      */
     data: XOR<PermissionCreateInput, PermissionUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12484,6 +13917,7 @@ export namespace Prisma {
      * Choose, which Permission to update.
      */
     where: PermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12558,6 +13992,7 @@ export namespace Prisma {
      * In case the Permission was found with the provided `where` argument, update it with this data.
      */
     update: XOR<PermissionUpdateInput, PermissionUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12580,6 +14015,7 @@ export namespace Prisma {
      * Filter which Permission to delete.
      */
     where: PermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -12898,7 +14334,7 @@ export namespace Prisma {
   type UserPermissionGetPayload<S extends boolean | null | undefined | UserPermissionDefaultArgs> = $Result.GetResult<Prisma.$UserPermissionPayload, S>
 
   type UserPermissionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<UserPermissionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    Omit<UserPermissionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
       select?: UserPermissionCountAggregateInputType | true
     }
 
@@ -13344,6 +14780,7 @@ export namespace Prisma {
      * Filter, which UserPermission to fetch.
      */
     where: UserPermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13366,6 +14803,7 @@ export namespace Prisma {
      * Filter, which UserPermission to fetch.
      */
     where: UserPermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13418,6 +14856,7 @@ export namespace Prisma {
      * Filter by unique combinations of UserPermissions.
      */
     distinct?: UserPermissionScalarFieldEnum | UserPermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13470,6 +14909,7 @@ export namespace Prisma {
      * Filter by unique combinations of UserPermissions.
      */
     distinct?: UserPermissionScalarFieldEnum | UserPermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13522,6 +14962,7 @@ export namespace Prisma {
      * Filter by unique combinations of UserPermissions.
      */
     distinct?: UserPermissionScalarFieldEnum | UserPermissionScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13544,6 +14985,7 @@ export namespace Prisma {
      * The data needed to create a UserPermission.
      */
     data: XOR<UserPermissionCreateInput, UserPermissionUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13604,6 +15046,7 @@ export namespace Prisma {
      * Choose, which UserPermission to update.
      */
     where: UserPermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13682,6 +15125,7 @@ export namespace Prisma {
      * In case the UserPermission was found with the provided `where` argument, update it with this data.
      */
     update: XOR<UserPermissionUpdateInput, UserPermissionUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13704,6 +15148,7 @@ export namespace Prisma {
      * Filter which UserPermission to delete.
      */
     where: UserPermissionWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
   }
 
   /**
@@ -13816,6 +15261,14 @@ export namespace Prisma {
   export type CrimeIncidentScalarFieldEnum = (typeof CrimeIncidentScalarFieldEnum)[keyof typeof CrimeIncidentScalarFieldEnum]
 
 
+  export const RelationLoadStrategy: {
+    query: 'query',
+    join: 'join'
+  };
+
+  export type RelationLoadStrategy = (typeof RelationLoadStrategy)[keyof typeof RelationLoadStrategy]
+
+
   export const IncidentScalarFieldEnum: {
     id: 'id',
     key: 'key',
@@ -13876,6 +15329,9 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     accountNumber: 'accountNumber',
+    email: 'email',
+    emailVerifiedAt: 'emailVerifiedAt',
+    sessionVersion: 'sessionVersion',
     fullName: 'fullName',
     passwordHash: 'passwordHash',
     mustChangePassword: 'mustChangePassword',
@@ -13888,6 +15344,20 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const AuthTokenScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    purpose: 'purpose',
+    tokenHash: 'tokenHash',
+    expiresAt: 'expiresAt',
+    usedAt: 'usedAt',
+    createdAt: 'createdAt',
+    createdById: 'createdById'
+  };
+
+  export type AuthTokenScalarFieldEnum = (typeof AuthTokenScalarFieldEnum)[keyof typeof AuthTokenScalarFieldEnum]
 
 
   export const BackupScalarFieldEnum: {
@@ -14694,6 +16164,9 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: IntFilter<"User"> | number
     accountNumber?: StringFilter<"User"> | string
+    email?: StringNullableFilter<"User"> | string | null
+    emailVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    sessionVersion?: IntFilter<"User"> | number
     fullName?: StringFilter<"User"> | string
     passwordHash?: StringFilter<"User"> | string
     mustChangePassword?: BoolFilter<"User"> | boolean
@@ -14705,11 +16178,15 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     permissions?: UserPermissionListRelationFilter
     exportSchedules?: ExportScheduleListRelationFilter
+    authTokens?: AuthTokenListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     accountNumber?: SortOrder
+    email?: SortOrderInput | SortOrder
+    emailVerifiedAt?: SortOrderInput | SortOrder
+    sessionVersion?: SortOrder
     fullName?: SortOrder
     passwordHash?: SortOrder
     mustChangePassword?: SortOrder
@@ -14721,14 +16198,18 @@ export namespace Prisma {
     updatedAt?: SortOrder
     permissions?: UserPermissionOrderByRelationAggregateInput
     exportSchedules?: ExportScheduleOrderByRelationAggregateInput
+    authTokens?: AuthTokenOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: number
     accountNumber?: string
+    email?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
+    emailVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    sessionVersion?: IntFilter<"User"> | number
     fullName?: StringFilter<"User"> | string
     passwordHash?: StringFilter<"User"> | string
     mustChangePassword?: BoolFilter<"User"> | boolean
@@ -14740,11 +16221,15 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     permissions?: UserPermissionListRelationFilter
     exportSchedules?: ExportScheduleListRelationFilter
-  }, "id" | "accountNumber">
+    authTokens?: AuthTokenListRelationFilter
+  }, "id" | "accountNumber" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     accountNumber?: SortOrder
+    email?: SortOrderInput | SortOrder
+    emailVerifiedAt?: SortOrderInput | SortOrder
+    sessionVersion?: SortOrder
     fullName?: SortOrder
     passwordHash?: SortOrder
     mustChangePassword?: SortOrder
@@ -14767,6 +16252,9 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"User"> | number
     accountNumber?: StringWithAggregatesFilter<"User"> | string
+    email?: StringNullableWithAggregatesFilter<"User"> | string | null
+    emailVerifiedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    sessionVersion?: IntWithAggregatesFilter<"User"> | number
     fullName?: StringWithAggregatesFilter<"User"> | string
     passwordHash?: StringWithAggregatesFilter<"User"> | string
     mustChangePassword?: BoolWithAggregatesFilter<"User"> | boolean
@@ -14776,6 +16264,78 @@ export namespace Prisma {
     lockedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+  }
+
+  export type AuthTokenWhereInput = {
+    AND?: AuthTokenWhereInput | AuthTokenWhereInput[]
+    OR?: AuthTokenWhereInput[]
+    NOT?: AuthTokenWhereInput | AuthTokenWhereInput[]
+    id?: IntFilter<"AuthToken"> | number
+    userId?: IntFilter<"AuthToken"> | number
+    purpose?: StringFilter<"AuthToken"> | string
+    tokenHash?: StringFilter<"AuthToken"> | string
+    expiresAt?: DateTimeFilter<"AuthToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"AuthToken"> | Date | string | null
+    createdAt?: DateTimeFilter<"AuthToken"> | Date | string
+    createdById?: IntNullableFilter<"AuthToken"> | number | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type AuthTokenOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    purpose?: SortOrder
+    tokenHash?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdById?: SortOrderInput | SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type AuthTokenWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    tokenHash?: string
+    AND?: AuthTokenWhereInput | AuthTokenWhereInput[]
+    OR?: AuthTokenWhereInput[]
+    NOT?: AuthTokenWhereInput | AuthTokenWhereInput[]
+    userId?: IntFilter<"AuthToken"> | number
+    purpose?: StringFilter<"AuthToken"> | string
+    expiresAt?: DateTimeFilter<"AuthToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"AuthToken"> | Date | string | null
+    createdAt?: DateTimeFilter<"AuthToken"> | Date | string
+    createdById?: IntNullableFilter<"AuthToken"> | number | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "tokenHash">
+
+  export type AuthTokenOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    purpose?: SortOrder
+    tokenHash?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdById?: SortOrderInput | SortOrder
+    _count?: AuthTokenCountOrderByAggregateInput
+    _avg?: AuthTokenAvgOrderByAggregateInput
+    _max?: AuthTokenMaxOrderByAggregateInput
+    _min?: AuthTokenMinOrderByAggregateInput
+    _sum?: AuthTokenSumOrderByAggregateInput
+  }
+
+  export type AuthTokenScalarWhereWithAggregatesInput = {
+    AND?: AuthTokenScalarWhereWithAggregatesInput | AuthTokenScalarWhereWithAggregatesInput[]
+    OR?: AuthTokenScalarWhereWithAggregatesInput[]
+    NOT?: AuthTokenScalarWhereWithAggregatesInput | AuthTokenScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"AuthToken"> | number
+    userId?: IntWithAggregatesFilter<"AuthToken"> | number
+    purpose?: StringWithAggregatesFilter<"AuthToken"> | string
+    tokenHash?: StringWithAggregatesFilter<"AuthToken"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"AuthToken"> | Date | string
+    usedAt?: DateTimeNullableWithAggregatesFilter<"AuthToken"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"AuthToken"> | Date | string
+    createdById?: IntNullableWithAggregatesFilter<"AuthToken"> | number | null
   }
 
   export type BackupWhereInput = {
@@ -15795,6 +17355,9 @@ export namespace Prisma {
 
   export type UserCreateInput = {
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -15806,11 +17369,15 @@ export namespace Prisma {
     updatedAt?: Date | string
     permissions?: UserPermissionCreateNestedManyWithoutUserInput
     exportSchedules?: ExportScheduleCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
     id?: number
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -15822,10 +17389,14 @@ export namespace Prisma {
     updatedAt?: Date | string
     permissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
     exportSchedules?: ExportScheduleUncheckedCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -15837,11 +17408,15 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     permissions?: UserPermissionUpdateManyWithoutUserNestedInput
     exportSchedules?: ExportScheduleUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -15853,11 +17428,15 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     permissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
     exportSchedules?: ExportScheduleUncheckedUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
     id?: number
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -15871,6 +17450,9 @@ export namespace Prisma {
 
   export type UserUpdateManyMutationInput = {
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -15885,6 +17467,9 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -15894,6 +17479,79 @@ export namespace Prisma {
     lockedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuthTokenCreateInput = {
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+    user: UserCreateNestedOneWithoutAuthTokensInput
+  }
+
+  export type AuthTokenUncheckedCreateInput = {
+    id?: number
+    userId: number
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+  }
+
+  export type AuthTokenUpdateInput = {
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
+    user?: UserUpdateOneRequiredWithoutAuthTokensNestedInput
+  }
+
+  export type AuthTokenUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: IntFieldUpdateOperationsInput | number
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type AuthTokenCreateManyInput = {
+    id?: number
+    userId: number
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+  }
+
+  export type AuthTokenUpdateManyMutationInput = {
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type AuthTokenUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: IntFieldUpdateOperationsInput | number
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type BackupCreateInput = {
@@ -16847,6 +18505,12 @@ export namespace Prisma {
     none?: ExportScheduleWhereInput
   }
 
+  export type AuthTokenListRelationFilter = {
+    every?: AuthTokenWhereInput
+    some?: AuthTokenWhereInput
+    none?: AuthTokenWhereInput
+  }
+
   export type UserPermissionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -16855,9 +18519,16 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type AuthTokenOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     accountNumber?: SortOrder
+    email?: SortOrder
+    emailVerifiedAt?: SortOrder
+    sessionVersion?: SortOrder
     fullName?: SortOrder
     passwordHash?: SortOrder
     mustChangePassword?: SortOrder
@@ -16871,6 +18542,7 @@ export namespace Prisma {
 
   export type UserAvgOrderByAggregateInput = {
     id?: SortOrder
+    sessionVersion?: SortOrder
     autoLogoutTimer?: SortOrder
     failedLoginAttempts?: SortOrder
   }
@@ -16878,6 +18550,9 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     accountNumber?: SortOrder
+    email?: SortOrder
+    emailVerifiedAt?: SortOrder
+    sessionVersion?: SortOrder
     fullName?: SortOrder
     passwordHash?: SortOrder
     mustChangePassword?: SortOrder
@@ -16892,6 +18567,9 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     accountNumber?: SortOrder
+    email?: SortOrder
+    emailVerifiedAt?: SortOrder
+    sessionVersion?: SortOrder
     fullName?: SortOrder
     passwordHash?: SortOrder
     mustChangePassword?: SortOrder
@@ -16905,8 +18583,59 @@ export namespace Prisma {
 
   export type UserSumOrderByAggregateInput = {
     id?: SortOrder
+    sessionVersion?: SortOrder
     autoLogoutTimer?: SortOrder
     failedLoginAttempts?: SortOrder
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type AuthTokenCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    purpose?: SortOrder
+    tokenHash?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
+    createdAt?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type AuthTokenAvgOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type AuthTokenMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    purpose?: SortOrder
+    tokenHash?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
+    createdAt?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type AuthTokenMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    purpose?: SortOrder
+    tokenHash?: SortOrder
+    expiresAt?: SortOrder
+    usedAt?: SortOrder
+    createdAt?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type AuthTokenSumOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    createdById?: SortOrder
   }
 
   export type BytesFilter<$PrismaModel = never> = {
@@ -16979,11 +18708,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBytesFilter<$PrismaModel>
     _max?: NestedBytesFilter<$PrismaModel>
-  }
-
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
   }
 
   export type ExportScheduleCountOrderByAggregateInput = {
@@ -17276,6 +19000,13 @@ export namespace Prisma {
     connect?: ExportScheduleWhereUniqueInput | ExportScheduleWhereUniqueInput[]
   }
 
+  export type AuthTokenCreateNestedManyWithoutUserInput = {
+    create?: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput> | AuthTokenCreateWithoutUserInput[] | AuthTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AuthTokenCreateOrConnectWithoutUserInput | AuthTokenCreateOrConnectWithoutUserInput[]
+    createMany?: AuthTokenCreateManyUserInputEnvelope
+    connect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+  }
+
   export type UserPermissionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<UserPermissionCreateWithoutUserInput, UserPermissionUncheckedCreateWithoutUserInput> | UserPermissionCreateWithoutUserInput[] | UserPermissionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: UserPermissionCreateOrConnectWithoutUserInput | UserPermissionCreateOrConnectWithoutUserInput[]
@@ -17288,6 +19019,13 @@ export namespace Prisma {
     connectOrCreate?: ExportScheduleCreateOrConnectWithoutUserInput | ExportScheduleCreateOrConnectWithoutUserInput[]
     createMany?: ExportScheduleCreateManyUserInputEnvelope
     connect?: ExportScheduleWhereUniqueInput | ExportScheduleWhereUniqueInput[]
+  }
+
+  export type AuthTokenUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput> | AuthTokenCreateWithoutUserInput[] | AuthTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AuthTokenCreateOrConnectWithoutUserInput | AuthTokenCreateOrConnectWithoutUserInput[]
+    createMany?: AuthTokenCreateManyUserInputEnvelope
+    connect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
   }
 
   export type UserPermissionUpdateManyWithoutUserNestedInput = {
@@ -17318,6 +19056,20 @@ export namespace Prisma {
     deleteMany?: ExportScheduleScalarWhereInput | ExportScheduleScalarWhereInput[]
   }
 
+  export type AuthTokenUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput> | AuthTokenCreateWithoutUserInput[] | AuthTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AuthTokenCreateOrConnectWithoutUserInput | AuthTokenCreateOrConnectWithoutUserInput[]
+    upsert?: AuthTokenUpsertWithWhereUniqueWithoutUserInput | AuthTokenUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AuthTokenCreateManyUserInputEnvelope
+    set?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    disconnect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    delete?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    connect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    update?: AuthTokenUpdateWithWhereUniqueWithoutUserInput | AuthTokenUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AuthTokenUpdateManyWithWhereWithoutUserInput | AuthTokenUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AuthTokenScalarWhereInput | AuthTokenScalarWhereInput[]
+  }
+
   export type UserPermissionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<UserPermissionCreateWithoutUserInput, UserPermissionUncheckedCreateWithoutUserInput> | UserPermissionCreateWithoutUserInput[] | UserPermissionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: UserPermissionCreateOrConnectWithoutUserInput | UserPermissionCreateOrConnectWithoutUserInput[]
@@ -17344,6 +19096,34 @@ export namespace Prisma {
     update?: ExportScheduleUpdateWithWhereUniqueWithoutUserInput | ExportScheduleUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: ExportScheduleUpdateManyWithWhereWithoutUserInput | ExportScheduleUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: ExportScheduleScalarWhereInput | ExportScheduleScalarWhereInput[]
+  }
+
+  export type AuthTokenUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput> | AuthTokenCreateWithoutUserInput[] | AuthTokenUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AuthTokenCreateOrConnectWithoutUserInput | AuthTokenCreateOrConnectWithoutUserInput[]
+    upsert?: AuthTokenUpsertWithWhereUniqueWithoutUserInput | AuthTokenUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AuthTokenCreateManyUserInputEnvelope
+    set?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    disconnect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    delete?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    connect?: AuthTokenWhereUniqueInput | AuthTokenWhereUniqueInput[]
+    update?: AuthTokenUpdateWithWhereUniqueWithoutUserInput | AuthTokenUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AuthTokenUpdateManyWithWhereWithoutUserInput | AuthTokenUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AuthTokenScalarWhereInput | AuthTokenScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutAuthTokensInput = {
+    create?: XOR<UserCreateWithoutAuthTokensInput, UserUncheckedCreateWithoutAuthTokensInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAuthTokensInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutAuthTokensNestedInput = {
+    create?: XOR<UserCreateWithoutAuthTokensInput, UserUncheckedCreateWithoutAuthTokensInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAuthTokensInput
+    upsert?: UserUpsertWithoutAuthTokensInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAuthTokensInput, UserUpdateWithoutAuthTokensInput>, UserUncheckedUpdateWithoutAuthTokensInput>
   }
 
   export type BytesFieldUpdateOperationsInput = {
@@ -18211,6 +19991,35 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type AuthTokenCreateWithoutUserInput = {
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+  }
+
+  export type AuthTokenUncheckedCreateWithoutUserInput = {
+    id?: number
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+  }
+
+  export type AuthTokenCreateOrConnectWithoutUserInput = {
+    where: AuthTokenWhereUniqueInput
+    create: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput>
+  }
+
+  export type AuthTokenCreateManyUserInputEnvelope = {
+    data: AuthTokenCreateManyUserInput | AuthTokenCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserPermissionUpsertWithWhereUniqueWithoutUserInput = {
     where: UserPermissionWhereUniqueInput
     update: XOR<UserPermissionUpdateWithoutUserInput, UserPermissionUncheckedUpdateWithoutUserInput>
@@ -18269,8 +20078,41 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"ExportSchedule"> | Date | string
   }
 
-  export type UserCreateWithoutExportSchedulesInput = {
+  export type AuthTokenUpsertWithWhereUniqueWithoutUserInput = {
+    where: AuthTokenWhereUniqueInput
+    update: XOR<AuthTokenUpdateWithoutUserInput, AuthTokenUncheckedUpdateWithoutUserInput>
+    create: XOR<AuthTokenCreateWithoutUserInput, AuthTokenUncheckedCreateWithoutUserInput>
+  }
+
+  export type AuthTokenUpdateWithWhereUniqueWithoutUserInput = {
+    where: AuthTokenWhereUniqueInput
+    data: XOR<AuthTokenUpdateWithoutUserInput, AuthTokenUncheckedUpdateWithoutUserInput>
+  }
+
+  export type AuthTokenUpdateManyWithWhereWithoutUserInput = {
+    where: AuthTokenScalarWhereInput
+    data: XOR<AuthTokenUpdateManyMutationInput, AuthTokenUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type AuthTokenScalarWhereInput = {
+    AND?: AuthTokenScalarWhereInput | AuthTokenScalarWhereInput[]
+    OR?: AuthTokenScalarWhereInput[]
+    NOT?: AuthTokenScalarWhereInput | AuthTokenScalarWhereInput[]
+    id?: IntFilter<"AuthToken"> | number
+    userId?: IntFilter<"AuthToken"> | number
+    purpose?: StringFilter<"AuthToken"> | string
+    tokenHash?: StringFilter<"AuthToken"> | string
+    expiresAt?: DateTimeFilter<"AuthToken"> | Date | string
+    usedAt?: DateTimeNullableFilter<"AuthToken"> | Date | string | null
+    createdAt?: DateTimeFilter<"AuthToken"> | Date | string
+    createdById?: IntNullableFilter<"AuthToken"> | number | null
+  }
+
+  export type UserCreateWithoutAuthTokensInput = {
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -18281,11 +20123,15 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     permissions?: UserPermissionCreateNestedManyWithoutUserInput
+    exportSchedules?: ExportScheduleCreateNestedManyWithoutUserInput
   }
 
-  export type UserUncheckedCreateWithoutExportSchedulesInput = {
+  export type UserUncheckedCreateWithoutAuthTokensInput = {
     id?: number
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -18296,6 +20142,97 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     permissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    exportSchedules?: ExportScheduleUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutAuthTokensInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAuthTokensInput, UserUncheckedCreateWithoutAuthTokensInput>
+  }
+
+  export type UserUpsertWithoutAuthTokensInput = {
+    update: XOR<UserUpdateWithoutAuthTokensInput, UserUncheckedUpdateWithoutAuthTokensInput>
+    create: XOR<UserCreateWithoutAuthTokensInput, UserUncheckedCreateWithoutAuthTokensInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAuthTokensInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAuthTokensInput, UserUncheckedUpdateWithoutAuthTokensInput>
+  }
+
+  export type UserUpdateWithoutAuthTokensInput = {
+    accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
+    fullName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
+    defaultLandingPage?: StringFieldUpdateOperationsInput | string
+    autoLogoutTimer?: IntFieldUpdateOperationsInput | number
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    permissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    exportSchedules?: ExportScheduleUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAuthTokensInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
+    fullName?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
+    defaultLandingPage?: StringFieldUpdateOperationsInput | string
+    autoLogoutTimer?: IntFieldUpdateOperationsInput | number
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    permissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    exportSchedules?: ExportScheduleUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutExportSchedulesInput = {
+    accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
+    fullName: string
+    passwordHash: string
+    mustChangePassword?: boolean
+    defaultLandingPage?: string
+    autoLogoutTimer?: number
+    failedLoginAttempts?: number
+    lockedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    permissions?: UserPermissionCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutExportSchedulesInput = {
+    id?: number
+    accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
+    fullName: string
+    passwordHash: string
+    mustChangePassword?: boolean
+    defaultLandingPage?: string
+    autoLogoutTimer?: number
+    failedLoginAttempts?: number
+    lockedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    permissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutExportSchedulesInput = {
@@ -18316,6 +20253,9 @@ export namespace Prisma {
 
   export type UserUpdateWithoutExportSchedulesInput = {
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -18326,11 +20266,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     permissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExportSchedulesInput = {
     id?: IntFieldUpdateOperationsInput | number
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -18341,6 +20285,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     permissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserPermissionCreateWithoutPermissionInput = {
@@ -18383,6 +20328,9 @@ export namespace Prisma {
 
   export type UserCreateWithoutPermissionsInput = {
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -18393,11 +20341,15 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     exportSchedules?: ExportScheduleCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPermissionsInput = {
     id?: number
     accountNumber: string
+    email?: string | null
+    emailVerifiedAt?: Date | string | null
+    sessionVersion?: number
     fullName: string
     passwordHash: string
     mustChangePassword?: boolean
@@ -18408,6 +20360,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     exportSchedules?: ExportScheduleUncheckedCreateNestedManyWithoutUserInput
+    authTokens?: AuthTokenUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPermissionsInput = {
@@ -18444,6 +20397,9 @@ export namespace Prisma {
 
   export type UserUpdateWithoutPermissionsInput = {
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -18454,11 +20410,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     exportSchedules?: ExportScheduleUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPermissionsInput = {
     id?: IntFieldUpdateOperationsInput | number
     accountNumber?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessionVersion?: IntFieldUpdateOperationsInput | number
     fullName?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
@@ -18469,6 +20429,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     exportSchedules?: ExportScheduleUncheckedUpdateManyWithoutUserNestedInput
+    authTokens?: AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PermissionUpsertWithoutUsersInput = {
@@ -18983,6 +20944,16 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type AuthTokenCreateManyUserInput = {
+    id?: number
+    purpose: string
+    tokenHash: string
+    expiresAt: Date | string
+    usedAt?: Date | string | null
+    createdAt?: Date | string
+    createdById?: number | null
+  }
+
   export type UserPermissionUpdateWithoutUserInput = {
     assignedBy?: NullableIntFieldUpdateOperationsInput | number | null
     assignedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19035,6 +21006,35 @@ export namespace Prisma {
     timeOfDay?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AuthTokenUpdateWithoutUserInput = {
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type AuthTokenUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type AuthTokenUncheckedUpdateManyWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    purpose?: StringFieldUpdateOperationsInput | string
+    tokenHash?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdById?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type UserPermissionCreateManyPermissionInput = {

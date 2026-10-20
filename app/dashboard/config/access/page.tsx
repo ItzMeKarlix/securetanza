@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { createPortal } from "react-dom";
 import {
 	Check,
-	CheckCircle2,
-	Copy,
 	Edit,
-	Eye,
-	EyeOff,
+	KeyRound,
 	Lock,
+	Send,
 	Trash2,
 	Unlock,
 	UserPlus,
@@ -34,6 +32,7 @@ import {
 } from "../_components/settings-ui";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { isValidEmail, normalizeEmail } from "@/lib/email-address";
 import {
 	ACCESS_ROLES,
 	MEMBER_PERMISSION,
@@ -47,12 +46,13 @@ const ROLE_ORDER: AccessRole[] = ["admin", "member", "privileged"];
 
 interface AccessForm {
 	fullName: string;
+	email: string;
 	role: AccessRole;
 	/** Module privilege permission ids - only used when role is "privileged". */
 	privilegeIds: number[];
 }
 
-const EMPTY_FORM: AccessForm = { fullName: "", role: "privileged", privilegeIds: [] };
+const EMPTY_FORM: AccessForm = { fullName: "", email: "", role: "privileged", privilegeIds: [] };
 
 interface Permission {
 	id: number;
@@ -63,6 +63,9 @@ interface Permission {
 interface User {
 	id: number;
 	accountNumber: string;
+	email: string | null;
+	/** invited = link not accepted yet; legacy = no email, signs in by account number. */
+	status: "locked" | "invited" | "legacy" | "active";
 	fullName: string;
 	permissions: Permission[];
 	createdAt: string;
@@ -96,29 +99,7 @@ function AccessSecurity() {
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isCopied, setIsCopied] = useState(false);
-	const [showPassword, setShowPassword] = useState(false);
-	const [newAccount, setNewAccount] = useState<{
-		kind: "created" | "unlocked";
-		fullName: string;
-		accountNumber: string;
-		tempPassword?: string;
-	} | null>(null);
-
-	const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-	useEffect(() => {
-		return () => {
-			if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-		};
-	}, []);
-
-	const closeCredentialsModal = () => {
-		if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-		setNewAccount(null);
-		setIsCopied(false);
-		setShowPassword(false);
-	};
+	const [sendingFor, setSendingFor] = useState<number | null>(null);
 
 	const [userToUnlock, setUserToUnlock] = useState<User | null>(null);
 	const [isUnlocking, setIsUnlocking] = useState(false);
@@ -131,6 +112,23 @@ function AccessSecurity() {
 	const itemsPerPage = 10;
 
 	const [formData, setFormData] = useState<AccessForm>(EMPTY_FORM);
+
+	/** Email is required for new accounts; on edit it may stay empty only for legacy accounts. */
+	const resolveEmail = (required: boolean): string | null | undefined => {
+		const email = normalizeEmail(formData.email);
+		if (!email) {
+			if (required) {
+				toast.error("Enter the person's email address — their invite is sent there.");
+				return null;
+			}
+			return undefined;
+		}
+		if (!isValidEmail(email)) {
+			toast.error("Enter a valid email address.");
+			return null;
+		}
+		return email;
+	};
 
 	/** Turn the role + module picks into the permission ids the API stores. */
 	const resolvePermissionIds = (): number[] | null => {
@@ -191,6 +189,8 @@ function AccessSecurity() {
 		if (isSubmitting) return;
 
 
+		const email = resolveEmail(true);
+		if (!email) return;
 		const permissionIds = resolvePermissionIds();
 		if (!permissionIds) return;
 
@@ -199,18 +199,15 @@ function AccessSecurity() {
 			const response = await fetch("/api/users", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ fullName: formData.fullName, permissionIds }),
+				body: JSON.stringify({ fullName: formData.fullName, email, permissionIds }),
 			});
 			const data = await response.json();
 			if (data.success) {
-				toast.success("Account created");
+				if (data.data.emailSent) toast.success(`Account created. Invitation sent to ${email}`);
+				else toast.error(`Account created, but the invite email to ${email} could not be sent. Use “Resend invite” once mail is working.`);
 				setShowCreateModal(false);
 				setFormData(EMPTY_FORM);
-				if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-				setIsCopied(false);
-				setShowPassword(false);
 				fetchUsers();
-				setNewAccount({ ...data.data, kind: "created" });
 			} else toast.error(data.error || "Failed to create account");
 
 		} catch {
@@ -224,6 +221,8 @@ function AccessSecurity() {
 		e.preventDefault();
 		if (!selectedUser || isSubmitting) return;
 
+		const email = resolveEmail(Boolean(selectedUser.email));
+		if (email === null) return;
 		const permissionIds = resolvePermissionIds();
 		if (!permissionIds) return;
 
@@ -232,7 +231,7 @@ function AccessSecurity() {
 			const response = await fetch(`/api/users/${selectedUser.id}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ fullName: formData.fullName, permissionIds }),
+				body: JSON.stringify({ fullName: formData.fullName, ...(email ? { email } : {}), permissionIds }),
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -246,7 +245,11 @@ function AccessSecurity() {
 			}
 			const data = await response.json();
 			if (data.success) {
-				toast.success("Access updated");
+				toast.success(
+					email && email !== selectedUser.email
+						? `Access updated. ${selectedUser.fullName} now signs in with ${email}`
+						: "Access updated"
+				);
 				setShowEditModal(false);
 				setSelectedUser(null);
 				fetchUsers();
@@ -294,11 +297,9 @@ function AccessSecurity() {
 			const data = await response.json();
 			if (response.ok && data.success) {
 				setUserToUnlock(null);
-				if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-				setIsCopied(false);
-				setShowPassword(false);
+				if (data.data.emailSent) toast.success(`Account unlocked. A reset link was emailed to ${data.data.email}`);
+				else toast.error("Account unlocked, but the reset email could not be sent. Use “Send reset link” once mail is working.");
 				fetchUsers();
-				setNewAccount({ ...data.data, kind: "unlocked" });
 			} else toast.error(data.error || "Failed to unlock account");
 
 		} catch {
@@ -308,10 +309,28 @@ function AccessSecurity() {
 		}
 	};
 
+	/** Re-sends a pending invite, or emails a reset link to an active account. */
+	const sendAccountEmail = async (user: User, kind: "invite" | "reset-link") => {
+		if (sendingFor !== null) return;
+		setSendingFor(user.id);
+		try {
+			const response = await fetch(`/api/users/${user.id}/${kind}`, { method: "POST" });
+			const data = await response.json().catch(() => ({}));
+			if (response.ok && data.success) {
+				toast.success(kind === "invite" ? `Invitation re-sent to ${user.email}` : `Reset link sent to ${user.email}`);
+			} else toast.error(data.error || "Couldn't send the email");
+		} catch {
+			toast.error("Couldn't send the email");
+		} finally {
+			setSendingFor(null);
+		}
+	};
+
 	const openEditModal = (user: User) => {
 		setSelectedUser(user);
 		setFormData({
 			fullName: user.fullName,
+			email: user.email ?? "",
 			role: getAccessRole(user.permissions.map((p) => p.name)),
 			privilegeIds: user.permissions.filter((p) => p.name.startsWith("privileged_")).map((p) => p.id),
 		});
@@ -342,16 +361,12 @@ function AccessSecurity() {
 					<button
 						onClick={() => {
 							setFormData(EMPTY_FORM);
-							if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-							setIsCopied(false);
-							setShowPassword(false);
 							setShowCreateModal(true);
 						}}
 						className={btnPrimary}
 					>
-
 						<UserPlus className="h-3.5 w-3.5" />
-						Authorize New Officer
+						Add Account
 					</button>
 				}
 			>
@@ -362,8 +377,8 @@ function AccessSecurity() {
 							<table className="w-full min-w-[42.5rem] text-left">
 								<thead>
 									<tr className="border-b border-slate-200 dark:border-white/[0.07]">
-										<th className={th}>Account No.</th>
-										<th className={th}>Full Name</th>
+										<th className={th}>Staff ID</th>
+										<th className={th}>Name & Email</th>
 										<th className={th}>Role</th>
 										<th className={cn(th, "text-right")}>Actions</th>
 									</tr>
@@ -395,10 +410,26 @@ function AccessSecurity() {
 														{user.accountNumber}
 													</td>
 													<td className={td}>
-														<div className="flex items-center gap-2">
+														<div className="flex flex-wrap items-center gap-2">
 															<span className="font-medium text-slate-900 dark:text-white">
 																{user.fullName}
 															</span>
+															{user.status === "invited" && (
+																<span
+																	title="Invite sent; waiting for them to set a password"
+																	className="inline-flex items-center rounded border border-sky-200 px-1.5 py-0.5 text-[0.7188rem] font-medium text-sky-700 dark:border-sky-500/25 dark:text-sky-300"
+																>
+																	Invite pending
+																</span>
+															)}
+															{user.status === "legacy" && (
+																<span
+																	title="Still signs in with the account number. Add an email to move them to email sign-in."
+																	className="inline-flex items-center rounded border border-amber-200 px-1.5 py-0.5 text-[0.7188rem] font-medium text-amber-700 dark:border-amber-500/25 dark:text-amber-300"
+																>
+																	No email
+																</span>
+															)}
 															{user.lockedAt && (
 																<span
 																	title={`Locked ${new Date(user.lockedAt).toLocaleString()} after ${user.failedLoginAttempts} failed sign-in attempts`}
@@ -407,6 +438,9 @@ function AccessSecurity() {
 																	<Lock className="h-3 w-3" /> Locked
 																</span>
 															)}
+														</div>
+														<div className="mt-0.5 text-[0.7812rem] text-slate-500 dark:text-slate-400">
+															{user.email ?? "—"}
 														</div>
 													</td>
 													<td className={td}>
@@ -417,15 +451,37 @@ function AccessSecurity() {
 															{user.lockedAt && (
 																<button
 																	onClick={() => setUserToUnlock(user)}
-																	title="Unlock account and issue a temporary password"
+																	title="Unlock account and email a reset link"
 																	className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-white/[0.06] dark:hover:text-amber-400"
 																>
 																	<Unlock className="h-4 w-4" />
 																	<span className="sr-only">Unlock {user.fullName}</span>
 																</button>
 															)}
+														{user.status === "invited" && (
 															<button
-																onClick={() => openEditModal(user)}
+																onClick={() => sendAccountEmail(user, "invite")}
+																disabled={sendingFor !== null}
+																title={`Resend invite to ${user.email}`}
+																className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0369A1] disabled:opacity-35 dark:hover:bg-white/[0.06] dark:hover:text-[#7DD3FC]"
+															>
+																<Send className="h-4 w-4" />
+																<span className="sr-only">Resend invite to {user.fullName}</span>
+															</button>
+														)}
+														{user.status === "active" && !isSelf && (
+															<button
+																onClick={() => sendAccountEmail(user, "reset-link")}
+																disabled={sendingFor !== null}
+																title={`Email a password-reset link to ${user.email}`}
+																className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0369A1] disabled:opacity-35 dark:hover:bg-white/[0.06] dark:hover:text-[#7DD3FC]"
+															>
+																<KeyRound className="h-4 w-4" />
+																<span className="sr-only">Send reset link to {user.fullName}</span>
+															</button>
+														)}
+														<button
+															onClick={() => openEditModal(user)}
 																disabled={isSelf}
 																title={
 																	isSelf ? "Cannot modify your own access level" : "Edit access"
@@ -484,73 +540,8 @@ function AccessSecurity() {
 				</div>
 			</Section>
 
-			{/* ── Credentials handoff ── */}
-			{newAccount && (
-				<Modal
-					title={newAccount.kind === "unlocked" ? "Account Unlocked" : "Account Created"}
-					onClose={closeCredentialsModal}
-				>
-					<dl className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/[0.07] dark:border-white/[0.07]">
-						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Full Name</dt>
-							<dd className="text-[0.875rem] font-medium text-slate-900 dark:text-white">
-								{newAccount.fullName}
-							</dd>
-						</div>
-						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Account Number</dt>
-							<dd className="font-mono text-[0.8125rem] font-medium text-slate-900 dark:text-white">
-								{newAccount.accountNumber}
-							</dd>
-						</div>
-						<div className="flex items-center justify-between gap-4 py-3">
-							<dt className="text-[0.8125rem] text-slate-500 dark:text-slate-400">Temporary Password</dt>
-							<dd className="flex items-center gap-1.5">
-								<span className="font-mono text-[0.8125rem] font-medium text-slate-900 dark:text-white">
-									{showPassword ? newAccount.tempPassword : "••••••••••"}
-								</span>
-								<button
-									onClick={() => setShowPassword(!showPassword)}
-									aria-label={showPassword ? "Hide password" : "Show password"}
-									className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/[0.06] dark:hover:text-slate-200"
-								>
-									{showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-								</button>
-							</dd>
-						</div>
-					</dl>
-
-					<p className="mt-4 text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
-						{newAccount.kind === "unlocked"
-							? "The previous password no longer works. Hand these over — the officer must set a new password on their next sign-in."
-							: "Please sign in and change your password."}
-					</p>
-
-					<button
-						onClick={() => {
-							navigator.clipboard.writeText(
-								`Secure Tanza Account ${
-									newAccount.kind === "unlocked" ? "Unlocked" : "Created"
-								}\nFull Name: ${newAccount.fullName}\nAccount Number: ${
-									newAccount.accountNumber
-								}\nTemporary Password: ${newAccount.tempPassword}\n\nPlease sign in and change your password.`
-							);
-							if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-							setIsCopied(true);
-							copyTimeoutRef.current = setTimeout(() => {
-								setIsCopied(false);
-							}, 4000);
-						}}
-						className={cn(btnPrimary, "mt-5 w-full")}
-					>
-						{isCopied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-						{isCopied ? "Credentials Copied!" : "Copy Credentials"}
-					</button>
-				</Modal>
-			)}
-
 			{/* ── Create / edit ── */}
-			{(showCreateModal || showEditModal) && !newAccount && (
+			{(showCreateModal || showEditModal) && (
 				<Modal
 					title={showCreateModal ? "Add Account" : "Edit Access"}
 					width="max-w-lg"
@@ -566,6 +557,26 @@ function AccessSecurity() {
 								onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
 								required
 							/>
+						</Field>
+
+						<Field label="Email" htmlFor="account-email">
+							<input
+								id="account-email"
+								type="email"
+								className={inputBase}
+								placeholder="name@example.gov.ph"
+								autoComplete="off"
+								value={formData.email}
+								onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+								required={showCreateModal || Boolean(selectedUser?.email)}
+							/>
+							<p className="mt-1.5 text-[0.75rem] leading-relaxed text-slate-500 dark:text-slate-400">
+								{showCreateModal
+									? "They sign in with this address. An invite link to set their password is sent here."
+									: selectedUser?.email
+									? "Changing it signs them out; both the old and new address are notified."
+									: "Add an email to move this account from account-number sign-in to email sign-in."}
+							</p>
 						</Field>
 
 						<Field label="Role">
@@ -680,7 +691,7 @@ function AccessSecurity() {
 								Cancel
 							</button>
 							<button type="submit" disabled={isSubmitting} className={btnPrimary}>
-								{showCreateModal ? "Create Account" : "Save Changes"}
+								{showCreateModal ? "Create & Send Invite" : "Save Changes"}
 							</button>
 						</div>
 					</form>
@@ -698,8 +709,9 @@ function AccessSecurity() {
 							({userToUnlock.accountNumber})
 						</span>{" "}
 						was locked out after {userToUnlock.failedLoginAttempts} failed sign-in attempts.
-						Unlocking replaces their password with a new temporary one — the old password stops
-						working, and they must set a new password on their next sign-in.
+						Unlocking cancels their current password and emails a reset link to{" "}
+						<span className="font-medium text-slate-900 dark:text-white">{userToUnlock.email ?? "their address"}</span>.
+						Nobody else sees the new password.
 					</p>
 					<div className="mt-6 flex justify-end gap-2">
 						<button onClick={() => setUserToUnlock(null)} className={btnOutline}>
@@ -710,7 +722,7 @@ function AccessSecurity() {
 							onClick={() => executeUnlock(userToUnlock)}
 							className={cn(btnPrimary, "bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:text-white dark:hover:bg-amber-600")}
 						>
-							{isUnlocking ? "Unlocking…" : "Unlock & Issue Password"}
+							{isUnlocking ? "Unlocking…" : "Unlock & Email Reset Link"}
 						</button>
 					</div>
 				</Modal>

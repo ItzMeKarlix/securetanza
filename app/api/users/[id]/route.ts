@@ -4,9 +4,13 @@ import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { z } from 'zod';
+import { emailField, emailTaken } from '@/lib/account-emails';
+import { sendMail } from '@/lib/email/mailer';
+import { emailChangedEmail } from '@/lib/email/templates';
 
 const updateUserSchema = z.object({
-  fullName: z.string().min(1).optional(),
+  fullName: z.string().trim().min(1).optional(),
+  email: emailField.optional(),
   permissionIds: z.array(z.number().int().positive()).optional(),
 });
 
@@ -42,6 +46,11 @@ export async function PUT(
       );
     }
 
+    const emailChanged = validatedData.email !== undefined && validatedData.email !== existingUser.email;
+    if (emailChanged && (await emailTaken(validatedData.email!, userId))) {
+      return NextResponse.json({ error: 'Another account already uses that email address' }, { status: 409 });
+    }
+
     if (validatedData.permissionIds) {
       const selected = await prisma.permission.findMany({
         where: { id: { in: validatedData.permissionIds } },
@@ -56,10 +65,18 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: { fullName?: string; email?: string; emailVerifiedAt?: null; sessionVersion?: { increment: number } } = {};
 
     if (validatedData.fullName) {
       updateData.fullName = validatedData.fullName;
+    }
+
+    // A new address is unconfirmed until a link sent to it is used, and the
+    // person signs in again with it.
+    if (emailChanged) {
+      updateData.email = validatedData.email;
+      updateData.emailVerifiedAt = null;
+      updateData.sessionVersion = { increment: 1 };
     }
 
 
@@ -98,10 +115,19 @@ export async function PUT(
         session: session.sessionId,
         userAgent: getUserAgent(request),
         resource: `User:${existingUser.accountNumber}`,
-        details: `Updated account/permissions for user ${existingUser.accountNumber}`,
+        details: emailChanged
+          ? `Updated account/permissions for user ${existingUser.accountNumber}; sign-in email ${existingUser.email ?? '(none)'} -> ${updatedUser.email}`
+          : `Updated account/permissions for user ${existingUser.accountNumber}`,
         outcome: 'success',
       },
     });
+
+    // Tell both addresses, so a change nobody asked for is noticed.
+    if (emailChanged && updatedUser.email) {
+      const notices = [emailChangedEmail(updatedUser.email, updatedUser.fullName, updatedUser.email)];
+      if (existingUser.email) notices.push(emailChangedEmail(existingUser.email, updatedUser.fullName, updatedUser.email));
+      await Promise.all(notices.map(sendMail));
+    }
 
     return NextResponse.json({
       success: true,
@@ -115,7 +141,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
+        { error: error.issues[0]?.message || 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

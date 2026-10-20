@@ -75,3 +75,37 @@ sudo -u securetanza npx tsx -e "
   `package.json`'s `start` script) makes one process dying take the other
   down with it — otherwise a crashed cron worker could sit dead indefinitely
   while Next.js kept serving requests, and systemd would have no way to know.
+
+## Cloud deployment: email sign-in
+
+Staff sign in with their email address. Invites, password resets and unlock
+links are sent by email, so a cloud deployment needs these set (see
+`.env.example` at the repo root for the full list):
+
+- `APP_BASE_URL` — the public origin, e.g. `https://securetanza.example.gov.ph`.
+  Every emailed link is built from this, never from the request's Host header.
+  Required in production; the app refuses to build links without it.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`,
+  `MAIL_FROM` — any SMTP provider works (Google Workspace, Microsoft 365,
+  Brevo, Mailgun, SES SMTP…). Set up SPF and DKIM for the `MAIL_FROM`
+  domain, or invites will land in spam.
+- `ALLOWED_EMAIL_DOMAINS` (optional) — restrict staff addresses to your
+  agency's domains.
+- `JWT_SECRET` — a long random value; the built-in fallback is not safe.
+
+The server also calls `https://api.pwnedpasswords.com` when someone sets a
+password (only a 5-character hash prefix is sent). If outbound HTTPS is
+blocked, the breach check is skipped and the offline checks still apply.
+
+### Moving existing accounts to email
+
+1. Apply migrations (`pnpm db:migrate:deploy`, or run
+   `backend/prisma/migrations/20261021000000_email_auth/migration.sql`
+   directly if the migration history is out of sync).
+2. Existing accounts keep signing in with their account number until an
+   administrator adds an email in Access & Security (the table marks them
+   **No email**). From then on that account signs in with the email only.
+3. Optionally use **Send reset link** on each account so people pick a new
+   password through the emailed link.
+4. Once no account is left without an email, remove the account-number
+   fallback in `app/api/auth/login/route.ts` (marked TRANSITION).

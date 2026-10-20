@@ -168,10 +168,10 @@ Enter `1`, `2`, `3`, `4`, `5`, `NT`, or `NA` in Rating. Put screenshots, sanitiz
 
 | ID | Evaluation statement | Check / source | Rating | Evidence / remarks |
 | --- | --- | --- | --- | --- |
-| F01 | Account-number/password sign-in, session recognition and manual sign-out work correctly. | Valid/invalid login; reload; protected page after logout. S01. | ____ | ____ |
+| F01 | Email/password sign-in (account-number fallback only for accounts without an email), session recognition and manual sign-out work correctly. | Valid/invalid login by email; legacy account-number login before and after an email is assigned; reload; protected page after logout. S01. | ____ | ____ |
 | F02 | A user with a temporary password must complete the password-change flow before normal application use. | Compare first sign-in, successful change and rejected inputs (rule failures, reuse of the temporary password, common/guessable and known-breached passwords). S01–S02. | ____ | ____ |
 | F03 | Repeated wrong passwords produce an accurate remaining-attempt message and lock the account after three consecutive failures. | Test failure/reset/locked-account paths. S01. | ____ | ____ |
-| F04 | An authorized administrator can unlock a test account and issue temporary credentials that require a new password. | Old password fails; temporary password works; audit event exists. S01, S03. | ____ | ____ |
+| F04 | An authorized administrator can unlock a test account; the owner receives an emailed reset link and sets a new password. Invites, resends and self-service reset links are single-use and expire. | Old password fails after unlock; reset link works once; expired/reused link rejected; forgot-password gives the same response for unknown emails; audit events exist. S01, S03. | ____ | ____ |
 | F05 | Granted permissions determine available modules and prevent access to restricted functions through direct requests. | Check navigation, `/`, `/map`, dashboard/config pages and underlying APIs separately. S02–S03, S24. | ____ | ____ |
 | F06 | Idle preferences, countdown warning, Stay signed in and automatic logout behave according to the chosen inactivity duration. | Include background/resumed tabs and session polling. S02–S03. | ____ | ____ |
 | F07 | Profile identity and password settings display accurate account data and validate password updates. | Check current password, new-password rules/confirmation (common/guessable and known-breached passwords rejected), invalid timer and saved timer. S03. | ____ | ____ |

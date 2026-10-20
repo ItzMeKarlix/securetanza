@@ -168,7 +168,8 @@ export default function ProfilePage() {
 							<p className="mt-0.5 text-[0.8125rem] text-slate-500 dark:text-slate-400">{primaryRole}</p>
 						</div>
 					</div>
-					<DataRow label="Account number" value={user?.accountNumber ?? "—"} mono />
+					<DataRow label="Email" value={user?.email ?? "Not set — ask an administrator to add one"} />
+					<DataRow label="Staff ID" value={user?.accountNumber ?? "—"} mono />
 				</Rows>
 			</Section>
 

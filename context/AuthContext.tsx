@@ -2,12 +2,19 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { IdleSessionTimer, idleTimeoutMs, isIdleProtectedPath, onceAsync } from "@/lib/idle-session";
+import { IdleSessionTimer, idleTimeoutMs, isIdleProtectedPath, isPublicPage, onceAsync } from "@/lib/idle-session";
 import { IdleLogoutWarning } from "@/components/layout/idle-logout-warning";
+import { toast } from "sonner";
+
+const SESSION_CHECK_TIMEOUT_MS = 10_000;
+const RETRY_MIN_MS = 2_000;
+const RETRY_MAX_MS = 30_000;
+const CONNECTION_TOAST_ID = "session-connection";
 
 interface User {
   id: number;
   accountNumber: string;
+  email?: string | null;
   fullName: string;
   permissions: string[];
   mustChangePassword?: boolean;
@@ -20,7 +27,7 @@ interface AuthContextType {
   loading: boolean;
   loggingOut: boolean;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<unknown>;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isAdmin: () => boolean;
@@ -65,47 +72,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userRef = useRef<User | null>(null);
   userRef.current = user;
 
-  const checkSession = useCallback(async () => {
-    if (loggingOutRef.current) return null;
-    try {
-      const response = await fetch("/api/auth/session", {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-        },
+  // Connection trouble is not a sign-out. While the server can't confirm the
+  // session (offline, 5xx, timeout) we keep the current user, tell them we're
+  // reconnecting, and retry with backoff. Only an explicit "authenticated:
+  // false" from the server ends the session on this side.
+  const retryTimerRef = useRef<number | null>(null);
+  const retryDelayRef = useRef(RETRY_MIN_MS);
+  const connectionLostRef = useRef(false);
+  const checkSessionRef = useRef<() => Promise<User | null>>(async () => null);
+
+  const markConnectionLost = useCallback(() => {
+    if (!connectionLostRef.current) {
+      connectionLostRef.current = true;
+      toast.warning("Can't reach the server. Reconnecting…", {
+        id: CONNECTION_TOAST_ID,
+        description: "You're still signed in — your session will resume when the connection is back.",
+        duration: Infinity,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (loggingOutRef.current) return null;
-        if (data.success && data.user && Array.isArray(data.user.permissions) && data.user.permissions.length > 0) {
-          setUser(data.user);
-          return data.user;
-        }
-      }
-
-      // If user session is invalid, account was deleted, or all permissions were revoked
-      if (loggingOutRef.current) return null;
-      const hadPriorSession = userRef.current !== null;
-      setUser(null);
-
-      if (typeof window !== "undefined") {
-        const currentPath = window.location.pathname;
-        // If user was logged in previously OR is currently on any protected page:
-        if (hadPriorSession || isIdleProtectedPath(currentPath)) {
-          if (currentPath !== "/login") {
-            console.warn("🔒 User access revoked or account removed. Automatically redirecting to auth page...");
-            window.location.replace("/login?reason=expired");
-          }
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error("Session check error:", error);
-      return null;
-    } finally {
-      setLoading(false);
     }
+    if (retryTimerRef.current !== null) return;
+    const delay = retryDelayRef.current;
+    retryDelayRef.current = Math.min(delay * 2, RETRY_MAX_MS);
+    retryTimerRef.current = window.setTimeout(() => {
+      retryTimerRef.current = null;
+      void checkSessionRef.current();
+    }, delay);
+  }, []);
+
+  const markConnectionOk = useCallback(() => {
+    retryDelayRef.current = RETRY_MIN_MS;
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (connectionLostRef.current) {
+      connectionLostRef.current = false;
+      toast.success("Reconnected", { id: CONNECTION_TOAST_ID, description: undefined, duration: 2500 });
+    }
+  }, []);
+
+  const checkSession = useCallback(async (): Promise<User | null> => {
+    if (loggingOutRef.current) return null;
+
+    let response: Response;
+    let data: { authenticated?: boolean | null; reason?: string; user?: User } = {};
+    try {
+      response = await fetch("/api/auth/session", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+        signal: AbortSignal.timeout(SESSION_CHECK_TIMEOUT_MS),
+      });
+      data = await response.json().catch(() => ({}));
+    } catch {
+      // Offline, DNS failure, timeout… the session itself is unknown, not invalid.
+      if (!loggingOutRef.current) markConnectionLost();
+      return userRef.current;
+    }
+
+    if (loggingOutRef.current) return null;
+
+    // Server couldn't decide (503 from a database blip, 502 from a proxy, …).
+    if (!response.ok || data.authenticated == null) {
+      markConnectionLost();
+      return userRef.current;
+    }
+
+    markConnectionOk();
+    setLoading(false);
+
+    if (data.authenticated && data.user && Array.isArray(data.user.permissions) && data.user.permissions.length > 0) {
+      setUser(data.user);
+      return data.user;
+    }
+
+    // Definitively signed out (expired, revoked, password changed elsewhere, or never signed in).
+    const hadPriorSession = userRef.current !== null;
+    setUser(null);
+    if (typeof window !== "undefined") {
+      const currentPath = window.location.pathname;
+      if (!isPublicPage(currentPath) && (hadPriorSession || isIdleProtectedPath(currentPath))) {
+        // Only call it an expiry when there actually was a session.
+        const expired = hadPriorSession || data.reason === "invalid";
+        window.location.replace(expired ? "/login?reason=expired" : "/login");
+      }
+    }
+    return null;
+  }, [markConnectionLost, markConnectionOk]);
+
+  useEffect(() => {
+    checkSessionRef.current = checkSession;
+  }, [checkSession]);
+
+  // Back online: check straight away instead of waiting for the next retry.
+  useEffect(() => {
+    const onOnline = () => {
+      if (connectionLostRef.current) {
+        if (retryTimerRef.current !== null) {
+          window.clearTimeout(retryTimerRef.current);
+          retryTimerRef.current = null;
+        }
+        void checkSessionRef.current();
+      }
+    };
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      if (retryTimerRef.current !== null) window.clearTimeout(retryTimerRef.current);
+    };
   }, []);
 
   // Initial check on mount
@@ -115,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check session on window focus and visibility change only when authenticated and not on login page
   useEffect(() => {
-    if (pathname === "/login") return;
+    if (isPublicPage(pathname)) return;
 
     const handleFocus = () => {
       if (userRef.current !== null) {
@@ -140,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Heartbeat check ONLY when user is logged in and not on login page
   useEffect(() => {
-    if (authenticatedUserId === undefined || pathname === "/login") {
+    if (authenticatedUserId === undefined || isPublicPage(pathname)) {
       return;
     }
 
@@ -176,15 +249,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkVisibility = () => {
       if (document.visibilityState === "visible") timer.check();
     };
-    const events = ["mousemove", "keydown", "scroll", "click", "touchstart"];
-    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+    // Capture phase: `scroll` doesn't bubble, and this app scrolls inside inner
+    // panels, so a bubbling listener never saw someone reading with the wheel.
+    // `wheel` covers a mouse that isn't moving; `pointerdown` covers pen/touch.
+    const events = ["mousemove", "keydown", "scroll", "wheel", "click", "pointerdown", "touchstart"];
+    const listenerOptions = { passive: true, capture: true } as const;
+    events.forEach((event) => window.addEventListener(event, updateActivity, listenerOptions));
     window.addEventListener("focus", timer.check);
     document.addEventListener("visibilitychange", checkVisibility);
 
     return () => {
       timer.dispose();
       idleTimerRef.current = null;
-      events.forEach((event) => window.removeEventListener(event, updateActivity));
+      events.forEach((event) => window.removeEventListener(event, updateActivity, listenerOptions));
       window.removeEventListener("focus", timer.check);
       document.removeEventListener("visibilitychange", checkVisibility);
     };
@@ -196,7 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Tab-Session Enforcer (Logout on tab close / new tab isolation)
   useEffect(() => {
-    if (authenticatedUserId !== undefined && typeof window !== "undefined" && window.location.pathname !== "/login") {
+    if (authenticatedUserId !== undefined && typeof window !== "undefined" && !isPublicPage(window.location.pathname)) {
       const hasTabSession = sessionStorage.getItem("tabSessionActive");
 
       if (!hasTabSession) {

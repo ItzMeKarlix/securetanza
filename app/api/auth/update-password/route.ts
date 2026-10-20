@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { getSession, hashPassword, verifyPassword } from '@/lib/auth';
+import { getSession, hashPassword, verifyPassword, createSession, invalidateSessionCache } from '@/lib/auth';
+import { sendMail } from '@/lib/email/mailer';
+import { passwordChangedEmail } from '@/lib/email/templates';
+import { appUrl } from '@/lib/app-url';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
@@ -49,13 +52,34 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const passwordHash = await hashPassword(newPassword);
 
-    // Update the user
-    await prisma.user.update({
+    // Update the user. Bumping sessionVersion signs out every other session;
+    // this one is re-issued below so the person stays signed in here.
+    const updatedUser = await prisma.user.update({
       where: { id: session.userId },
       data: {
         passwordHash,
+        sessionVersion: { increment: 1 },
       },
+      relationLoadStrategy: 'join',
+      include: { permissions: { include: { permission: true } } },
     });
+
+    invalidateSessionCache(session.userId);
+    await createSession({
+      id: updatedUser.id,
+      accountNumber: updatedUser.accountNumber,
+      email: updatedUser.email,
+      sessionVersion: updatedUser.sessionVersion,
+      fullName: updatedUser.fullName,
+      permissions: updatedUser.permissions.map((up) => up.permission.permissionName),
+      mustChangePassword: updatedUser.mustChangePassword,
+      defaultLandingPage: updatedUser.defaultLandingPage,
+      autoLogoutTimer: updatedUser.autoLogoutTimer,
+    });
+
+    if (updatedUser.email) {
+      await sendMail(passwordChangedEmail(updatedUser.email, updatedUser.fullName, appUrl('/login')));
+    }
 
     // Audit log
     await prisma.auditLog.create({

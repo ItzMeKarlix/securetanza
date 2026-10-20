@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MIN_STRENGTH_SCORE, checkRules, estimatePassword } from "@/lib/password-policy";
+import { MIN_STRENGTH_SCORE, checkRules } from "@/lib/password-policy";
+import { estimatePasswordOffThread, warmPasswordChecker } from "@/lib/password-strength-client";
 
 export type CommonCheckStatus = "idle" | "checking" | "ok" | "weak";
 
@@ -24,11 +25,16 @@ export function usePasswordCheck(password: string, userInputs: string[]) {
 		warning: string | null;
 	} | null>(null);
 
+	// Load the dictionaries in the worker while the person is still reading the form.
+	useEffect(() => {
+		warmPasswordChecker();
+	}, []);
+
 	useEffect(() => {
 		if (!password) return;
 		let cancelled = false;
 		const timer = setTimeout(() => {
-			estimatePassword(password, inputsKey ? inputsKey.split("\u0000") : [])
+			estimatePasswordOffThread(password, inputsKey ? inputsKey.split("\u0000") : [])
 				.then((estimate) => {
 					if (!cancelled) setResult({ password, score: estimate.score, warning: estimate.warning });
 				})

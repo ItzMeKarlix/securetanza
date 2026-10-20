@@ -38,6 +38,10 @@ async function isBreached(password: string): Promise<boolean | null> {
 	}
 }
 
+// Build zxcvbn's dictionaries when the server loads this module, not on the first
+// person to set a password (~1 s on a cold start).
+void estimatePassword('warm-up', []).catch(() => {});
+
 /**
  * The authoritative new-password check. Returns an error message for the
  * user, or null when the password is acceptable.
@@ -49,12 +53,17 @@ export async function validateNewPassword(
 	const ruleError = firstRuleError(password);
 	if (ruleError) return ruleError;
 
-	const estimate = await estimatePassword(password, passwordUserInputs(user));
+	// The strength estimate and the breach lookup don't depend on each other, so
+	// the slower network call overlaps the CPU work instead of following it.
+	const [estimate, breached] = await Promise.all([
+		estimatePassword(password, passwordUserInputs(user)),
+		isBreached(password),
+	]);
+
 	if (estimate.score < MIN_STRENGTH_SCORE) {
 		return estimate.warning ? `${COMMON_PASSWORD_MESSAGE} ${estimate.warning}` : COMMON_PASSWORD_MESSAGE;
 	}
-
-	if (await isBreached(password)) return BREACHED_PASSWORD_MESSAGE;
+	if (breached) return BREACHED_PASSWORD_MESSAGE;
 
 	return null;
 }

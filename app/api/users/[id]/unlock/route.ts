@@ -2,19 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
-import { hash } from 'bcryptjs';
+import { unusablePasswordHash } from '@/lib/auth-tokens';
+import { sendUnlockReset } from '@/lib/account-emails';
 
-/** Mirrors the generator used when an account is first created. */
-function generateSecurePassword() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 10; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return password;
-}
-
-// POST /api/users/[id]/unlock - Clear a lockout and issue a temporary password (admin only)
+// POST /api/users/[id]/unlock - Clear a lockout and email a reset link (admin only)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -49,21 +40,30 @@ export async function POST(
       );
     }
 
-    // The old password stops working the moment the lock is cleared: whoever ran the
-    // account into the lock may have been guessing at it.
-    const tempPassword = generateSecurePassword();
+    if (!existingUser.email) {
+      return NextResponse.json(
+        { error: 'Add an email address to this account first, so the reset link has somewhere to go.' },
+        { status: 400 }
+      );
+    }
 
-    await prisma.user.update({
+    // The old password stops working the moment the lock is cleared: whoever ran the
+    // account into the lock may have been guessing at it. Nobody — the admin included —
+    // learns a new one; the owner sets it from the emailed link.
+    const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        passwordHash: await hash(tempPassword, 10),
-        mustChangePassword: true,
+        passwordHash: await unusablePasswordHash(),
+        mustChangePassword: false,
         failedLoginAttempts: 0,
         lockedAt: null,
+        sessionVersion: { increment: 1 },
       },
     });
 
     invalidateSessionCache(userId);
+
+    const emailSent = await sendUnlockReset(user, session.userId);
 
     await prisma.auditLog.create({
       data: {
@@ -73,7 +73,7 @@ export async function POST(
         session: session.sessionId,
         userAgent: getUserAgent(request),
         resource: `User:${existingUser.accountNumber}`,
-        details: `Unlocked account ${existingUser.accountNumber} and issued a temporary password`,
+        details: `Unlocked account ${existingUser.accountNumber} and emailed a reset link to ${user.email}${emailSent ? '' : ' (email delivery failed)'}`,
         severity: 'high',
         outcome: 'success',
       },
@@ -83,10 +83,11 @@ export async function POST(
       success: true,
       message: 'Account unlocked',
       data: {
-        id: existingUser.id,
-        accountNumber: existingUser.accountNumber,
-        fullName: existingUser.fullName,
-        tempPassword,
+        id: user.id,
+        accountNumber: user.accountNumber,
+        email: user.email,
+        fullName: user.fullName,
+        emailSent,
       },
     });
   } catch (error) {

@@ -66,8 +66,14 @@
 1. Open your browser and navigate to the application URL (e.g., `https://securetanza.local` or `http://localhost:3000`).
 2. The public landing view presents the **Interactive GIS Crime Map**.
 3. To access administrative, case dossier, or report export tools, click the **User Menu** (top-right) and select **Login** or navigate to `/login`.
-4. Enter your designated **Account Number** and **Password**.
+4. Enter your **Email** and **Password**. (Older accounts that have not been given an email yet can still sign in with their **Account Number** until an administrator adds one.)
 5. Once authenticated, your session token is verified via secure JWT cookies.
+
+**New accounts.** An administrator adds you in *Settings → Access & Security* with your name, email and role. You receive an invitation email; open the link (valid 48 hours, single use) and choose your password. No temporary password is ever shown to anyone.
+
+**Forgot your password?** Select **Forgot password?** on the sign-in page and enter your email. If it belongs to an active account, a reset link (valid 1 hour) is emailed to you. Changing or resetting your password signs out your other sessions, and you get an email confirming the change.
+
+**Locked out?** Three consecutive wrong passwords lock the account. Ask an administrator to unlock it — the unlock emails you a link to choose a new password (valid 24 hours).
 
 ---
 

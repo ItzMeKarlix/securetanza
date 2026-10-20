@@ -44,10 +44,12 @@ export async function POST(request: NextRequest) {
 
     // Update the user
     const updatedUser = await prisma.user.update({
+      relationLoadStrategy: 'join',
       where: { id: session.userId },
       data: {
         passwordHash,
         mustChangePassword: false,
+        sessionVersion: { increment: 1 },
       },
       include: {
         permissions: {
@@ -65,9 +67,13 @@ export async function POST(request: NextRequest) {
     const sessionId = await createSession({
       id: updatedUser.id,
       accountNumber: updatedUser.accountNumber,
+      email: updatedUser.email,
+      sessionVersion: updatedUser.sessionVersion,
       fullName: updatedUser.fullName,
       permissions,
       mustChangePassword: false,
+      defaultLandingPage: updatedUser.defaultLandingPage,
+      autoLogoutTimer: updatedUser.autoLogoutTimer,
     });
 
     // Audit log

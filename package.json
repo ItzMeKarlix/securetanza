@@ -71,6 +71,7 @@
     "@types/html2canvas": "^1.0.0",
     "@types/node": "^20",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -85,4 +86,7 @@
     "unrs-resolver"
   ],
   "trustedDependencies": [
-    "sharp
+    "sharp",
+    "unrs-resolver"
+  ]
+}

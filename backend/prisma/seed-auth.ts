@@ -48,15 +48,24 @@ async function main() {
   // 2. Create main admin accounts
   const adminPasswordHash = await hash('admin123', 10);
   
+  // SEED_ADMIN_EMAILS="first@agency.gov.ph,second@agency.gov.ph" gives the seeded
+  // admins sign-in emails. Without it they fall back to account-number sign-in.
+  const seedEmails = (process.env.SEED_ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
   const admins = [
-    { accountNumber: 'ACC-000001', fullName: 'Administrator 1' },
-    { accountNumber: 'ACC-000002', fullName: 'Administrator 2' },
+    { accountNumber: 'ACC-000001', fullName: 'Administrator 1', email: seedEmails[0] ?? null },
+    { accountNumber: 'ACC-000002', fullName: 'Administrator 2', email: seedEmails[1] ?? null },
   ];
 
   for (const admin of admins) {
     const user = await prisma.user.create({
       data: {
         accountNumber: admin.accountNumber,
+        email: admin.email,
+        emailVerifiedAt: admin.email ? new Date() : null,
         fullName: admin.fullName,
         passwordHash: adminPasswordHash,
       },

@@ -93,7 +93,7 @@ export default function UserMenu() {
                     {user.fullName}
                   </p>
                   <p className={`text-xs truncate ${"text-slate-500 dark:text-slate-400"}`}>
-                    {user.accountNumber}
+                    {user.email ?? user.accountNumber}
                   </p>
                 </div>
               </div>

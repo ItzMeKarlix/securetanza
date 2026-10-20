@@ -6,7 +6,9 @@ test("operational map, compare and dashboard routes are protected while public p
   for (const path of ["/", "/map", "/compare", "/dashboard", "/dashboard/config", "/dashboard/reports"]) {
     assert.equal(isIdleProtectedPath(path), true);
   }
-  for (const path of ["/login", "/docs"]) assert.equal(isIdleProtectedPath(path), false);
+  for (const path of ["/login", "/forgot-password", "/set-password", "/docs"]) {
+    assert.equal(isIdleProtectedPath(path), false);
+  }
 });
 
 function harness(timeoutMs: number | null = 15 * 60_000) {
