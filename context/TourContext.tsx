@@ -20,7 +20,7 @@ interface TourContextType {
 	/** Manually (re)start a guided tour, optionally specifying a role walkthrough. */
 	replayTour: (roleOverride?: UserRoleType) => void;
 	/** Current effective user role for tours */
-	activeRole: UserRoleType;
+	activeRole: UserRoleType | null;
 }
 
 const TourContext = createContext<TourContextType | undefined>(undefined);
@@ -31,8 +31,8 @@ export function useTour() {
 	return ctx;
 }
 
-function getUserRole(user: any): UserRoleType {
-	if (!user) return "public";
+function getUserRole(user: any): UserRoleType | null {
+	if (!user) return null;
 	const perms: string[] = user.permissions || [];
 	if (perms.includes("admin") || perms.includes("admin_operational_officer")) {
 		return "admin";
@@ -106,7 +106,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 		currentPathnameRef.current = pathname;
 	}, [pathname]);
 
-	const currentRole = useMemo<UserRoleType>(() => {
+	const currentRole = useMemo<UserRoleType | null>(() => {
 		return getUserRole(user);
 	}, [user]);
 
@@ -115,7 +115,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
 	const getActiveStages = useCallback((): { stages: TourStage[]; role: UserRoleType } => {
 		const storedRole = readLocal(TOUR_ROLE_KEY) as UserRoleType | null;
-		const role: UserRoleType = storedRole || currentRole;
+		const role: UserRoleType = storedRole || currentRole || "privileged_user";
 		return {
 			stages: getTourStagesForRole(role, permissionsKey.split(",").filter(Boolean)),
 			role,
@@ -209,7 +209,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
 	// Auto-start / auto-resume.
 	useEffect(() => {
-		if (loading) return;
+		if (loading || !user) return;
 
 		const { stages } = getActiveStages();
 		const stageIndex = stages.findIndex((s) => s.path === pathname);
@@ -236,7 +236,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 		if (!completed && stageIndex === 0) {
 			runStage(0);
 		}
-	}, [loading, pathname, getActiveStages, runStage]);
+	}, [loading, user, pathname, getActiveStages, runStage]);
 
 	// Clean up driver instance on unmount or navigation
 	useEffect(() => {
@@ -254,6 +254,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 			}
 
 			const effectiveRole = roleOverride || currentRole;
+			if (!effectiveRole) return;
 			const stages = getTourStagesForRole(effectiveRole, permissionsKey.split(",").filter(Boolean));
 			if (stages.length === 0) return;
 

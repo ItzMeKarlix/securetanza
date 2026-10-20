@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { CheckCircle2, Eye, EyeOff, LogOut, Timer } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import {
 	DataRow,
@@ -18,6 +18,7 @@ import {
 	SplitLayout,
 } from "./_components/settings-ui";
 import { cn } from "@/lib/utils";
+import { getUserRole, getRoleBadge } from "@/components/docs/docs-permissions";
 
 export default function ProfilePage() {
 	const { user, logout, refreshSession } = useAuth();
@@ -51,9 +52,8 @@ export default function ProfilePage() {
 				.slice(0, 2)
 		: "??";
 
-	const primaryRole =
-		user?.permissions?.[0]?.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ??
-		"Officer";
+	const userRole = getUserRole(user);
+	const primaryRole = getRoleBadge(userRole).label;
 
 	const handleChangePassword = async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();

@@ -12,3 +12,4 @@ export * from "./docs-settings";
 export * from "./docs-upload";
 export * from "./docs-troubleshooting";
 export * from "./docs-cta";
+export * from "./docs-permissions";
