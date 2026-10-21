@@ -406,6 +406,24 @@ body {
   }
 }
 
+/* Browser autofill paints a dark blue-grey fill over saved sign-in fields.
+   Keep the field's own background and text colour instead. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #0f172a;
+  caret-color: #0f172a;
+  transition: background-color 9999s ease-out 0s;
+}
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+}
+
 /* ============================================
    RESPONSIVE IMPROVEMENTS
    ============================================ */

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Clock, Lock, Mail, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldOff, WifiOff } from "lucide-react";
 import {
   AUTH_ERROR,
-  AUTH_FINE,
   AUTH_ICON,
   AUTH_INPUT,
   AUTH_LABEL,
@@ -228,12 +227,8 @@ export default function LoginPage() {
                   autoCapitalize="none"
                   spellCheck={false}
                   disabled={loading}
-                  aria-describedby="identifier-hint"
                 />
               </div>
-              <p id="identifier-hint" className={AUTH_FINE}>
-                No email on your account yet? Use your account number (ACC-…).
-              </p>
             </div>
 
             <div className="space-y-2">
