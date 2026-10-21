@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import { AlertCircle, ArrowLeft, Check, Copy, Loader2, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+	AUTH_BADGE,
+	AUTH_ERROR,
+	AUTH_LINK,
+	AUTH_PRIMARY,
+	AUTH_QUIET_LINK,
+	AUTH_SECONDARY,
+	AUTH_SUBTITLE,
+	AUTH_TITLE,
+} from "./auth-shell";
 import { CodeInput } from "./code-input";
 import { BackupCodesPanel } from "./backup-codes-panel";
 import type { SignInResult } from "./mfa-challenge";
@@ -85,17 +94,17 @@ export function MfaEnroll({
 	return (
 		<div className="space-y-6">
 			<div>
-				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#0EA5E9]/10">
-					<ShieldCheck className="h-6 w-6 text-[#38BDF8]" />
+				<div className={AUTH_BADGE}>
+					<ShieldCheck className="h-5 w-5" />
 				</div>
-				<p className="text-xs font-semibold uppercase tracking-wider text-[#38BDF8]">
+				<h1 className={AUTH_TITLE}>
+					{step === "intro" ? "Set up two-step verification" : step === "scan" ? "Connect your app" : "Save your backup codes"}
+				</h1>
+				<p className="mt-1.5 text-sm font-medium text-sky-700 dark:text-sky-400">
 					Step {step === "intro" ? 1 : step === "scan" ? 2 : 3} of 3
 				</p>
-				<h2 className="mt-1 text-xl font-semibold text-white">
-					{step === "intro" ? "Set up two-step verification" : step === "scan" ? "Connect your app" : "Save your backup codes"}
-				</h2>
 				{step === "intro" && (
-					<p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+					<p className={AUTH_SUBTITLE}>
 						Hi {fullName.split(" ")[0]}. Every Secure Tanza account now needs a second step at sign-in, so a
 						stolen password alone can&apos;t get into case data. It takes about a minute.
 					</p>
@@ -103,29 +112,24 @@ export function MfaEnroll({
 			</div>
 
 			{error && (
-				<div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
-					<AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-					<p className="text-sm text-red-400">{error}</p>
+				<div className={AUTH_ERROR} role="alert">
+					<AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+					<p>{error}</p>
 				</div>
 			)}
 
 			{step === "intro" && (
 				<>
-					<div className="rounded-xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300 leading-relaxed">
-						<p className="font-medium text-white">Install an authenticator app on your phone</p>
-						<p className="mt-1 text-slate-400">
+					<div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed dark:border-white/10 dark:bg-slate-950/40">
+						<p className="font-medium text-slate-950 dark:text-white">Install an authenticator app on your phone</p>
+						<p className="mt-1 text-slate-600 dark:text-slate-400">
 							Google Authenticator, Microsoft Authenticator or Authy — free on the App Store and Google Play. If
 							you already have one, use it.
 						</p>
 					</div>
-					<Button
-						type="button"
-						onClick={() => void start()}
-						disabled={busy}
-						className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg"
-					>
-						{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "I have an authenticator app"}
-					</Button>
+					<button type="button" onClick={() => void start()} disabled={busy} className={AUTH_PRIMARY}>
+						{busy ? <Loader2 className="h-5 w-5 animate-spin" aria-label="Starting setup" /> : "I have an authenticator app"}
+					</button>
 				</>
 			)}
 
@@ -137,31 +141,29 @@ export function MfaEnroll({
 					}}
 					className="space-y-5"
 				>
-					<ol className="space-y-4 text-sm text-slate-300">
+					<ol className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
 						<li>
-							<span className="font-medium text-white">1. In the app, add an account and scan this code.</span>
+							<span className="font-medium text-slate-950 dark:text-white">1. In the app, add an account and scan this code.</span>
 							<div className="mt-3 flex justify-center">
-								<div className="rounded-xl bg-white p-3">
+								<div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-transparent">
 									<Image src={setup.qrDataUrl} alt="QR code for your authenticator app" width={180} height={180} unoptimized />
 								</div>
 							</div>
-							<details className="mt-3 text-slate-400">
-								<summary className="cursor-pointer text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC]">
-									Can&apos;t scan? Enter the key instead
-								</summary>
+							<details className="mt-3 text-slate-600 dark:text-slate-400">
+								<summary className={`text-xs ${AUTH_LINK}`}>Can&apos;t scan? Enter the key instead</summary>
 								<div className="mt-2 flex items-center gap-2">
-									<code className="flex-1 rounded-lg border border-white/10 bg-slate-950/50 px-3 py-2 font-mono text-xs tracking-wider text-white break-all">
+									<code className="flex-1 break-all rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs tracking-wider text-slate-950 dark:border-white/10 dark:bg-slate-950/50 dark:text-white">
 										{setup.manualKey}
 									</code>
 									<button
 										type="button"
-										aria-label="Copy key"
+										aria-label={copied ? "Key copied" : "Copy key"}
 										onClick={async () => {
 											await navigator.clipboard.writeText(setup.manualKey.replace(/ /g, ""));
 											setCopied(true);
 											setTimeout(() => setCopied(false), 2000);
 										}}
-										className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:text-white"
+										className={`${AUTH_SECONDARY} h-9 w-9 shrink-0 px-0`}
 									>
 										{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
 									</button>
@@ -170,17 +172,20 @@ export function MfaEnroll({
 							</details>
 						</li>
 						<li>
-							<span className="font-medium text-white">2. Enter the 6-digit code the app shows.</span>
+							<span className="font-medium text-slate-950 dark:text-white">2. Enter the 6-digit code the app shows.</span>
 						</li>
 					</ol>
 					<CodeInput value={code} onChange={setCode} onComplete={(c) => void confirm(c)} disabled={busy} autoFocus={false} />
-					<Button
-						type="submit"
-						disabled={busy || code.length !== 6}
-						className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg disabled:opacity-50"
-					>
-						{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & turn on"}
-					</Button>
+					<button type="submit" disabled={busy || code.length !== 6} className={AUTH_PRIMARY}>
+						{busy ? (
+							<>
+								<Loader2 className="h-5 w-5 animate-spin" />
+								Verifying…
+							</>
+						) : (
+							"Verify & turn on"
+						)}
+					</button>
 				</form>
 			)}
 
@@ -189,11 +194,7 @@ export function MfaEnroll({
 			)}
 
 			{step !== "codes" && (
-				<button
-					type="button"
-					onClick={() => onRestart("")}
-					className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-				>
+				<button type="button" onClick={() => onRestart("")} className={`${AUTH_QUIET_LINK} w-full`}>
 					<ArrowLeft className="h-4 w-4" /> Back to sign in
 				</button>
 			)}

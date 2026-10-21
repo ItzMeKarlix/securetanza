@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, Lock, CheckCircle2, Loader2, XCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { AUTH_INPUT, AUTH_LABEL } from "./auth-shell";
 import { COMMON_PASSWORD_LABEL } from "@/lib/password-policy";
 import type { usePasswordCheck } from "@/hooks/usePasswordCheck";
 
 /**
  * New + confirm password fields with the strength meter and policy checklist,
- * for the dark sign-in surfaces (first-sign-in modal, set-password page).
+ * for the sign-in surfaces (first-sign-in modal, set-password page), light and dark.
  * The parent owns `usePasswordCheck` so it can gate its own submit button.
  */
 export function PasswordFields({
@@ -33,20 +33,20 @@ export function PasswordFields({
 
 	return (
 		<>
-			<div className="space-y-1.5">
-				<label htmlFor="new-password" className="text-xs font-semibold text-slate-300 ml-1">
-					New Password
+			<div className="space-y-2">
+				<label htmlFor="new-password" className={AUTH_LABEL}>
+					New password
 				</label>
 				<div className="relative group">
-					<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#0EA5E9] transition-colors">
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 transition-colors group-focus-within:text-sky-700 dark:text-slate-400 dark:group-focus-within:text-sky-400">
 						<Lock className="h-4 w-4" />
 					</div>
-					<Input
+					<input
 						id="new-password"
 						type={showNew ? "text" : "password"}
 						value={newPassword}
 						onChange={(e) => onNewPassword(e.target.value)}
-						className="pl-11 pr-11 h-12 bg-slate-950/50 border-white/10 focus:border-[#0EA5E9] text-white transition-all rounded-xl"
+						className={`${AUTH_INPUT} pl-10 pr-11`}
 						placeholder="Enter new password"
 						autoComplete="new-password"
 						required
@@ -56,7 +56,7 @@ export function PasswordFields({
 						type="button"
 						onClick={() => setShowNew(!showNew)}
 						aria-label={showNew ? "Hide password" : "Show password"}
-						className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+						className="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-lg pr-3.5 text-slate-500 transition-colors hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:text-white"
 					>
 						{showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 					</button>
@@ -77,7 +77,7 @@ export function PasswordFields({
 												: score <= 3
 												? "bg-emerald-400"
 												: "bg-emerald-500"
-											: "bg-white/10"
+											: "bg-slate-200 dark:bg-white/10"
 									}`}
 								/>
 							))}
@@ -86,7 +86,7 @@ export function PasswordFields({
 							{check.rules.map(({ label, passed }) => (
 								<div
 									key={label}
-									className={`flex items-center gap-2 text-xs transition-colors duration-300 ${passed ? "text-emerald-400" : "text-slate-500"}`}
+									className={`flex items-center gap-2 text-xs transition-colors duration-300 ${passed ? "text-emerald-700 dark:text-emerald-400" : "text-slate-600 dark:text-slate-400"}`}
 								>
 									<CheckCircle2 className={`w-3.5 h-3.5 ${passed ? "opacity-100" : "opacity-30"}`} />
 									<span>{label}</span>
@@ -95,10 +95,10 @@ export function PasswordFields({
 							<div
 								className={`flex items-start gap-2 text-xs transition-colors duration-300 ${
 									check.common === "ok"
-										? "text-emerald-400"
+										? "text-emerald-700 dark:text-emerald-400"
 										: check.common === "weak"
-										? "text-red-400"
-										: "text-slate-500"
+										? "text-red-700 dark:text-red-400"
+										: "text-slate-600 dark:text-slate-400"
 								}`}
 							>
 								{check.common === "checking" ? (
@@ -112,7 +112,7 @@ export function PasswordFields({
 								)}
 								<span>
 									{COMMON_PASSWORD_LABEL}
-									{check.warning && <span className="block text-slate-400">{check.warning}</span>}
+									{check.warning && <span className="block text-slate-600 dark:text-slate-400">{check.warning}</span>}
 								</span>
 							</div>
 						</div>
@@ -120,21 +120,23 @@ export function PasswordFields({
 				)}
 			</div>
 
-			<div className="space-y-1.5">
-				<label htmlFor="confirm-password" className="text-xs font-semibold text-slate-300 ml-1">
-					Confirm Password
+			<div className="space-y-2">
+				<label htmlFor="confirm-password" className={AUTH_LABEL}>
+					Confirm password
 				</label>
 				<div className="relative group">
-					<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#0EA5E9] transition-colors">
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 transition-colors group-focus-within:text-sky-700 dark:text-slate-400 dark:group-focus-within:text-sky-400">
 						<Lock className="h-4 w-4" />
 					</div>
-					<Input
+					<input
 						id="confirm-password"
 						type={showConfirm ? "text" : "password"}
 						value={confirmPassword}
 						onChange={(e) => onConfirmPassword(e.target.value)}
-						className={`pl-11 pr-11 h-12 bg-slate-950/50 text-white transition-all rounded-xl ${
-							mismatch ? "border-red-500 focus:border-red-500" : "border-white/10 focus:border-[#0EA5E9]"
+						aria-invalid={mismatch}
+						aria-describedby={mismatch ? "confirm-password-mismatch" : undefined}
+						className={`${AUTH_INPUT} pl-10 pr-11 ${
+							mismatch ? "border-red-500 focus:border-red-500 focus:ring-red-500/15 dark:border-red-400 dark:focus:border-red-400" : ""
 						}`}
 						placeholder="Confirm new password"
 						autoComplete="new-password"
@@ -145,11 +147,16 @@ export function PasswordFields({
 						type="button"
 						onClick={() => setShowConfirm(!showConfirm)}
 						aria-label={showConfirm ? "Hide password" : "Show password"}
-						className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+						className="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-lg pr-3.5 text-slate-500 transition-colors hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:text-white"
 					>
 						{showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 					</button>
 				</div>
+				{mismatch && (
+					<p id="confirm-password-mismatch" className="text-xs text-red-700 dark:text-red-400">
+						Passwords don&apos;t match.
+					</p>
+				)}
 			</div>
 		</>
 	);

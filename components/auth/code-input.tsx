@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { AUTH_INPUT } from "./auth-shell";
 
 /**
  * A single field for a 6-digit verification code. One input (not six boxes),
@@ -47,7 +48,7 @@ export function CodeInput({
 				if (digits.length === 6) onComplete?.(digits);
 			}}
 			placeholder="000000"
-			className="block w-full h-14 rounded-xl border border-slate-700 bg-slate-800/50 text-center font-mono text-2xl tracking-[0.5em] text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent transition-all disabled:opacity-60"
+			className={`${AUTH_INPUT} h-14 text-center font-mono text-2xl tracking-[0.5em] tabular-nums`}
 		/>
 	);
 }

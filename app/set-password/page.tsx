@@ -3,9 +3,8 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AuthCard } from "@/components/auth/auth-card";
+import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { AUTH_ERROR, AUTH_FINE, AUTH_PRIMARY, AUTH_QUIET_LINK, AuthShell } from "@/components/auth/auth-shell";
 import { PasswordFields } from "@/components/auth/password-fields";
 import { usePasswordCheck } from "@/hooks/usePasswordCheck";
 import { passwordUserInputs } from "@/lib/password-policy";
@@ -24,7 +23,7 @@ const PROBLEM_COPY = {
 
 export default function SetPasswordPage() {
 	return (
-		<Suspense fallback={<AuthCard title="Set your password"><Spinner /></AuthCard>}>
+		<Suspense fallback={<AuthShell title="Set your password"><Spinner /></AuthShell>}>
 			<SetPassword />
 		</Suspense>
 	);
@@ -99,39 +98,41 @@ function SetPassword() {
 
 	if (info.state === "loading") {
 		return (
-			<AuthCard title="Set your password">
+			<AuthShell title="Set your password">
 				<Spinner />
-			</AuthCard>
+			</AuthShell>
 		);
 	}
 
 	if (info.state === "invalid") {
 		const copy = PROBLEM_COPY[info.problem];
 		return (
-			<AuthCard title={copy.title} subtitle={copy.body}>
-				<div className="space-y-4">
+			<AuthShell title={copy.title} subtitle={copy.body}>
+				<div className="space-y-6">
+					{error && (
+						<div className={AUTH_ERROR} role="alert">
+							<AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+							<p>{error}</p>
+						</div>
+					)}
 					{info.problem !== "locked" && (
-						<Link
-							href="/forgot-password"
-							className="flex h-12 w-full items-center justify-center rounded-lg bg-[#0EA5E9] font-semibold text-white transition-colors hover:bg-[#0EA5E9]/90"
-						>
+						<Link href="/forgot-password" className={AUTH_PRIMARY}>
 							Request a new link
 						</Link>
 					)}
-					<p className="text-center text-xs leading-relaxed text-slate-500">
-						Invited and the link expired? Ask your administrator to re-send the invite.
-					</p>
-					<Link href="/login" className="block text-center text-sm font-medium text-slate-400 hover:text-white transition-colors">
+					<p className={AUTH_FINE}>Invited and the link expired? Ask your administrator to re-send the invite.</p>
+					<Link href="/login" className={`${AUTH_QUIET_LINK} w-full`}>
+						<ArrowLeft className="h-4 w-4" />
 						Back to sign in
 					</Link>
 				</div>
-			</AuthCard>
+			</AuthShell>
 		);
 	}
 
 	const isInvite = info.purpose === "invite";
 	return (
-		<AuthCard
+		<AuthShell
 			title={isInvite ? `Welcome, ${info.fullName.split(" ")[0]}` : "Choose a new password"}
 			subtitle={
 				<>
@@ -139,7 +140,7 @@ function SetPassword() {
 					{info.email && (
 						<>
 							{isInvite ? " — you'll sign in as " : " "}
-							<span className="font-medium text-slate-200">{info.email}</span>
+							<span className="font-semibold text-slate-950 dark:text-white">{info.email}</span>
 						</>
 					)}
 					.
@@ -148,9 +149,9 @@ function SetPassword() {
 		>
 			<form onSubmit={handleSubmit} className="space-y-5">
 				{error && (
-					<div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-						<AlertCircle className="w-4 h-4 shrink-0" />
-						<p className="font-medium">{error}</p>
+					<div className={AUTH_ERROR} role="alert">
+						<AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+						<p>{error}</p>
 					</div>
 				)}
 				<PasswordFields
@@ -161,29 +162,27 @@ function SetPassword() {
 					check={check}
 					disabled={submitting}
 				/>
-				<Button
-					type="submit"
-					disabled={!canSubmit}
-					className="w-full h-12 mt-2 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-semibold flex items-center justify-center gap-2"
-				>
+				<button type="submit" disabled={!canSubmit} className={`${AUTH_PRIMARY} mt-2`}>
 					{submitting ? (
-						<Loader2 className="h-5 w-5 animate-spin" />
-					) : (
 						<>
-							<CheckCircle2 className="w-4 h-4" />
-							{isInvite ? "Set password & continue" : "Save new password"}
+							<Loader2 className="h-5 w-5 animate-spin" />
+							Saving…
 						</>
+					) : isInvite ? (
+						"Set password & continue"
+					) : (
+						"Save new password"
 					)}
-				</Button>
+				</button>
 			</form>
-		</AuthCard>
+		</AuthShell>
 	);
 }
 
 function Spinner() {
 	return (
 		<div className="flex justify-center py-6">
-			<Loader2 className="h-6 w-6 animate-spin text-[#0EA5E9]" />
+			<Loader2 className="h-6 w-6 animate-spin text-sky-700 dark:text-sky-400" aria-label="Checking your link" />
 		</div>
 	);
 }

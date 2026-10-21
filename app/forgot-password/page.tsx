@@ -3,8 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, Loader2, Mail, MailCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AuthCard } from "@/components/auth/auth-card";
+import {
+	AUTH_ERROR,
+	AUTH_FINE,
+	AUTH_ICON,
+	AUTH_INFO,
+	AUTH_INPUT,
+	AUTH_LABEL,
+	AUTH_PRIMARY,
+	AUTH_QUIET_LINK,
+	AuthShell,
+} from "@/components/auth/auth-shell";
 import { isValidEmail, normalizeEmail } from "@/lib/email-address";
 
 export default function ForgotPasswordPage() {
@@ -39,48 +48,48 @@ export default function ForgotPasswordPage() {
 	};
 
 	return (
-		<AuthCard
+		<AuthShell
 			title={sentTo ? "Check your email" : "Reset your password"}
 			subtitle={sentTo ? undefined : "Enter the email you sign in with and we'll send you a reset link."}
 		>
 			{sentTo ? (
 				<div className="space-y-6">
-					<div className="flex items-start gap-3 rounded-lg border border-[#0EA5E9]/25 bg-[#0EA5E9]/10 p-4">
-						<MailCheck className="h-5 w-5 shrink-0 text-[#38BDF8] mt-0.5" />
-						<p className="text-sm leading-relaxed text-slate-300">
-							If <span className="font-medium text-white">{sentTo}</span> belongs to an active account, a
-							reset link is on its way. It expires in 1 hour. Check your spam folder if it doesn&apos;t
-							arrive in a few minutes.
+					<div className={AUTH_INFO}>
+						<MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-sky-700 dark:text-sky-400" />
+						<p className="leading-relaxed">
+							If <span className="font-semibold">{sentTo}</span> belongs to an active account, a reset link is
+							on its way. It expires in 1 hour. Check your spam folder if it doesn&apos;t arrive in a few
+							minutes.
 						</p>
 					</div>
-					<p className="text-xs leading-relaxed text-slate-500">
-						Account locked after too many sign-in attempts? A reset link won&apos;t be sent — ask your
-						system administrator to unlock it.
+					<p className={AUTH_FINE}>
+						Account locked after too many sign-in attempts? A reset link won&apos;t be sent — ask your system
+						administrator to unlock it.
 					</p>
 					<BackToSignIn />
 				</div>
 			) : (
 				<form onSubmit={handleSubmit} className="space-y-6">
 					{error && (
-						<div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
-							<AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-							<p className="text-sm text-red-400">{error}</p>
+						<div className={AUTH_ERROR} role="alert">
+							<AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+							<p>{error}</p>
 						</div>
 					)}
-					<div>
-						<label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+					<div className="space-y-2">
+						<label htmlFor="email" className={AUTH_LABEL}>
 							Email
 						</label>
 						<div className="relative">
-							<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-								<Mail className="h-5 w-5 text-slate-500" />
+							<div className={AUTH_ICON}>
+								<Mail className="h-[1.125rem] w-[1.125rem]" />
 							</div>
 							<input
 								id="email"
 								type="email"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
-								className="block w-full pl-10 pr-3 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent transition-all"
+								className={`${AUTH_INPUT} pl-10`}
 								placeholder="name@example.gov.ph"
 								autoComplete="username"
 								required
@@ -88,33 +97,26 @@ export default function ForgotPasswordPage() {
 							/>
 						</div>
 					</div>
-					<Button
-						type="submit"
-						disabled={loading}
-						className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
-					>
+					<button type="submit" disabled={loading} className={AUTH_PRIMARY}>
 						{loading ? (
 							<>
-								<Loader2 className="h-5 w-5 animate-spin mr-2" />
+								<Loader2 className="h-5 w-5 animate-spin" />
 								Sending…
 							</>
 						) : (
 							"Send reset link"
 						)}
-					</Button>
+					</button>
 					<BackToSignIn />
 				</form>
 			)}
-		</AuthCard>
+		</AuthShell>
 	);
 }
 
 function BackToSignIn() {
 	return (
-		<Link
-			href="/login"
-			className="flex items-center justify-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-		>
+		<Link href="/login" className={`${AUTH_QUIET_LINK} w-full`}>
 			<ArrowLeft className="h-4 w-4" />
 			Back to sign in
 		</Link>

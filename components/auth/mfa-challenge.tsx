@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { AlertCircle, ArrowLeft, KeyRound, Loader2, Mail, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+	AUTH_BADGE,
+	AUTH_CHECKBOX,
+	AUTH_ERROR,
+	AUTH_FINE,
+	AUTH_INPUT,
+	AUTH_LINK,
+	AUTH_PRIMARY,
+	AUTH_QUIET_LINK,
+	AUTH_SUBTITLE,
+	AUTH_TITLE,
+} from "./auth-shell";
 import { CodeInput } from "./code-input";
 
 type Mode = "totp" | "backup" | "email";
@@ -100,26 +111,26 @@ export function MfaChallenge({
 	return (
 		<div className="space-y-6">
 			<div>
-				<div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#0EA5E9]/10">
+				<div className={AUTH_BADGE}>
 					{mode === "backup" ? (
-						<KeyRound className="h-6 w-6 text-[#38BDF8]" />
+						<KeyRound className="h-5 w-5" />
 					) : mode === "email" ? (
-						<Mail className="h-6 w-6 text-[#38BDF8]" />
+						<Mail className="h-5 w-5" />
 					) : (
-						<Smartphone className="h-6 w-6 text-[#38BDF8]" />
+						<Smartphone className="h-5 w-5" />
 					)}
 				</div>
-				<h2 className="text-xl font-semibold text-white">{heading}</h2>
-				<p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+				<h1 className={AUTH_TITLE}>{heading}</h1>
+				<p className={AUTH_SUBTITLE}>
 					{mode === "totp" && <>Hi {fullName.split(" ")[0]}. </>}
 					{intro}
 				</p>
 			</div>
 
 			{error && (
-				<div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
-					<AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-					<p className="text-sm text-red-400">{error}</p>
+				<div className={AUTH_ERROR} role="alert">
+					<AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+					<p>{error}</p>
 				</div>
 			)}
 
@@ -141,68 +152,61 @@ export function MfaChallenge({
 						spellCheck={false}
 						autoFocus
 						disabled={busy}
-						className="block w-full h-14 rounded-xl border border-slate-700 bg-slate-800/50 text-center font-mono text-xl tracking-[0.25em] uppercase text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent"
+						className={`${AUTH_INPUT} h-14 text-center font-mono text-xl tracking-[0.25em] uppercase`}
 					/>
 				) : (
 					<CodeInput value={code} onChange={setCode} onComplete={(c) => void submit(c)} disabled={busy} />
 				)}
 
-				<label className="flex items-start gap-2.5 cursor-pointer text-sm text-slate-300">
-					<input
-						type="checkbox"
-						checked={trust}
-						onChange={(e) => setTrust(e.target.checked)}
-						className="mt-0.5 h-4 w-4 accent-[#0EA5E9]"
-					/>
+				<label className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+					<input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} className={AUTH_CHECKBOX} />
 					<span>
 						Trust this browser for {trustDays} days
-						<span className="block text-xs text-slate-500">
+						<span className={`block ${AUTH_FINE}`}>
 							Only on a device you alone use — never on a shared station PC. You&apos;ll still enter your password.
 						</span>
 					</span>
 				</label>
 
-				<Button
+				<button
 					type="submit"
 					disabled={busy || (mode === "backup" ? code.replace(/[^0-9a-z]/gi, "").length !== 8 : code.length !== 6)}
-					className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg disabled:opacity-50"
+					className={AUTH_PRIMARY}
 				>
-					{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify"}
-				</Button>
+					{busy ? (
+						<>
+							<Loader2 className="h-5 w-5 animate-spin" />
+							Verifying…
+						</>
+					) : (
+						"Verify"
+					)}
+				</button>
 			</form>
 
-			<div className="space-y-2 border-t border-white/10 pt-5 text-sm">
-				<p className="text-xs font-medium uppercase tracking-wider text-slate-500">Can&apos;t use your app?</p>
+			<div className="space-y-2.5 border-t border-slate-200 pt-5 text-sm dark:border-white/10">
+				<p className="font-medium text-slate-950 dark:text-white">Can&apos;t use your app?</p>
 				{mode !== "totp" && (
-					<button type="button" onClick={() => switchTo("totp")} className="block font-medium text-[#38BDF8] hover:text-[#7DD3FC]">
+					<button type="button" onClick={() => switchTo("totp")} className={`block ${AUTH_LINK}`}>
 						Use my authenticator app
 					</button>
 				)}
 				{mode !== "backup" && (
-					<button type="button" onClick={() => switchTo("backup")} className="block font-medium text-[#38BDF8] hover:text-[#7DD3FC]">
+					<button type="button" onClick={() => switchTo("backup")} className={`block ${AUTH_LINK}`}>
 						Use a backup code
 					</button>
 				)}
 				{emailFallback && (
-					<button
-						type="button"
-						disabled={busy}
-						onClick={() => void sendEmail()}
-						className="block font-medium text-[#38BDF8] hover:text-[#7DD3FC] disabled:opacity-50"
-					>
+					<button type="button" disabled={busy} onClick={() => void sendEmail()} className={`block ${AUTH_LINK}`}>
 						{mode === "email" ? "Send a new code" : "Email me a code instead"}
 					</button>
 				)}
-				<p className="pt-1 text-xs leading-relaxed text-slate-500">
+				<p className={`pt-1 ${AUTH_FINE}`}>
 					Lost your phone and your backup codes? Ask your system administrator to reset two-step verification.
 				</p>
 			</div>
 
-			<button
-				type="button"
-				onClick={() => onRestart("")}
-				className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-			>
+			<button type="button" onClick={() => onRestart("")} className={`${AUTH_QUIET_LINK} w-full`}>
 				<ArrowLeft className="h-4 w-4" /> Back to sign in
 			</button>
 		</div>

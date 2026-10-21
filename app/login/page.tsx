@@ -2,10 +2,19 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { Clock, Lock, Mail, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldOff, WifiOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  AUTH_ERROR,
+  AUTH_FINE,
+  AUTH_ICON,
+  AUTH_INPUT,
+  AUTH_LABEL,
+  AUTH_LINK,
+  AUTH_PRIMARY,
+  AUTH_SUCCESS,
+  AuthShell,
+} from "@/components/auth/auth-shell";
 import { useAuth } from "@/context/AuthContext";
 import { ForceChangePasswordModal } from "@/components/modals/ForceChangePasswordModal";
 import { getDefaultRouteForUser } from "@/lib/auth-routes";
@@ -163,37 +172,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen overflow-y-auto flex bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4 py-8">
-      {/* The body never scrolls in this app, so this page scrolls itself; my-auto on the card
-          centres it when it fits and lets it scroll from the top when it does not. */}
-      {/* Background Pattern */}
-      <div className="fixed inset-0 pointer-events-none bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-10"></div>
-
-      {/* Login Card */}
-      <div className="relative w-full max-w-md mx-auto my-auto">
-        <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
-          {/* Logo and Title */}
-          <div className={mfa ? "text-center mb-4" : "text-center mb-8"}>
-            <div className={mfa ? "hidden" : "flex justify-center mb-4"}>
-              <div className="w-20 h-20 bg-[#0EA5E9]/10 rounded-2xl flex items-center justify-center">
-                <Image
-                  src="/SC LOGO W 1.png"
-                  alt="SecureTanza Logo"
-                  width={60}
-                  height={60}
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            </div>
-            <h1 className={mfa ? "text-xl font-bold text-white" : "text-3xl font-bold text-white mb-2"}>
-              SecureTanza
-            </h1>
-            <p className={mfa ? "hidden" : "text-slate-400 text-sm"}>
-              Crime Mapping & Analytics System
-            </p>
-          </div>
-
+    <AuthShell
+      title={mfa ? undefined : "Sign in"}
+      subtitle={mfa ? undefined : "Use the account your system administrator set up for you."}
+    >
           {mfa ? (
             mfa.stage === "enroll" ? (
               <MfaEnroll fullName={mfa.fullName} onSuccess={(r) => void finishSignIn(r)} onRestart={restartSignIn} />
@@ -209,30 +191,27 @@ export default function LoginPage() {
           ) : (
           <>
           {notice && !error && (
-            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-start gap-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-emerald-300">{notice}</p>
+            <div className={`${AUTH_SUCCESS} mb-6`} role="status">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+              <p>{notice}</p>
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
+            <div className={`${AUTH_ERROR} mb-6`} role="alert">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              <p>{error}</p>
             </div>
           )}
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-slate-300 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="identifier" className={AUTH_LABEL}>
                 Email
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-500" />
+                <div className={AUTH_ICON}>
+                  <Mail className="h-[1.125rem] w-[1.125rem]" />
                 </div>
                 {/* type="text" (not "email") during the transition, so an older
                     account's ACC- number is still accepted. */}
@@ -242,43 +221,42 @@ export default function LoginPage() {
                   inputMode="email"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent transition-all"
+                  className={`${AUTH_INPUT} pl-10`}
                   placeholder="name@example.gov.ph"
                   required
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
                   disabled={loading}
+                  aria-describedby="identifier-hint"
                 />
               </div>
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p id="identifier-hint" className={AUTH_FINE}>
                 No email on your account yet? Use your account number (ACC-…).
               </p>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <div className="mb-2 flex items-baseline justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className={AUTH_LABEL}>
                   Password
                 </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-[#38BDF8] hover:text-[#7DD3FC] transition-colors"
-                >
+                {/* Phones give links a 44px tap height; the negative margin keeps that
+                    target without pushing the field down. */}
+                <Link href="/forgot-password" className={`-my-3 inline-flex items-center text-sm ${AUTH_LINK}`}>
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-500" />
+                <div className={AUTH_ICON}>
+                  <Lock className="h-[1.125rem] w-[1.125rem]" />
                 </div>
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent transition-all"
+                  className={`${AUTH_INPUT} pl-10 pr-12`}
                   placeholder="Enter your password"
                   required
                   autoComplete="current-password"
@@ -287,82 +265,54 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 flex cursor-pointer items-center rounded-r-lg px-3.5 text-slate-500 transition-colors hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:text-white"
                   disabled={loading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-[1.125rem] w-[1.125rem]" /> : <Eye className="h-[1.125rem] w-[1.125rem]" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
+            <button type="submit" disabled={loading} className={AUTH_PRIMARY}>
               {loading ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  Signing in...
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Signing in…
                 </>
               ) : (
-                "Sign In"
+                "Sign in"
               )}
-            </Button>
+            </button>
           </form>
           </>
           )}
-
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-center text-sm text-slate-500">
-              Tanza Municipal Police Station
-            </p>
-            <p className="text-center text-xs text-slate-600 mt-1">
-              Authorized personnel only
-            </p>
-          </div>
-        </div>
-
-        {/* Version Info */}
-        <p className="text-center text-xs text-slate-600 mt-4">
-          SecureTanza v1.0.0 • © 2026
-        </p>
-      </div>
 
       {signedOutReason && (() => {
         const { title, message, icon: Icon } = SIGNED_OUT_COPY[signedOutReason];
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 dark:bg-black/60"
             onClick={() => setSignedOutReason(null)}
           >
             <div
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="signed-out-title"
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl"
+              className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/20 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
-                <Icon className="h-6 w-6 text-amber-400" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
+                <Icon className="h-5 w-5" />
               </div>
-              <h2 id="signed-out-title" className="mt-4 text-lg font-bold text-white">
+              <h2 id="signed-out-title" className="mt-4 font-heading text-lg font-bold text-slate-950 dark:text-white">
                 {title}
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{message}</p>
-              <Button
-                onClick={() => setSignedOutReason(null)}
-                autoFocus
-                className="mt-6 w-full h-11 bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold rounded-lg"
-              >
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{message}</p>
+              <button type="button" onClick={() => setSignedOutReason(null)} autoFocus className={`${AUTH_PRIMARY} mt-6 h-11`}>
                 Got it
-              </Button>
+              </button>
             </div>
           </div>
         );
@@ -379,6 +329,6 @@ export default function LoginPage() {
           }}
         />
       )}
-    </div>
+    </AuthShell>
   );
 }
