@@ -272,22 +272,11 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <ShieldAlert className="h-3.5 w-3.5" />
-                Unique Incidents
-              </p>
-              <p className={valueClass}>{stats.totalCrimes.toLocaleString()}</p>
-              <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
-                {stats.multipleOffenseIncidents.toLocaleString()} with multiple offenses
-              </p>
-            </div>
-
-            <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
-              <p className={labelClass} style={{ marginBottom: 8 }}>
-                <BarChart3 className="h-3.5 w-3.5" />
-                Recorded Offenses
+                Crime Incidents
               </p>
               <p className={valueClass}>{stats.totalOffenses.toLocaleString()}</p>
               <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
-                Classified by offense and felony stage
+                Includes {stats.multipleOffenseIncidents.toLocaleString()} double entries, counted separately
               </p>
             </div>
 

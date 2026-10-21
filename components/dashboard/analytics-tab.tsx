@@ -419,7 +419,7 @@ function AnalyticsSkeleton({
           <dt
             className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${dark ? "text-slate-500" : "text-slate-400"}`}
           >
-            Total Incidents
+            Crime Incidents
           </dt>
           <dd className="mt-1.5 flex justify-end">
             <AnalyticsBone bone={bone} className="h-6 w-16" />
@@ -721,16 +721,16 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
           <dt
             className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}
           >
-            Total Incidents
+            Crime Incidents
           </dt>
           <dd
             className={`mt-1.5 text-lg font-semibold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >
-            {totalIncidents.toLocaleString()}
+            {totalOffenses.toLocaleString()}
             <span
               className={`block text-sm font-normal ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}
             >
-              {totalOffenses.toLocaleString()} recorded offenses
+              {Math.max(totalOffenses - totalIncidents, 0).toLocaleString()} double entries counted separately
             </span>
           </dd>
         </dl>

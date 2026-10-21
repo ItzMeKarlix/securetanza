@@ -840,8 +840,7 @@ export class PDFReportGenerator {
 
     const meta: Array<[string, string]> = [
       ['Reference', this.reference],
-      ['Total incidents', data.totalCrimes.toLocaleString()],
-      ['Recorded offenses', data.totalOffenses.toLocaleString()],
+      ['Crime incidents', data.totalCrimes.toLocaleString()],
       ['Sections included', String(sectionCount)],
       ['Generated', new Date().toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })],
     ];
@@ -924,7 +923,7 @@ export class PDFReportGenerator {
         : `Barangay ${data.barangayName}`;
 
     this.paragraph(
-      `${data.totalCrimes.toLocaleString()} unique incidents with ${data.totalOffenses.toLocaleString()} recorded offenses${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
+      `${data.totalCrimes.toLocaleString()} crime incidents${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
         `The current quarterly threat rating is ${trends.currentThreatLevel.toLowerCase()}, ` +
         `${
           trends.trendDirection === 'improved' ? 'down from' : trends.trendDirection === 'worsened' ? 'up from' : 'unchanged against'
@@ -970,7 +969,7 @@ export class PDFReportGenerator {
 
     if (opts.includeText) {
       this.paragraph(
-        `${data.totalCrimes.toLocaleString()} incidents were recorded across the reporting period. ` +
+        `${data.totalCrimes.toLocaleString()} crime incidents were recorded across the reporting period. ` +
           `The figures below summarise the current situation at a glance.`
       );
       this.gap(3);
@@ -978,7 +977,7 @@ export class PDFReportGenerator {
 
     if (opts.includeCharts) {
       this.figureBand([
-        { label: 'Total incidents', value: data.totalCrimes.toLocaleString(), caption: data.timeRange },
+        { label: 'Crime incidents', value: data.totalCrimes.toLocaleString(), caption: data.timeRange },
         { label: 'Cleared', value: `${trends.resolutionRate}%`, caption: 'Cases marked cleared' },
         { label: 'Safety index', value: `${trends.safetyIndex}%`, caption: 'Cleared or solved' },
       ]);
@@ -1292,14 +1291,16 @@ export class PDFReportGenerator {
           : "No barangay falls in this report's high or critical risk band.",
         { width: MEASURE }
       );
-      if (hotspots.length && data.totalCrimes > 0) {
+      // Barangay counts merge double entries, so the share uses their own total.
+      const barangayTotal = data.analyticsData.crimesByBarangay.reduce((sum, b) => sum + b.count, 0);
+      if (hotspots.length && barangayTotal > 0) {
         // A concentration figure — how much of the town's total these flagged
         // barangays carry — which isn't stated anywhere else in the report.
         const hotspotTotal = hotspots.reduce((sum, h) => sum + h.count, 0);
-        const share = (hotspotTotal / data.totalCrimes) * 100;
+        const share = (hotspotTotal / barangayTotal) * 100;
         this.gap(2);
         this.note(
-          `${hotspots.length === 1 ? 'This barangay accounts' : 'Together, these barangays account'} for ${hotspotTotal.toLocaleString()} of ${data.totalCrimes.toLocaleString()} incidents recorded across Tanza this period (${share.toFixed(1)}%).`
+          `${hotspots.length === 1 ? 'This barangay accounts' : 'Together, these barangays account'} for ${hotspotTotal.toLocaleString()} of ${barangayTotal.toLocaleString()} incidents recorded across Tanza this period (${share.toFixed(1)}%).`
         );
       } else {
         this.gap(4);

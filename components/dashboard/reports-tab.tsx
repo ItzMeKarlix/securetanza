@@ -269,8 +269,8 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
 
   const timeRangeText = getTimeRangeText();
   const totalCrimes = useMemo(
-    () => analyticsData.totalIncidents,
-    [analyticsData.totalIncidents]
+    () => analyticsData.totalOffenses,
+    [analyticsData.totalOffenses]
   );
 
   const selectedSections = SECTIONS.filter((section) => reportConfig[section.key].enabled);
@@ -805,7 +805,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
                 <dl className="mt-auto border-t border-slate-400 pt-1.5">
                   {[
                     {
-                      label: "Total incidents",
+                      label: "Crime incidents",
                       value: analyticsData.loading ? "—" : totalCrimes.toLocaleString(),
                     },
                     { label: "Sections included", value: String(selectedCount) },

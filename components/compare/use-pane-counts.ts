@@ -16,7 +16,7 @@ interface PaneResult {
 }
 
 /**
- * Incidents per barangay for one side of the compare view: that side's period
+ * Crime incidents (each entry counted) per barangay for one side of the compare view: that side's period
  * (every range in it, summed) and crime type, read from its own MapProvider.
  * A superseded request is aborted, so a slow answer for an old period can never
  * overwrite the current one. While a new period loads, the last counts stay up.
@@ -53,11 +53,15 @@ export function usePaneCounts() {
         const body = await readJson<{
           success?: boolean;
           error?: string;
-          data?: { barangayCounts?: Record<string, number> };
+          data?: {
+            barangayCounts?: Record<string, number>;
+            barangayOffenseCounts?: Record<string, number>;
+          };
         }>(`/api/crimes/barangay-counts?${params}`);
         if (!body?.success)
           throw new Error(body?.error || "Counts request failed");
-        return body.data?.barangayCounts ?? {};
+        // Crime incidents count every entry, so double entries stay separate.
+        return body.data?.barangayOffenseCounts ?? body.data?.barangayCounts ?? {};
       }),
     )
       .then((results) => {
