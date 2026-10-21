@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { CrimeService, BarangayService, PermissionService } from '@/backend/services';
 import { cacheService } from '@/backend/cache';
+import { getSession, isAdminSession } from '@/lib/auth';
 
 export const honoApp = new Hono();
 
@@ -151,6 +152,16 @@ honoApp.get('/permissions', async (c) => {
 // CACHE OBSERVABILITY ROUTES
 // ==========================================
 
+// Cache keys name users and filters, and a flush drops every session cache:
+// administrators only (the middleware only checks that someone is signed in).
+honoApp.use('/cache/*', async (c, next) => {
+  const session = await getSession();
+  if (!isAdminSession(session)) {
+    return c.json({ success: false, error: 'Unauthorized - Administrative access required' }, 403);
+  }
+  await next();
+});
+
 honoApp.get('/cache/telemetry', async (c) => {
   const stats = await cacheService.getStats();
   const recentEvents = cacheService.getRecentEvents();
@@ -167,6 +178,9 @@ honoApp.get('/cache/telemetry', async (c) => {
 
 honoApp.post('/cache/flush', async (c) => {
   const pattern = c.req.query('pattern');
+  if (pattern !== undefined && !/^[\w:*.-]{1,100}$/.test(pattern)) {
+    return c.json({ success: false, error: 'Invalid cache key pattern' }, 400);
+  }
   if (pattern) {
     const purged = await cacheService.deleteByPattern(pattern);
     return c.json({

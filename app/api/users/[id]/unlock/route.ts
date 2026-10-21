@@ -4,6 +4,7 @@ import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { unusablePasswordHash } from '@/lib/auth-tokens';
 import { sendUnlockReset } from '@/lib/account-emails';
+import { idParam } from '@/lib/input-sanitize';
 
 // POST /api/users/[id]/unlock - Clear a lockout and email a reset link (admin only)
 export async function POST(
@@ -21,7 +22,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const userId = parseInt(id);
+    const userId = idParam(id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });

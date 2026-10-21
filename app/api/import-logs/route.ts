@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, canOperateSession } from '@/lib/auth';
+import { intParam } from '@/lib/input-sanitize';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = intParam(searchParams.get('limit'), 100, 1, 500);
+    const offset = intParam(searchParams.get('offset'), 0, 0, 1_000_000);
 
     const where = { action: 'Import' };
 

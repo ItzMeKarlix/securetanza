@@ -2,6 +2,7 @@ import { mapGeoJsonToDb } from "./barangay-mapper";
 import { parseNumericField } from "./import-validation";
 import { normaliseHeader } from "@/components/upload/upload-meta";
 import type { CrimeInput } from "./crime-records";
+import { cleanImportedText } from "@/lib/input-sanitize";
 
 /** Shared by HTTP uploads and non-destructive workbook recovery. */
 export function parseCrimeWorkbookRow(
@@ -29,7 +30,7 @@ export function parseCrimeWorkbookRow(
   }
 
   // Map barangay name if needed
-  const barangayName = mapGeoJsonToDb(String(normalizedRow.barangay));
+  const barangayName = mapGeoJsonToDb(cleanImportedText(normalizedRow.barangay));
 
   // Parse dates
   const dateReported = parseExcelDate(normalizedRow.date_reported);
@@ -72,12 +73,16 @@ export function parseCrimeWorkbookRow(
   const latitude = parseNumericField(normalizedRow.lat, "latitude");
   const longitude = parseNumericField(normalizedRow.lng, "longitude");
 
+  if (!cleanImportedText(normalizedRow.incident_type) || !barangayName) {
+    throw new Error("Missing required fields (barangay or incident_type)");
+  }
+
   const candidateData = {
     sourceFile: source.file,
     sourceSheet: source.sheet,
     sourceRow: source.row,
     blotterNo: normalizedRow.blotter_no
-      ? String(normalizedRow.blotter_no).trim()
+      ? cleanImportedText(normalizedRow.blotter_no) || null
       : null,
     dateEncoded,
     pro: nullableText(normalizedRow.police_regional_office),
@@ -94,7 +99,7 @@ export function parseCrimeWorkbookRow(
     timeReported,
     dateCommitted,
     timeCommitted,
-    incidentType: String(normalizedRow.incident_type),
+    incidentType: cleanImportedText(normalizedRow.incident_type),
     isCrime,
     modeReporting: nullableText(normalizedRow.mode_reporting),
     stageOfFelony: nullableText(normalizedRow.stage_of_felony),
@@ -207,5 +212,7 @@ function nullableText(value: unknown): string | null {
   if (isBlank(value)) return null;
   if (typeof value !== "string")
     throw new Error("Text columns must contain text");
-  return value;
+  // Workbooks are official, so markup or invisible characters are dropped
+  // rather than failing the row.
+  return cleanImportedText(value) || null;
 }

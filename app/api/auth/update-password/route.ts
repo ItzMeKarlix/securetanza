@@ -7,10 +7,11 @@ import { appUrl } from '@/lib/app-url';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
+import { MAX_PASSWORD_LENGTH } from '@/lib/input-sanitize';
 
 const updatePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(1, 'New password is required'),
+  currentPassword: z.string().min(1, 'Current password is required').max(MAX_PASSWORD_LENGTH, `Use a password of ${MAX_PASSWORD_LENGTH} characters or fewer.`),
+  newPassword: z.string().min(1, 'New password is required').max(MAX_PASSWORD_LENGTH, `Use a password of ${MAX_PASSWORD_LENGTH} characters or fewer.`),
 }).refine(data => data.currentPassword !== data.newPassword, {
   message: "New password cannot be the same as your current password",
   path: ["newPassword"],

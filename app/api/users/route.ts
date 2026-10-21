@@ -4,15 +4,16 @@ import { getSession } from '@/lib/auth';
 import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { z } from 'zod';
+import { personNameField } from '@/lib/input-sanitize';
 import { randomBytes } from 'crypto';
 import { unusablePasswordHash } from '@/lib/auth-tokens';
 import { accountStatus, emailField, emailTaken, sendInvite } from '@/lib/account-emails';
 
 // Validation schema for user creation/update
 const userSchema = z.object({
-  fullName: z.string().trim().min(1, 'Full name is required'),
+  fullName: personNameField,
   email: emailField,
-  permissionIds: z.array(z.number().int().positive()).min(1, 'At least one permission is required'),
+  permissionIds: z.array(z.number().int().positive()).min(1, 'At least one permission is required').max(20),
 });
 
 // Helper to generate a random unique account number

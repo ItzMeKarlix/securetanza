@@ -4,14 +4,15 @@ import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { z } from 'zod';
+import { idParam, personNameField } from '@/lib/input-sanitize';
 import { emailField, emailTaken } from '@/lib/account-emails';
 import { sendMail } from '@/lib/email/mailer';
 import { emailChangedEmail } from '@/lib/email/templates';
 
 const updateUserSchema = z.object({
-  fullName: z.string().trim().min(1).optional(),
+  fullName: personNameField.optional(),
   email: emailField.optional(),
-  permissionIds: z.array(z.number().int().positive()).optional(),
+  permissionIds: z.array(z.number().int().positive()).max(20).optional(),
 });
 
 // PUT /api/users/[id] - Update user (admin only)
@@ -30,7 +31,8 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const userId = parseInt(id);
+    const userId = idParam(id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
 
@@ -170,7 +172,8 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const userId = parseInt(id);
+    const userId = idParam(id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({

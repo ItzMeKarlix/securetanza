@@ -4,9 +4,10 @@ import { getSession, hashPassword, verifyPassword, createSession, invalidateSess
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
+import { MAX_PASSWORD_LENGTH } from '@/lib/input-sanitize';
 
 const changePasswordSchema = z.object({
-  newPassword: z.string().min(1, 'New password is required'),
+  newPassword: z.string().min(1, 'New password is required').max(MAX_PASSWORD_LENGTH, `Use a password of ${MAX_PASSWORD_LENGTH} characters or fewer.`),
 });
 
 export async function POST(request: NextRequest) {

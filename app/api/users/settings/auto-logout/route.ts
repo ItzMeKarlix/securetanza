@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest) {
     let { autoLogoutTimer } = body;
 
     // Validate
-    if (typeof autoLogoutTimer !== "number" || autoLogoutTimer < 1 || autoLogoutTimer > 1440) {
+    if (typeof autoLogoutTimer !== "number" || !Number.isInteger(autoLogoutTimer) || autoLogoutTimer < 1 || autoLogoutTimer > 1440) {
       return NextResponse.json(
         {
           success: false,

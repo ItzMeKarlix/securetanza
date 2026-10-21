@@ -8,6 +8,7 @@ import { validateNewPassword } from '@/lib/password-policy.server';
 import { sendMail } from '@/lib/email/mailer';
 import { passwordChangedEmail } from '@/lib/email/templates';
 import { appUrl } from '@/lib/app-url';
+import { MAX_PASSWORD_LENGTH, linkTokenParam } from '@/lib/input-sanitize';
 
 const PROBLEM_MESSAGES = {
   invalid: 'This link is not valid. Request a new one.',
@@ -24,8 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const raw = typeof body.token === 'string' ? body.token : '';
+    const raw = linkTokenParam(body.token);
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+    if (newPassword.length > MAX_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: `Use a password of ${MAX_PASSWORD_LENGTH} characters or fewer.` }, { status: 400 });
+    }
 
     // Check the link first, but only use it up once the password is acceptable,
     // so a rejected password doesn't burn the link.

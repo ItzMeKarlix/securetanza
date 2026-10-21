@@ -224,9 +224,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const action = body.action;
-    const scope = body.scope || 'all';
+    const scope = body.scope ?? 'all';
+    if (!['ping', 'clear_cache', 'prune_exports'].includes(action)) {
+      return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+    }
+    // An unrecognised scope must not fall through to "clear everything".
+    if (!['all', 'crimes', 'geo', 'auth', 'config'].includes(scope)) {
+      return NextResponse.json({ error: 'Unknown cache scope' }, { status: 400 });
+    }
 
     if (action === 'ping') {
       const pingStart = performance.now();

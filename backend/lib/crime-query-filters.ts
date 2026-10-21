@@ -5,6 +5,28 @@ import {
   buildOffenseCategoryWhere,
 } from "@/lib/crime-groups";
 import { normalizeFelonyStage } from "@/lib/offense-classification";
+import { escapeLike, isoDateParam, queryText } from "@/lib/input-sanitize";
+
+const TEXT_FILTERS = [
+  "barangay", "incidentId", "offenseCategory", "region", "province", "municipal",
+  "incidentType", "modeReporting", "stageOfFelony", "caseStatus", "offenseType", "modus", "typeOfPlace",
+] as const;
+const DATE_FILTERS = ["startDateReported", "endDateReported", "startDateCommitted", "endDateCommitted"] as const;
+
+/**
+ * Filters arrive straight from query strings. Text is cleaned and bounded (and
+ * dropped if it carries markup); a date that doesn't parse is ignored rather
+ * than reaching the database as an Invalid Date.
+ */
+function cleanFilters(filters: CrimeFilters): CrimeFilters {
+  const clean: CrimeFilters = { ...filters };
+  for (const field of TEXT_FILTERS) {
+    const value = filters[field];
+    clean[field] = typeof value === "string" ? queryText(value) : null;
+  }
+  for (const field of DATE_FILTERS) clean[field] = isoDateParam(filters[field]);
+  return clean;
+}
 export interface CrimeFilters {
   barangay?: string | null;
   incidentId?: string | null;
@@ -31,9 +53,10 @@ export interface CrimeFilters {
 }
 /** Compose AND predicates so type, date, stage and hour scopes cannot overwrite one another. */
 export function buildCrimeWhere(
-  filters: CrimeFilters,
+  rawFilters: CrimeFilters,
   crimesOnly = false,
 ): Prisma.CrimeIncidentWhereInput {
+  const filters = cleanFilters(rawFilters);
   const and: Prisma.CrimeIncidentWhereInput[] = crimesOnly
     ? [{ isCrime: true }]
     : [];
@@ -58,7 +81,8 @@ export function buildCrimeWhere(
     "typeOfPlace",
   ] as const) {
     const value = filters[field];
-    if (value) and.push({ [field]: { contains: value, mode: "insensitive" } });
+    // Escaped so % and _ match literally instead of acting as wildcards.
+    if (value) and.push({ [field]: { contains: escapeLike(value), mode: "insensitive" } });
   }
   if (filters.incidentType)
     and.push(buildIncidentTypeWhere(filters.incidentType));

@@ -3,6 +3,7 @@ import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { accountStatus, sendInvite } from '@/lib/account-emails';
+import { idParam } from '@/lib/input-sanitize';
 
 // POST /api/users/[id]/invite - Re-send the invite link to a pending account (admin only)
 export async function POST(
@@ -16,7 +17,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const userId = parseInt(id);
+    const userId = idParam(id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
     }

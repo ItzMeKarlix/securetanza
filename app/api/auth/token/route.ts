@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClientIp } from '@/lib/request-context';
 import { allowRequest } from '@/lib/rate-limit';
 import { peekToken } from '@/lib/auth-tokens';
+import { linkTokenParam } from '@/lib/input-sanitize';
 
 // GET /api/auth/token?token= - Describe an invite/reset link without using it (public)
 export async function GET(request: NextRequest) {
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
   }
 
-  const raw = request.nextUrl.searchParams.get('token') ?? '';
+  const raw = linkTokenParam(request.nextUrl.searchParams.get('token'));
   try {
     const result = await peekToken(raw);
     if (result.problem) {

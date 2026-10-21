@@ -9,6 +9,7 @@ import { appUrl } from "@/lib/app-url";
 /** Zod field: trims + lowercases, then checks format and the optional domain allow-list. */
 export const emailField = z
 	.string()
+	.max(320, "Enter a valid email address")
 	.transform(normalizeEmail)
 	.refine(isValidEmail, "Enter a valid email address")
 	.refine(isAllowedEmailDomain, "That email domain isn't allowed for Secure Tanza accounts");

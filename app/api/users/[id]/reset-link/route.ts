@@ -7,6 +7,7 @@ import { issueToken, TOKEN_TTL_MS } from '@/lib/auth-tokens';
 import { sendMail } from '@/lib/email/mailer';
 import { resetEmail } from '@/lib/email/templates';
 import { appUrl } from '@/lib/app-url';
+import { idParam } from '@/lib/input-sanitize';
 
 // POST /api/users/[id]/reset-link - Email a password-reset link to an account (admin only).
 // Covers a failed unlock email, and moving legacy accounts onto email sign-in.
@@ -22,7 +23,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const userId = parseInt(id);
+    const userId = idParam(id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
     }

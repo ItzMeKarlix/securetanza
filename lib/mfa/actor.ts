@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { readChallenge } from "./challenge";
 import { loadSignInUser, type SignInUser } from "./sign-in";
 import { verifySecondFactor, MFA_LOCKED_MESSAGE, type FactorMethod } from "./second-factor";
+import { codeParam } from "@/lib/input-sanitize";
 
 type Fail = { error: string; status: number; restart?: boolean; locked?: boolean };
 
@@ -23,7 +24,7 @@ export async function requireStepUp(user: SignInUser, body: { method?: unknown; 
 	// Accounts created before 2FA existed have nothing to step up with yet.
 	if (!user.totpEnabledAt) return null;
 	const method: FactorMethod = body.method === "backup" ? "backup" : "totp";
-	const code = typeof body.code === "string" ? body.code : "";
+	const code = codeParam(body.code);
 	if (!code) return { error: "Enter a code from your authenticator app to continue.", status: 401 };
 	const outcome = await verifySecondFactor(user, method, code);
 	if (outcome.ok) return null;

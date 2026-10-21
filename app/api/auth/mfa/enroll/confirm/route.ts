@@ -11,6 +11,7 @@ import { auditAuth, completeSignIn, loadSignInUser } from '@/lib/mfa/sign-in';
 import { signedInUser } from '@/lib/mfa/actor';
 import { sendMail } from '@/lib/email/mailer';
 import { mfaChangedEmail } from '@/lib/email/templates';
+import { codeParam } from '@/lib/input-sanitize';
 
 // POST /api/auth/mfa/enroll/confirm - first code from the app turns 2FA on; returns backup codes once
 export async function POST(request: NextRequest) {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const code = typeof body.code === 'string' ? body.code : '';
+    const code = codeParam(body.code);
 
     // Same two callers as /enroll/start. Step-up already happened at start; the
     // pending-secret cookie is bound to this user and only lives 10 minutes.

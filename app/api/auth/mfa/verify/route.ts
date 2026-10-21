@@ -8,6 +8,7 @@ import { auditAuth, completeSignIn, loadSignInUser } from '@/lib/mfa/sign-in';
 import { deviceLabel, trustThisBrowser } from '@/lib/mfa/trusted-device';
 import { sendMail } from '@/lib/email/mailer';
 import { mfaEmailUsedEmail } from '@/lib/email/templates';
+import { codeParam } from '@/lib/input-sanitize';
 
 const METHODS: FactorMethod[] = ['totp', 'backup', 'email'];
 const LABEL: Record<FactorMethod, string> = { totp: 'authenticator app', backup: 'backup code', email: 'emailed code' };
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const method: FactorMethod = METHODS.includes(body.method) ? body.method : 'totp';
-    const code = typeof body.code === 'string' ? body.code : '';
+    const code = codeParam(body.code);
 
     const user = await loadSignInUser(challenge.userId);
     // A password change, unlock or 2FA reset since the password step voids the challenge.

@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { z } from 'zod';
+import { intParam, isoDateParam, queryText, safeTextField } from '@/lib/input-sanitize';
+
+/**
+ * What a browser may add to the audit trail: only events the server can't see
+ * for itself — today, a report generated and downloaded in the browser.
+ * Everything else (sign-ins, imports, account changes, backups) is recorded by
+ * the route that did it, so a client can't write those or pick a severity.
+ */
+const clientEventSchema = z.object({
+  action: z.literal('Export'),
+  resource: safeTextField({ max: 200, min: 1, label: 'Resource' }),
+  details: safeTextField({ max: 500, min: 1, label: 'Details' }),
+  outcome: z.enum(['success', 'failure']).default('success'),
+}).strict();
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,11 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const action = searchParams.get('action');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    const limit = intParam(searchParams.get('limit'), 100, 1, 500);
+    const offset = intParam(searchParams.get('offset'), 0, 0, 1_000_000);
+    const action = queryText(searchParams.get('action'), 40);
+    const startDate = isoDateParam(searchParams.get('startDate'));
+    const endDate = isoDateParam(searchParams.get('endDate'));
 
     const where: { action?: string; createdAt?: { gte?: Date; lte?: Date } } = {};
 
@@ -78,31 +93,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-
-    // Basic validation
-    if (!body.action || !body.details) {
+    const parsed = clientEventSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields (action, details)' },
+        { success: false, error: parsed.error.issues[0]?.message || 'Invalid audit event' },
         { status: 400 }
       );
     }
+    const event = parsed.data;
 
     const log = await prisma.auditLog.create({
       data: {
-        action: body.action,
-        details: body.details,
+        action: event.action,
+        details: event.details,
         user: session.fullName || session.accountNumber,
         ip: getClientIp(request) || 'unknown',
         session: session.sessionId,
         userAgent: getUserAgent(request),
-        resource: body.resource,
-        severity: body.severity || 'low',
-        outcome: body.outcome || 'success',
-        fileName: body.fileName,
-        fileSize: body.fileSize,
-        recordsImported: body.recordsImported,
-        errorMessage: body.errorMessage
+        resource: event.resource,
+        severity: 'low',
+        outcome: event.outcome,
       }
     });
 

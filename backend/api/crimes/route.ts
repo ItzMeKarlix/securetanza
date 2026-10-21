@@ -4,6 +4,7 @@ import { CrimeService } from '@/backend/services/crime.service';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, canOperateSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { intParam } from '@/lib/input-sanitize';
 
 // Validation schema for crime incident
 const crimeIncidentSchema = z.object({
@@ -64,8 +65,8 @@ export async function GET(request: NextRequest) {
       hour: searchParams.get('hour'),
       year: searchParams.get('year'),
       view: searchParams.get('view') === 'analysis' ? 'analysis' : undefined,
-      limit: limit ? parseInt(limit, 10) : 500,
-      offset: Number(searchParams.get('offset') || 0),
+      limit: intParam(limit, 500, 1, 2000),
+      offset: intParam(searchParams.get('offset'), 0, 0, 1_000_000),
     });
 
     return NextResponse.json({

@@ -5,6 +5,7 @@ import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { resetMfa } from '@/lib/mfa/reset';
 import { sendMail } from '@/lib/email/mailer';
 import { mfaChangedEmail } from '@/lib/email/templates';
+import { idParam } from '@/lib/input-sanitize';
 
 // POST /api/users/[id]/mfa-reset - clear someone's 2FA so they enroll again at next sign-in (admin only)
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const userId = parseInt((await params).id);
+    const userId = idParam((await params).id);
+    if (userId === null) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (isNaN(userId)) return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
     if (userId === session.userId) {
       return NextResponse.json(

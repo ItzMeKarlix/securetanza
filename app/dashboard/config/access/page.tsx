@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 
 import {
-	Check,
 	Edit,
 	KeyRound,
 	ShieldOff,
@@ -33,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isValidEmail, normalizeEmail } from "@/lib/email-address";
+import { PERSON_NAME_MAX, cleanText, personNameProblem } from "@/lib/input-sanitize";
 import {
 	ACCESS_ROLES,
 	MEMBER_PERMISSION,
@@ -43,6 +43,8 @@ import {
 
 const ADMIN_PERMISSION = "admin_operational_officer";
 const ROLE_ORDER: AccessRole[] = ["admin", "member", "privileged"];
+const FIELD_INVALID = "border-red-500 focus-visible:border-red-500 dark:border-red-400 dark:focus-visible:border-red-400";
+const FIELD_ERROR = "text-[0.75rem] leading-snug text-red-700 dark:text-red-400";
 
 interface AccessForm {
 	fullName: string;
@@ -116,6 +118,25 @@ function AccessSecurity() {
 	const itemsPerPage = 10;
 
 	const [formData, setFormData] = useState<AccessForm>(EMPTY_FORM);
+	// Field errors show once a field has been left (or on submit), not while typing the first letter.
+	const [touched, setTouched] = useState({ name: false, email: false });
+	const emailRequired = showCreateModal || Boolean(selectedUser?.email);
+	const emailProblem = (): string | null => {
+		const email = normalizeEmail(formData.email);
+		if (!email) return emailRequired ? "Enter the person's email address — their invite is sent there." : null;
+		return isValidEmail(email) ? null : "Enter a valid email address, like name@example.gov.ph.";
+	};
+	const nameError = touched.name ? personNameProblem(formData.fullName) : null;
+	const emailError = touched.email ? emailProblem() : null;
+
+	/** Same rules the API applies; on a problem, show it on the field and move focus there. */
+	const fieldsValid = (): boolean => {
+		setTouched({ name: true, email: true });
+		const nameProblem = personNameProblem(formData.fullName);
+		const problem = nameProblem ?? emailProblem();
+		if (problem) document.getElementById(nameProblem ? "account-name" : "account-email")?.focus();
+		return !problem;
+	};
 
 	/** Email is required for new accounts; on edit it may stay empty only for legacy accounts. */
 	const resolveEmail = (required: boolean): string | null | undefined => {
@@ -190,8 +211,7 @@ function AccessSecurity() {
 
 	const handleCreateUser = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (isSubmitting) return;
-
+		if (isSubmitting || !fieldsValid()) return;
 
 		const email = resolveEmail(true);
 		if (!email) return;
@@ -203,7 +223,7 @@ function AccessSecurity() {
 			const response = await fetch("/api/users", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ fullName: formData.fullName, email, permissionIds }),
+				body: JSON.stringify({ fullName: cleanText(formData.fullName), email, permissionIds }),
 			});
 			const data = await response.json();
 			if (data.success) {
@@ -223,7 +243,7 @@ function AccessSecurity() {
 
 	const handleUpdateUser = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!selectedUser || isSubmitting) return;
+		if (!selectedUser || isSubmitting || !fieldsValid()) return;
 
 		const email = resolveEmail(Boolean(selectedUser.email));
 		if (email === null) return;
@@ -235,7 +255,7 @@ function AccessSecurity() {
 			const response = await fetch(`/api/users/${selectedUser.id}`, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ fullName: formData.fullName, ...(email ? { email } : {}), permissionIds }),
+				body: JSON.stringify({ fullName: cleanText(formData.fullName), ...(email ? { email } : {}), permissionIds }),
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -363,6 +383,7 @@ function AccessSecurity() {
 		setShowCreateModal(false);
 		setShowEditModal(false);
 		setSelectedUser(null);
+		setTouched({ name: false, email: false });
 	};
 
 	const totalPages = Math.ceil(users.length / itemsPerPage);
@@ -586,31 +607,65 @@ function AccessSecurity() {
 					title={showCreateModal ? "Add Account" : "Edit Access"}
 					width="max-w-lg"
 					onClose={closeFormModal}
+					footer={
+						<>
+							<button type="button" onClick={closeFormModal} className={btnOutline}>
+								Cancel
+							</button>
+							<button type="submit" form="account-form" disabled={isSubmitting} className={btnPrimary}>
+								{showCreateModal ? "Create & Send Invite" : "Save Changes"}
+							</button>
+						</>
+					}
 				>
-					<form onSubmit={showCreateModal ? handleCreateUser : handleUpdateUser} className="space-y-5">
+					<form
+						id="account-form"
+						noValidate
+						onSubmit={showCreateModal ? handleCreateUser : handleUpdateUser}
+						className="space-y-5"
+					>
 						<Field label="Full Name" htmlFor="account-name">
 							<input
 								id="account-name"
-								className={inputBase}
-								placeholder="Full name"
+								className={cn(inputBase, nameError && FIELD_INVALID)}
+								placeholder="e.g. Juan Dela Cruz"
+								autoComplete="off"
+								maxLength={PERSON_NAME_MAX}
 								value={formData.fullName}
 								onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+								onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+								aria-invalid={Boolean(nameError)}
+								aria-describedby={nameError ? "account-name-error" : undefined}
 								required
 							/>
+							{nameError && (
+								<p id="account-name-error" className={FIELD_ERROR}>
+									{nameError}
+								</p>
+							)}
 						</Field>
 
 						<Field label="Email" htmlFor="account-email">
 							<input
 								id="account-email"
 								type="email"
-								className={inputBase}
+								className={cn(inputBase, emailError && FIELD_INVALID)}
 								placeholder="name@example.gov.ph"
 								autoComplete="off"
+								maxLength={254}
 								value={formData.email}
 								onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-								required={showCreateModal || Boolean(selectedUser?.email)}
+								onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+								aria-invalid={Boolean(emailError)}
+								aria-describedby={emailError ? "account-email-error account-email-hint" : "account-email-hint"}
+								required={emailRequired}
 							/>
-							<p className="mt-1.5 text-[0.75rem] leading-relaxed text-slate-500 dark:text-slate-400">
+							{emailError && (
+								<p id="account-email-error" className={FIELD_ERROR}>
+									{emailError}
+								</p>
+							)}
+							<p id="account-email-hint" className="text-[0.75rem] leading-relaxed text-slate-500 dark:text-slate-400">
 								{showCreateModal
 									? "They sign in with this address. An invite link to set their password is sent here."
 									: selectedUser?.email
@@ -620,72 +675,66 @@ function AccessSecurity() {
 						</Field>
 
 						<Field label="Role">
-								<div role="radiogroup" aria-label="Role" className="space-y-1.5">
-									{ROLE_ORDER.map((role) => {
-										const meta = ACCESS_ROLES[role];
-										const isSelected = formData.role === role;
-										return (
-											<button
-												key={role}
-												type="button"
-												role="radio"
-												aria-checked={isSelected}
-												onClick={() => setFormData((prev) => ({ ...prev, role }))}
-												className={cn(
-													"flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left transition-colors",
-													isSelected
-														? "border-[#0EA5E9] bg-[#0EA5E9]/[0.045] dark:bg-[#0EA5E9]/[0.07]"
-														: "border-slate-200 hover:border-slate-300 dark:border-white/[0.12] dark:hover:border-white/25"
-												)}
-											>
-												<span
-													aria-hidden="true"
-													className={cn(
-														"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
-														isSelected
-															? "border-[#0EA5E9]"
-															: "border-slate-300 dark:border-white/25"
-													)}
-												>
-													{isSelected && <span className="h-2 w-2 rounded-full bg-[#0EA5E9]" />}
-												</span>
-												<span className="min-w-0">
-													<span
-														className={cn(
-															"block text-[0.8438rem] font-medium",
-															isSelected
-																? "text-[#0369A1] dark:text-[#7DD3FC]"
-																: "text-slate-900 dark:text-white"
-														)}
-													>
-														{meta.label}
-													</span>
-													<span className="mt-0.5 block text-[0.7812rem] leading-snug text-slate-500 dark:text-slate-400">
-														{meta.description}
-													</span>
-												</span>
-											</button>
-										);
-									})}
-								</div>
-							</Field>
+							<div
+								role="radiogroup"
+								aria-label="Role"
+								aria-describedby="account-role-description"
+								className="grid grid-cols-3 gap-1 rounded-md border border-slate-200 bg-slate-50 p-1 dark:border-white/[0.12] dark:bg-white/[0.03]"
+								onKeyDown={(e) => {
+									const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+									if (!step) return;
+									e.preventDefault();
+									const next = ROLE_ORDER[(ROLE_ORDER.indexOf(formData.role) + step + ROLE_ORDER.length) % ROLE_ORDER.length];
+									setFormData((prev) => ({ ...prev, role: next }));
+									document.getElementById(`account-role-${next}`)?.focus();
+								}}
+							>
+								{ROLE_ORDER.map((role) => {
+									const isSelected = formData.role === role;
+									return (
+										<button
+											key={role}
+											id={`account-role-${role}`}
+											type="button"
+											role="radio"
+											aria-checked={isSelected}
+											tabIndex={isSelected ? 0 : -1}
+											onClick={() => setFormData((prev) => ({ ...prev, role }))}
+											className={cn(
+												"h-8 rounded-[5px] px-2 text-[0.8125rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0EA5E9]",
+												isSelected
+													? "bg-white text-[#0369A1] shadow-sm ring-1 ring-slate-200 dark:bg-[#0EA5E9]/15 dark:text-[#7DD3FC] dark:shadow-none dark:ring-[#0EA5E9]/40"
+													: "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+											)}
+										>
+											{ACCESS_ROLES[role].label}
+										</button>
+									);
+								})}
+							</div>
+							<p id="account-role-description" className="text-[0.78rem] leading-snug text-slate-500 dark:text-slate-400">
+								{ACCESS_ROLES[formData.role].description}
+							</p>
+						</Field>
 
-							{formData.role === "privileged" && (
-								<Field label="Module access">
-									<div className="space-y-1.5">
-										{MODULE_PRIVILEGES.map((module) => {
-											const permission = availablePermissions.find(
-												(p) => p.permissionName === module.permissionName
-											);
-											if (!permission) return null;
-											const isChecked = formData.privilegeIds.includes(permission.id);
-											return (
-												<button
-													key={permission.id}
-													type="button"
-													role="checkbox"
-													aria-checked={isChecked}
-													onClick={() =>
+						{formData.role === "privileged" && (
+							<Field label="Module access">
+								<div className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-white/[0.08] dark:border-white/[0.12]">
+									{MODULE_PRIVILEGES.map((module) => {
+										const permission = availablePermissions.find(
+											(p) => p.permissionName === module.permissionName
+										);
+										if (!permission) return null;
+										const isChecked = formData.privilegeIds.includes(permission.id);
+										return (
+											<label
+												key={permission.id}
+												className="flex cursor-pointer items-start gap-3 px-3 py-2.5 transition-colors first:rounded-t-md last:rounded-b-md hover:bg-slate-50 dark:hover:bg-white/[0.03]"
+											>
+												<input
+													type="checkbox"
+													checked={isChecked}
+													onChange={() =>
 														setFormData((prev) => ({
 															...prev,
 															privilegeIds: isChecked
@@ -693,47 +742,22 @@ function AccessSecurity() {
 																: [...prev.privilegeIds, permission.id],
 														}))
 													}
-													className={cn(
-														"flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition-colors",
-														isChecked
-															? "border-[#0EA5E9] bg-[#0EA5E9]/[0.045] dark:bg-[#0EA5E9]/[0.07]"
-															: "border-slate-200 hover:border-slate-300 dark:border-white/[0.12] dark:hover:border-white/25"
-													)}
-												>
-													<span
-														aria-hidden="true"
-														className={cn(
-															"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-															isChecked
-																? "border-[#0EA5E9] bg-[#0EA5E9] text-white"
-																: "border-slate-300 dark:border-white/25"
-														)}
-													>
-														{isChecked && <Check className="h-3 w-3" strokeWidth={3} />}
+													className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#0EA5E9] [color-scheme:light] dark:[color-scheme:dark]"
+												/>
+												<span className="min-w-0">
+													<span className="block text-[0.8125rem] font-medium text-slate-900 dark:text-white">
+														{module.label}
 													</span>
-													<span className="min-w-0">
-														<span className="block text-[0.8125rem] font-medium text-slate-900 dark:text-white">
-															{module.label}
-														</span>
-														<span className="mt-0.5 block text-[0.7812rem] leading-snug text-slate-500 dark:text-slate-400">
-															{module.description}
-														</span>
+													<span className="block text-[0.75rem] leading-snug text-slate-500 dark:text-slate-400">
+														{module.description}
 													</span>
-												</button>
-											);
-										})}
-									</div>
-								</Field>
-							)}
-
-						<div className="flex justify-end gap-2 pt-1">
-							<button type="button" onClick={closeFormModal} className={btnOutline}>
-								Cancel
-							</button>
-							<button type="submit" disabled={isSubmitting} className={btnPrimary}>
-								{showCreateModal ? "Create & Send Invite" : "Save Changes"}
-							</button>
-						</div>
+												</span>
+											</label>
+										);
+									})}
+								</div>
+							</Field>
+						)}
 					</form>
 				</Modal>
 			)}

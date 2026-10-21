@@ -5,9 +5,16 @@ export function normalizeEmail(value: string): string {
 	return value.trim().toLowerCase();
 }
 
-/** Deliberately simple: one @, something on each side, a dot in the domain, no spaces. */
+/**
+ * Practical address check: letters, digits and . _ % + - before the @; a
+ * dotted domain of letters, digits and hyphens with a letter-only ending. No
+ * spaces, quotes, angle brackets or other characters an attacker could use to
+ * smuggle markup into the places an address is shown.
+ */
+const EMAIL_PATTERN = /^[A-Za-z0-9_%+-]+(?:\.[A-Za-z0-9_%+-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+
 export function isValidEmail(value: string): boolean {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+	return value.length <= 254 && value.split("@")[0].length <= 64 && EMAIL_PATTERN.test(value);
 }
 
 /**

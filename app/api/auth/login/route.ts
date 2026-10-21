@@ -8,6 +8,7 @@ import { startChallenge } from '@/lib/mfa/challenge';
 import { emailCodeRefusal } from '@/lib/mfa/second-factor';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { normalizeEmail } from '@/lib/email-address';
+import { MAX_PASSWORD_LENGTH, cleanText } from '@/lib/input-sanitize';
 
 /** Consecutive wrong passwords tolerated before the account is locked. */
 const MAX_FAILED_ATTEMPTS = 3;
@@ -21,12 +22,12 @@ export async function POST(request: NextRequest) {
     // `accountNumber` is the field older clients send; same meaning as `identifier`.
     const rawIdentifier: unknown = body.identifier ?? body.email ?? body.accountNumber;
     const password: unknown = body.password;
-    const identifier = typeof rawIdentifier === 'string' ? rawIdentifier.trim() : '';
+    const identifier = typeof rawIdentifier === 'string' && rawIdentifier.length <= 320 ? cleanText(rawIdentifier) : '';
     const ip = getClientIp(request) || 'unknown';
     const userAgent = getUserAgent(request);
 
     // Validate input
-    if (!identifier || typeof password !== 'string' || !password) {
+    if (!identifier || typeof password !== 'string' || !password || password.length > MAX_PASSWORD_LENGTH) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }

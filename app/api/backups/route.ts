@@ -4,8 +4,17 @@ import { getSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { BackupService, XLSX_MIME } from '@/backend/services/backup.service';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/components/upload/upload-meta';
+import { isoDateParam, optionalSafeText, queryText, safeFileName } from '@/lib/input-sanitize';
 
 const PDF_MIME = 'application/pdf';
+
+const metaText = optionalSafeText({ max: 120, label: 'Archive details' });
+/** A form or JSON value as clean text, or null when absent, blank or unsafe. */
+function meta(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const parsed = metaText.safeParse(value);
+  return parsed.success ? parsed.data ?? null : null;
+}
 
 function isAdmin(permissions: string[]) {
   return permissions.includes('admin_operational_officer') || permissions.includes('admin');
@@ -78,29 +87,39 @@ export async function POST(request: NextRequest) {
           { status: 413 }
         );
       }
+      // The declared type comes from the browser; the bytes have to agree.
+      const content = new Uint8Array(await file.arrayBuffer());
+      if (new TextDecoder().decode(content.subarray(0, 5)) !== '%PDF-') {
+        return NextResponse.json(
+          { success: false, error: 'Only PDF reports can be archived this way.' },
+          { status: 400 }
+        );
+      }
 
       created = await BackupService.create({
         kind: 'report',
-        fileName: file.name || 'report.pdf',
+        fileName: safeFileName(file.name || 'report', '.pdf'),
         mimeType: PDF_MIME,
-        content: new Uint8Array(await file.arrayBuffer()),
-        label: (formData.get('label') as string) || null,
-        barangay: (formData.get('barangay') as string) || null,
-        periodLabel: (formData.get('periodLabel') as string) || null,
+        content,
+        label: meta(formData.get('label')),
+        barangay: meta(formData.get('barangay')),
+        periodLabel: meta(formData.get('periodLabel')),
         createdBy: session.accountNumber,
       });
     } else {
       const body = await request.json().catch(() => ({}));
-      const barangay = body.barangay && body.barangay !== 'General Dashboard' ? body.barangay : null;
+      const requested = queryText(typeof body.barangay === 'string' ? body.barangay : null);
+      const barangay = requested && requested !== 'General Dashboard' ? requested : null;
+      const startDate = body.startDate == null ? null : isoDateParam(body.startDate);
+      const endDate = body.endDate == null ? null : isoDateParam(body.endDate);
+      if ((body.startDate != null && !startDate) || (body.endDate != null && !endDate)) {
+        return NextResponse.json({ success: false, error: 'Invalid date range' }, { status: 400 });
+      }
 
-      const snapshot = await BackupService.buildCrimeDataWorkbook({
-        barangay,
-        startDate: body.startDate ?? null,
-        endDate: body.endDate ?? null,
-      });
+      const snapshot = await BackupService.buildCrimeDataWorkbook({ barangay, startDate, endDate });
 
       const stamp = new Date().toISOString().split('T')[0];
-      const scope = (barangay || 'All-Barangays').replace(/\s+/g, '-');
+      const scope = safeFileName(barangay || 'All-Barangays', '.xlsx').replace(/\.xlsx$/, '').replace(/\s+/g, '-');
 
       created = await BackupService.create({
         kind: 'crime_data',
@@ -109,7 +128,7 @@ export async function POST(request: NextRequest) {
         content: snapshot.buffer,
         label: barangay ? `Brgy. ${barangay}` : 'All barangays',
         barangay,
-        periodLabel: body.periodLabel || snapshot.periodLabel,
+        periodLabel: meta(body.periodLabel) || snapshot.periodLabel,
         rowCount: snapshot.rowCount,
         createdBy: session.accountNumber,
       });

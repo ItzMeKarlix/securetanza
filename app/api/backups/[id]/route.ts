@@ -23,6 +23,9 @@ export async function GET(
     }
 
     const { id } = await params;
+    if (!/^[a-z0-9]{20,40}$/.test(id)) {
+      return NextResponse.json({ success: false, error: 'Backup not found' }, { status: 404 });
+    }
     const backup = await BackupService.getWithContent(id);
 
     if (!backup) {
@@ -35,7 +38,7 @@ export async function GET(
       headers: {
         'Content-Type': backup.mimeType,
         'Content-Length': String(backup.sizeBytes),
-        'Content-Disposition': `attachment; filename="${backup.fileName.replace(/"/g, '')}"`,
+        'Content-Disposition': `attachment; filename="${backup.fileName.replace(/[^\w .()-]/g, '_')}"`,
         'Cache-Control': 'no-store',
       },
     });
@@ -60,6 +63,9 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    if (!/^[a-z0-9]{20,40}$/.test(id)) {
+      return NextResponse.json({ success: false, error: 'Backup not found' }, { status: 404 });
+    }
     const removed = await BackupService.remove(id);
 
     if (!removed) {
