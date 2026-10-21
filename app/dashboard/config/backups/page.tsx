@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Database, Download, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Database, Download, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import { SOFT_DELETE_RETENTION_DAYS, daysUntilPurge } from "@/lib/soft-delete";
 import { AdminOnly } from "../_components/settings-shell";
 import {
 	EmptyState,
@@ -10,6 +11,7 @@ import {
 	Panel,
 	Section,
 	btnGhost,
+	btnOutline,
 	btnPrimary,
 	td,
 	th,
@@ -29,6 +31,8 @@ interface Backup {
 	rowCount: number | null;
 	createdBy: string;
 	createdAt: string;
+	deletedAt?: string | null;
+	deletedBy?: string | null;
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -68,12 +72,17 @@ function Backups() {
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
+	const [deleted, setDeleted] = useState<Backup[]>([]);
+	const [showDeleted, setShowDeleted] = useState(false);
+	const [restoringId, setRestoringId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		setLoading(true);
 		try {
-			const res = await fetch("/api/backups");
+			const [res, deletedRes] = await Promise.all([fetch("/api/backups"), fetch("/api/backups?deleted=1")]);
 			const data = await res.json();
+			const deletedData = await deletedRes.json().catch(() => ({}));
+			if (deletedRes.ok && deletedData.success) setDeleted(deletedData.data);
 			if (res.ok && data.success) setBackups(data.data);
 			else setError(data.error || "Failed to load backups");
 		} catch {
@@ -101,7 +110,7 @@ function Backups() {
 			const data = await res.json();
 			if (res.ok && data.success) {
 				setSuccess(
-					`Snapshot archived — ${data.data.rowCount ?? 0} incidents, ${formatFileSize(data.data.sizeBytes)}`
+					`Snapshot archived — ${data.data.rowCount ?? 0} offenses, ${formatFileSize(data.data.sizeBytes)}`
 				);
 				load();
 			} else setError(data.error || "Failed to create the snapshot");
@@ -120,13 +129,32 @@ function Backups() {
 			const res = await fetch(`/api/backups/${backup.id}`, { method: "DELETE" });
 			const data = await res.json();
 			if (res.ok && data.success) {
-				setSuccess(`Deleted ${backup.fileName}`);
+				setSuccess(`Deleted ${backup.fileName}. You can restore it from Recently deleted for ${SOFT_DELETE_RETENTION_DAYS} days.`);
 				setBackups((prev) => prev.filter((item) => item.id !== backup.id));
+				setDeleted((prev) => [{ ...backup, deletedAt: new Date().toISOString() }, ...prev]);
 			} else setError(data.error || "Failed to delete the backup");
 		} catch {
 			setError("Failed to delete the backup");
 		} finally {
 			setDeletingId(null);
+		}
+	};
+
+	const restoreBackup = async (backup: Backup) => {
+		setRestoringId(backup.id);
+		setError("");
+		setSuccess("");
+		try {
+			const res = await fetch(`/api/backups/${backup.id}/restore`, { method: "POST" });
+			const data = await res.json().catch(() => ({}));
+			if (res.ok && data.success) {
+				setSuccess(`Restored ${backup.fileName}`);
+				load();
+			} else setError(data.error || "Failed to restore the backup");
+		} catch {
+			setError("Failed to restore the backup");
+		} finally {
+			setRestoringId(null);
 		}
 	};
 
@@ -221,7 +249,7 @@ function Backups() {
 													</div>
 													{backup.rowCount !== null && (
 														<div className="mt-0.5 text-[0.7812rem] tabular-nums text-slate-500 dark:text-slate-400">
-															{backup.rowCount.toLocaleString()} incidents
+															{backup.rowCount.toLocaleString()} offenses
 														</div>
 													)}
 												</td>
@@ -285,6 +313,52 @@ function Backups() {
 							</div>
 						)}
 					</Panel>
+
+					{deleted.length > 0 && (
+						<div>
+							<button
+								type="button"
+								onClick={() => setShowDeleted((v) => !v)}
+								aria-expanded={showDeleted}
+								aria-controls="recently-deleted-backups"
+								className="inline-flex items-center gap-1.5 rounded-md py-1 text-[0.8125rem] font-medium text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+							>
+								<ChevronRight className={cn("h-3.5 w-3.5 transition-transform", showDeleted && "rotate-90")} aria-hidden="true" />
+								Recently deleted ({deleted.length})
+							</button>
+							{showDeleted && (
+								<Panel className="mt-2">
+									<ul id="recently-deleted-backups" className="divide-y divide-slate-200 dark:divide-white/[0.07]">
+										{deleted.map((backup) => {
+											const left = backup.deletedAt ? daysUntilPurge(backup.deletedAt) : SOFT_DELETE_RETENTION_DAYS;
+											return (
+												<li key={backup.id} className="flex items-center justify-between gap-4 px-4 py-3">
+													<div className="min-w-0">
+														<p className="truncate text-[0.8438rem] font-medium text-slate-900 dark:text-white">{backup.fileName}</p>
+														<p className="truncate text-[0.75rem] tabular-nums text-slate-500 dark:text-slate-400">
+															{KIND_LABEL[backup.kind] ?? backup.kind} · {formatFileSize(backup.sizeBytes)} · deleted{" "}
+															{backup.deletedAt ? formatWhen(backup.deletedAt) : ""}
+															{backup.deletedBy ? ` by ${backup.deletedBy === "system" ? "retention" : backup.deletedBy}` : ""} ·{" "}
+															{left === 0 ? "removed permanently at the next nightly cleanup" : `removed permanently in ${left} day${left === 1 ? "" : "s"}`}
+														</p>
+													</div>
+													<button
+														type="button"
+														onClick={() => void restoreBackup(backup)}
+														disabled={restoringId === backup.id}
+														className={cn(btnOutline, "h-8 shrink-0")}
+													>
+														<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+														{restoringId === backup.id ? "Restoring…" : "Restore"}
+													</button>
+												</li>
+											);
+										})}
+									</ul>
+								</Panel>
+							)}
+						</div>
+					)}
 				</div>
 			</Section>
 		</div>

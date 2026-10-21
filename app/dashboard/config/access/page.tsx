@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 
 import {
+	ChevronRight,
 	Edit,
 	KeyRound,
+	RotateCcw,
 	ShieldOff,
 	Lock,
 	Send,
@@ -33,6 +35,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isValidEmail, normalizeEmail } from "@/lib/email-address";
 import { PERSON_NAME_MAX, cleanText, personNameProblem } from "@/lib/input-sanitize";
+import { SOFT_DELETE_RETENTION_DAYS, daysUntilPurge } from "@/lib/soft-delete";
 import {
 	ACCESS_ROLES,
 	MEMBER_PERMISSION,
@@ -77,6 +80,9 @@ interface User {
 	/** Set when three consecutive failed sign-ins locked the account. */
 	lockedAt: string | null;
 	failedLoginAttempts: number;
+	/** Only on the Recently deleted list. */
+	deletedAt?: string | null;
+	deletedBy?: string | null;
 }
 
 interface AvailablePermission {
@@ -112,6 +118,9 @@ function AccessSecurity() {
 
 	const [userToDelete, setUserToDelete] = useState<User | null>(null);
 	const [deleteConfirmation, setDeleteConfirmation] = useState("");
+	const [deletedUsers, setDeletedUsers] = useState<User[]>([]);
+	const [showDeleted, setShowDeleted] = useState(false);
+	const [restoringId, setRestoringId] = useState<number | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const [currentPage, setCurrentPage] = useState(1);
@@ -177,6 +186,7 @@ function AccessSecurity() {
 
 	const fetchUsers = async () => {
 		setUsersLoading(true);
+		void fetchDeletedUsers();
 		try {
 			const response = await fetch("/api/users");
 			if (!response.ok) {
@@ -285,6 +295,31 @@ function AccessSecurity() {
 		}
 	};
 
+	const fetchDeletedUsers = async () => {
+		try {
+			const response = await fetch("/api/users?deleted=1");
+			const data = await response.json();
+			if (data.success) setDeletedUsers(data.data);
+		} catch {
+			// The live list is what matters; this one can wait for the next refresh.
+		}
+	};
+
+	const restoreUser = async (user: User) => {
+		setRestoringId(user.id);
+		try {
+			const response = await fetch(`/api/users/${user.id}/restore`, { method: "POST" });
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(data.error || "Failed to restore account");
+			toast.success(`${user.fullName}'s account is restored. They can sign in again with their password.`);
+			fetchUsers();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "Failed to restore account");
+		} finally {
+			setRestoringId(null);
+		}
+	};
+
 	const executeDelete = async (userId: number) => {
 		setIsDeleting(true);
 		try {
@@ -301,7 +336,7 @@ function AccessSecurity() {
 			}
 			const data = await response.json();
 			if (data.success) {
-				toast.success("Access revoked successfully");
+				toast.success(`Account deleted. You can restore it from Recently deleted for ${SOFT_DELETE_RETENTION_DAYS} days.`);
 				setUserToDelete(null);
 				setDeleteConfirmation("");
 				fetchUsers();
@@ -561,7 +596,7 @@ function AccessSecurity() {
 																className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 hover:text-red-600 disabled:pointer-events-none disabled:opacity-35 dark:hover:bg-white/[0.06] dark:hover:text-red-400"
 															>
 																<Trash2 className="h-4 w-4" />
-																<span className="sr-only">Revoke access for {user.fullName}</span>
+																<span className="sr-only">Delete account for {user.fullName}</span>
 															</button>
 														</div>
 													</td>
@@ -598,6 +633,56 @@ function AccessSecurity() {
 							</div>
 						)}
 					</Panel>
+
+					{deletedUsers.length > 0 && (
+						<div>
+							<button
+								type="button"
+								onClick={() => setShowDeleted((v) => !v)}
+								aria-expanded={showDeleted}
+								aria-controls="recently-deleted-accounts"
+								className="inline-flex items-center gap-1.5 rounded-md py-1 text-[0.8125rem] font-medium text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+							>
+								<ChevronRight className={cn("h-3.5 w-3.5 transition-transform", showDeleted && "rotate-90")} aria-hidden="true" />
+								Recently deleted ({deletedUsers.length})
+							</button>
+							{showDeleted && (
+								<Panel className="mt-2">
+									<ul id="recently-deleted-accounts" className="divide-y divide-slate-200 dark:divide-white/[0.07]">
+										{deletedUsers.map((user) => {
+											const left = user.deletedAt ? daysUntilPurge(user.deletedAt) : SOFT_DELETE_RETENTION_DAYS;
+											return (
+												<li key={user.id} className="flex items-center justify-between gap-4 px-4 py-3">
+													<div className="min-w-0">
+														<p className="truncate text-[0.8438rem] font-medium text-slate-900 dark:text-white">
+															{user.fullName}{" "}
+															<span className="font-mono text-[0.75rem] font-normal text-slate-500 dark:text-slate-400">
+																{user.accountNumber}
+															</span>
+														</p>
+														<p className="truncate text-[0.75rem] tabular-nums text-slate-500 dark:text-slate-400">
+															Deleted {user.deletedAt ? new Date(user.deletedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : ""}
+															{user.deletedBy ? ` by ${user.deletedBy}` : ""} ·{" "}
+															{left === 0 ? "removed permanently at the next nightly cleanup" : `removed permanently in ${left} day${left === 1 ? "" : "s"}`}
+														</p>
+													</div>
+													<button
+														type="button"
+														onClick={() => void restoreUser(user)}
+														disabled={restoringId === user.id}
+														className={cn(btnOutline, "h-8 shrink-0")}
+													>
+														<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+														{restoringId === user.id ? "Restoring…" : "Restore"}
+													</button>
+												</li>
+											);
+										})}
+									</ul>
+								</Panel>
+							)}
+						</div>
+					)}
 				</div>
 			</Section>
 
@@ -820,18 +905,16 @@ function AccessSecurity() {
 			{/* ── Revoke ── */}
 			{userToDelete && (
 				<Modal
-					title="Revoke Access"
+					title="Delete Account"
 					onClose={() => {
 						setUserToDelete(null);
 						setDeleteConfirmation("");
 					}}
 				>
 					<p className="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">
-						<span className="font-medium text-red-600 dark:text-red-400">
-							This action is permanent and cannot be undone.
-						</span>
-						<br />
-						All administrative privileges will be revoked immediately. To confirm, please type{" "}
+						<span className="font-medium text-slate-900 dark:text-white">{userToDelete.fullName}</span> is signed out
+						and can&apos;t sign in. You can restore the account from Recently deleted for {SOFT_DELETE_RETENTION_DAYS} days;
+						after that it&apos;s removed permanently. To confirm, type{" "}
 						<code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.7812rem] text-slate-900 dark:bg-white/[0.07] dark:text-white">
 							{userToDelete.accountNumber}
 						</code>{" "}
@@ -859,7 +942,7 @@ function AccessSecurity() {
 							onClick={() => executeDelete(userToDelete.id)}
 							className={btnDanger}
 						>
-							{isDeleting ? "Revoking…" : "Revoke Access"}
+							{isDeleting ? "Deleting…" : "Delete Account"}
 						</button>
 					</div>
 				</Modal>

@@ -3,6 +3,7 @@ import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { BackupService } from '@/backend/services/backup.service';
+import { SOFT_DELETE_RETENTION_DAYS } from '@/lib/soft-delete';
 
 function isAdmin(permissions: string[]) {
   return permissions.includes('admin_operational_officer') || permissions.includes('admin');
@@ -66,7 +67,7 @@ export async function DELETE(
     if (!/^[a-z0-9]{20,40}$/.test(id)) {
       return NextResponse.json({ success: false, error: 'Backup not found' }, { status: 404 });
     }
-    const removed = await BackupService.remove(id);
+    const removed = await BackupService.remove(id, session.accountNumber);
 
     if (!removed) {
       return NextResponse.json({ success: false, error: 'Backup not found' }, { status: 404 });
@@ -80,13 +81,13 @@ export async function DELETE(
         session: session.sessionId,
         userAgent: getUserAgent(request),
         resource: `Backup:${removed.id}`,
-        details: `Deleted archived backup ${removed.fileName}`,
+        details: `Deleted archived backup ${removed.fileName} (restorable for ${SOFT_DELETE_RETENTION_DAYS} days)`,
         severity: 'high',
         outcome: 'success',
       },
     });
 
-    return NextResponse.json({ success: true, message: 'Backup deleted' });
+    return NextResponse.json({ success: true, message: `Backup deleted. It can be restored for ${SOFT_DELETE_RETENTION_DAYS} days.` });
   } catch (error) {
     console.error('Error deleting backup:', error);
     return NextResponse.json({ success: false, error: 'Failed to delete backup' }, { status: 500 });

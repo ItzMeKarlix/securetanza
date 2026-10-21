@@ -22,7 +22,7 @@ export function DocsMap() {
           Barangay Threat Levels
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Barangay polygon boundaries dynamically calculate threat levels based on incident counts within the active time filter. The platform uses quartile distributions (0–25th, 25–50th, 50–75th, and 75th+ percentiles) with standard base fallback thresholds:
+          Barangay polygon boundaries dynamically calculate threat levels based on offense counts within the active time filter. The platform uses quartile distributions (0–25th, 25–50th, 50–75th, and 75th+ percentiles) with standard base fallback thresholds:
         </p>
 
         <div className="overflow-x-auto">
@@ -38,31 +38,31 @@ export function DocsMap() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
                 <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Secure</td>
-                <td className="py-2 px-3">0 incidents</td>
-                <td className="py-2 px-3">Exactly 0 incidents recorded in the period</td>
+                <td className="py-2 px-3">0 offenses</td>
+                <td className="py-2 px-3">Exactly 0 offenses recorded in the period</td>
                 <td className="py-2 px-3 text-sky-600 dark:text-sky-400 font-medium">Sky Blue (#0ea5e9)</td>
               </tr>
               <tr>
                 <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Low</td>
-                <td className="py-2 px-3">1 – 2 incidents</td>
+                <td className="py-2 px-3">1 – 2 offenses</td>
                 <td className="py-2 px-3">1 to Q1 (25th percentile)</td>
                 <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-medium">Emerald (#10b981)</td>
               </tr>
               <tr>
                 <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Moderate</td>
-                <td className="py-2 px-3">3 – 5 incidents</td>
+                <td className="py-2 px-3">3 – 5 offenses</td>
                 <td className="py-2 px-3">Q1 to Q2 (25th–50th percentile / median)</td>
                 <td className="py-2 px-3 text-yellow-600 dark:text-yellow-400 font-medium">Yellow (#eab308)</td>
               </tr>
               <tr>
                 <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">High</td>
-                <td className="py-2 px-3">6 – 10 incidents</td>
+                <td className="py-2 px-3">6 – 10 offenses</td>
                 <td className="py-2 px-3">Q2 to Q3 (50th–75th percentile)</td>
                 <td className="py-2 px-3 text-orange-600 dark:text-orange-400 font-medium">Orange (#f97316)</td>
               </tr>
               <tr>
                 <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">Critical</td>
-                <td className="py-2 px-3">11+ incidents</td>
+                <td className="py-2 px-3">11+ offenses</td>
                 <td className="py-2 px-3">Above Q3 (75th+ percentile)</td>
                 <td className="py-2 px-3 text-red-600 dark:text-red-400 font-medium">Red (#ef4444)</td>
               </tr>
@@ -110,7 +110,7 @@ export function DocsMap() {
             Barangay Intelligence Drawer
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Clicking any barangay polygon opens the slide-out intelligence drawer. It details the barangay incident count, top offense category, safety index, clearance rate, and demographic population density, with direct links to filtered dashboards.
+            Clicking any barangay polygon opens the slide-out intelligence drawer. It details the barangay offense count, top offense category, safety index, clearance rate, and demographic population density, with direct links to filtered dashboards.
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export function DocsMap() {
               <strong>Harmonized Threat Scale:</strong> A unified statistical threshold is applied to both maps for accurate visual comparison.
             </li>
             <li>
-              <strong>Live Change Ledger:</strong> The right-hand ledger reports municipal net volume shifts and ranks barangays by incident rises and falls with interactive hover-highlighting and click-to-focus.
+              <strong>Live Change Ledger:</strong> The right-hand ledger reports municipal net volume shifts and ranks barangays by offense rises and falls with interactive hover-highlighting and click-to-focus.
             </li>
           </ul>
         </div>

@@ -77,7 +77,7 @@ export function DocsTroubleshooting({ onReplayTour, role, permissions: propPerms
         problem: "Batch Excel Upload reports schema error",
         cause: "Missing mandatory column headers or invalid date/time cell formatting.",
         solutions: [
-          "Verify that column headers match exact names: incident_type, barangay, date_committed, time_committed.",
+          "Verify that column headers match exact names: offense, stage_of_felony, barangay, date_committed, time_committed.",
           "Ensure dates are formatted as YYYY-MM-DD and times as HH:MM:SS in Excel.",
           "Verify file size is under 50 MB and file extension is .xlsx or .xls.",
         ],

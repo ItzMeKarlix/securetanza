@@ -7,9 +7,9 @@ import { DocsCta } from "./docs-cta";
 export function DocsReports() {
   const reportSections = [
     { title: "Executive Summary", desc: "High-level overview and critical operational takeaways." },
-    { title: "Current Statistics", desc: "Total incident volume and clearance rates." },
+    { title: "Current Statistics", desc: "Total offense volume and clearance rates." },
     { title: "Temporal Trends", desc: "12-month historical crime progression." },
-    { title: "Time Patterns", desc: "Hourly incident counts with all 24 hours labeled." },
+    { title: "Time Patterns", desc: "Hourly offense counts with all 24 hours labeled." },
     { title: "Crime Classification", desc: "Detailed breakdown of offense categories." },
     { title: "Barangay Comparison", desc: "Cross-barangay rankings and comparative metrics." },
     { title: "Crime Heatmap Matrix", desc: "Monthly distribution matrix across crime types." },
@@ -65,7 +65,7 @@ export function DocsReports() {
       {/* Next Steps */}
       <DocsCta
         title="Report Generation"
-        suggestion="Tailor PDF outputs for specific council briefings by selecting sections and editing the preview — for example, an Executive Summary plus hourly incident distribution for shift commanders."
+        suggestion="Tailor PDF outputs for specific council briefings by selecting sections and editing the preview — for example, an Executive Summary plus hourly offense distribution for shift commanders."
         actions={[
           {
             label: "Open Reports",

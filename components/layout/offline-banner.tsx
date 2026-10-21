@@ -18,16 +18,20 @@ function savedAtLabel(savedAt: number) {
  */
 export function OfflineBanner() {
   const { user } = useAuth();
-  const { offline, browserOnline, staleSince } = useOfflineStatus();
+  const { offline, browserOnline, staleSince, wentOffline } = useOfflineStatus();
 
   if (!offline && staleSince === null) return null;
 
   const saved = staleSince === null ? null : savedAtLabel(staleSince);
   let title: string;
   let detail: string;
-  if (!offline) {
+  if (!offline && wentOffline) {
     title = "Back online";
     detail = `Some figures on screen are from ${saved}. Refresh to load current data.`;
+  } else if (!offline) {
+    // Online the whole time, but the server didn't answer some requests.
+    title = "Some figures couldn't be refreshed";
+    detail = `They are from ${saved}, when they last loaded. Refresh to try again.`;
   } else {
     title = browserOnline ? "Can't reach the server" : "No internet connection";
     detail = !user

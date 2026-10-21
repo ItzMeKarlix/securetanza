@@ -29,7 +29,7 @@ export default function DashboardSidebar({ activeTab, setActiveTab, onExit }: Si
   
   const menuItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
-    { id: "incidents", label: "Cases", icon: Shield },
+    { id: "cases", label: "Cases", icon: Shield },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "reports", label: "Archive", icon: ClipboardList },
   ];

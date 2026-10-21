@@ -38,7 +38,7 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
   const dark = theme === "dark";
 
   const totalOffenses = stats?.totalOffenses ?? 0;
-  const threatLevel = getThreatLevelFromCount(stats?.totalIncidents ?? 0, thresholds);
+  const threatLevel = getThreatLevelFromCount(totalOffenses, thresholds);
 
   const riskLevel = threatLevel.charAt(0).toUpperCase() + threatLevel.slice(1);
   const riskColor =
@@ -61,7 +61,6 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
     .sort((a, b) => b.count - a.count);
 
   const statCells = [
-    { label: "Incidents", value: (stats?.totalIncidents ?? 0).toLocaleString(), className: "" },
     { label: "Offenses", value: totalOffenses.toLocaleString(), className: "" },
     { label: "Risk Level", value: riskLevel, className: riskColor },
     { label: "Safety Index", value: stats?.safetyIndex ?? "—", className: dark ? "text-emerald-400" : "text-emerald-600" },
@@ -117,7 +116,7 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
                       {barangayName}
                     </DrawerTitle>
                     <DrawerDescription className={`mt-1 text-sm ${mutedText}`}>
-                      One incident may include multiple offenses
+                      Recorded offenses and their stage of felony
                     </DrawerDescription>
                   </div>
                   <DrawerClose asChild>
@@ -136,14 +135,14 @@ export default function BarangayDrawer({ open, onOpenChange, barangayName, onMor
               <div className="flex-1 space-y-7 overflow-y-auto px-6 py-6">
                 {/* Key figures — one surface, hairline dividers */}
                 <div
-                  className={`grid grid-cols-2 overflow-hidden rounded-xl border ${
+                  className={`grid grid-cols-3 overflow-hidden rounded-xl border ${
                     dark ? "border-white/[0.06]" : "border-slate-200"
                   }`}
                 >
                   {statCells.map((cell, i) => (
                     <div
                       key={cell.label}
-                      className={`px-4 py-3.5 ${i % 2 === 1 ? `border-l ${hairline}` : ""} ${i >= 2 ? `border-t ${hairline}` : ""}`}
+                      className={`px-4 py-3.5 ${i > 0 ? `border-l ${hairline}` : ""}`}
                     >
                       <p className={`${OVERLAY_LABEL} mb-1.5`}>{cell.label}</p>
                       <p className={`${valueClass} ${cell.className}`} style={palette === "colorful" && cell.label === "Risk Level" ? { color: threatColors[threatLevel] } : undefined}>{cell.value}</p>

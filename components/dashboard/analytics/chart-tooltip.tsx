@@ -15,7 +15,7 @@ export interface TooltipPayload {
   title: string;
   subtitle?: string;
   rows: TooltipRow[];
-  /** Shown at the bottom in muted text, e.g. "Click to see incidents". */
+  /** Shown at the bottom in muted text, e.g. "Click to see offenses". */
   hint?: string;
 }
 

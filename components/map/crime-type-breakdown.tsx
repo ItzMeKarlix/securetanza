@@ -27,12 +27,12 @@ interface CrimeTypeBreakdownProps {
 /**
  * Barangay breakdown for the crime type selected in the map legend.
  *
- * Counts matching offense rows; map shading counts their unique incidents.
+ * Counts matching offenses per barangay, the same numbers the map shading uses.
  * Both use the same category, stage, and temporal scope.
  */
 export default function CrimeTypeBreakdown({ crimeType, onClose }: CrimeTypeBreakdownProps) {
 	const { crimeColor } = useDataColors();
-	const { crimeTypeOffenseCounts, loading, hasLoaded } = useCrimeTypeByBarangay();
+	const { crimeTypeCounts, loading, hasLoaded } = useCrimeTypeByBarangay();
 	const { hoveredBarangay, setHoveredBarangay } = useMapContext();
 
 	// Treat "not settled yet" as loading so the panel never flashes an empty state
@@ -44,10 +44,10 @@ export default function CrimeTypeBreakdown({ crimeType, onClose }: CrimeTypeBrea
 
 	const rows = React.useMemo(
 		() =>
-			Object.entries(crimeTypeOffenseCounts)
+			Object.entries(crimeTypeCounts)
 				.filter(([, count]) => count > 0)
 				.sort((a, b) => b[1] - a[1]),
-		[crimeTypeOffenseCounts],
+		[crimeTypeCounts],
 	);
 
 	// Whatever exit path takes this panel away mid-hover — the close button,

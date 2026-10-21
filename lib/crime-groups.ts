@@ -1,4 +1,4 @@
-// Preset crime groupings offered alongside individual incident types in the
+// Preset crime groupings offered alongside individual offense types in the
 // crime type filter. A group is stored in `selectedCrimeType` under its label and
 // expanded into a "|"-separated list of keywords when sent to the API; the backend
 // matches each keyword as a case-insensitive "contains" and ORs them together.
@@ -63,14 +63,14 @@ export function getCrimeGroup(
   return label ? CRIME_GROUPS.find((g) => g.label === label) : undefined;
 }
 
-/** Value to send as the `incidentType` query param for a selected crime type or group. */
-export function toIncidentTypeParam(selected: string): string {
+/** Value to send as the `crimeType` query param for a selected crime type or group. */
+export function toCrimeTypeParam(selected: string): string {
   const group = getCrimeGroup(selected);
   return group ? group.keywords.join(KEYWORD_SEPARATOR) : selected;
 }
 
-/** Prisma `where` fragment for an `incidentType` param, supporting "|"-separated keywords. */
-export function buildIncidentTypeWhere(value: string) {
+/** Prisma `where` fragment for a `crimeType` param, supporting "|"-separated keywords. */
+export function buildCrimeTypeWhere(value: string) {
   const terms = value
     .split(KEYWORD_SEPARATOR)
     .map((t) => t.trim())

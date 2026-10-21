@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { fetchCrimes, fetchCrimeStats, type CrimeIncident } from "@/lib/api";
+import { fetchCrimes, fetchCrimeStats, type OffenseRecord } from "@/lib/api";
 import { useMapContext } from "@/context/MapContext";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { calculateDynamicThresholds } from "@/lib/geo-threat";
 import { useTimeRangeData } from "./useTimeRangeData";
-import { uniqueIncidentRecords } from "@/lib/offense-classification";
 
 interface CrimeByType {
   type: string;
@@ -41,19 +40,18 @@ interface Trends {
 }
 
 interface AnalyticsData {
-  totalIncidents: number;
   totalOffenses: number;
   crimesByType: CrimeByType[];
   crimesByMonth: CrimeByMonth[];
   crimesByBarangay: CrimeByBarangay[];
   timePatterns: TimePatterns;
   trends: Trends;
-  /** The raw incidents behind the aggregates above. They're fetched anyway to
+  /** The raw offenses behind the aggregates above. They're fetched anyway to
    *  compute hourlyDistribution and the quarter counts, so exposing them lets
-   *  the Analytics page drill from a bar into the specific incidents without a
+   *  the Analytics page drill from a bar into the specific offenses without a
    *  second round trip. Note these are subject to fetchCrimes' row limit, so
    *  this array can be shorter than a server-computed total. */
-  allCrimes: CrimeIncident[];
+  allCrimes: OffenseRecord[];
   loading: boolean;
   detailsLoading: boolean;
   error: string | null;
@@ -63,7 +61,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
   const { timeRange, selectedCrimeType, selectedFelonyStage } = useMapContext();
   const dateRanges = useTimeRangeData();
   const [data, setData] = useState<AnalyticsData>({
-    totalIncidents: 0,
     totalOffenses: 0,
     crimesByType: [],
     crimesByMonth: [],
@@ -112,7 +109,7 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         // Fetch data for all date ranges in parallel
         const requests = dateRanges.map(({ start, end }) => {
           const offenseCategory = selectedCrimeType
-            ? toIncidentTypeParam(selectedCrimeType)
+            ? toCrimeTypeParam(selectedCrimeType)
             : undefined;
           const statsParams =
             barangayName && barangayName !== "General Dashboard"
@@ -146,7 +143,7 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         const results = await Promise.all(
           requests.map(async (request) => ({
             stats: await request.stats,
-            crimes: [] as CrimeIncident[],
+            crimes: [] as OffenseRecord[],
           })),
         );
         if (results.some((result) => !result.stats))
@@ -156,7 +153,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         // Aggregate all results
         let allCrimes: any[] = [];
         const aggregatedStats = {
-          totalIncidents: 0,
           totalOffenses: 0,
           crimesByType: new Map<string, number>(),
           crimesByMonth: Array(12).fill(0),
@@ -165,7 +161,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
 
         results.forEach(({ stats, crimes }) => {
           if (stats) {
-            aggregatedStats.totalIncidents += stats.totalIncidents;
             aggregatedStats.totalOffenses += stats.totalOffenses;
             // Aggregate crimes by type
             stats.crimesByType.forEach((item: any) => {
@@ -179,7 +174,7 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
             });
 
             // Aggregate crimes by barangay
-            stats.crimesByBarangay.forEach((item: any) => {
+            stats.offensesByBarangay.forEach((item: any) => {
               const current =
                 aggregatedStats.crimesByBarangay.get(item.barangay) || 0;
               aggregatedStats.crimesByBarangay.set(
@@ -206,7 +201,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         // Statistics are ready before the larger drill-down dataset.
         setData((prev) => ({
           ...prev,
-          totalIncidents: aggregatedStats.totalIncidents,
           totalOffenses: aggregatedStats.totalOffenses,
           crimesByType: stats.crimesByType,
           crimesByMonth: stats.activity.map((count, index) => ({
@@ -225,11 +219,10 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
           throw new Error("Unable to load case records. Please refresh.");
 
         const offenseRecords = Array.from(
-          new Map(allCrimes.map((r: CrimeIncident) => [r.id, r])).values(),
-        ) as CrimeIncident[];
-        const crimes = uniqueIncidentRecords(
-          offenseRecords.filter((r) => r.isCrime),
-        );
+          new Map(allCrimes.map((r: OffenseRecord) => [r.id, r])).values(),
+        ) as OffenseRecord[];
+        // Every offense counts on its own; offenses on one blotter are never merged.
+        const crimes = offenseRecords.filter((r) => r.isCrime);
 
         if (!stats) {
           throw new Error("Failed to fetch statistics");
@@ -253,7 +246,7 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         );
 
         // Threat level thresholds, scaled to the data being viewed. Fixed cut-offs
-        // (2/5/10/15) rated any quarter above 15 incidents "critical" no matter how
+        // (2/5/10/15) rated any quarter above 15 offenses "critical" no matter how
         // busy the area normally is, so they're taken from the quartiles of the
         // quarterly counts in the selection instead — same approach the map uses for
         // barangays (see calculateDynamicThresholds in lib/geo-threat.ts).
@@ -357,7 +350,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
 
         // Calculate resolution rate based on caseStatus (Cleared only)
         const clearedCrimes = crimes.filter((crime) => {
-          if (crime.incidentCleared !== undefined) return crime.incidentCleared;
           if (!crime.caseStatus) return false;
           const statusLower = crime.caseStatus.toLowerCase();
           return statusLower.includes("cleared");
@@ -370,8 +362,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
 
         // Calculate safety index (Cleared + Solved)
         const clearedAndSolvedCrimes = crimes.filter((crime) => {
-          if (crime.incidentResolved !== undefined)
-            return crime.incidentResolved;
           if (!crime.caseStatus) return false;
           const statusLower = crime.caseStatus.toLowerCase();
           return (
@@ -391,7 +381,6 @@ export function useAnalyticsData(barangayName?: string): AnalyticsData {
         }));
 
         setData({
-          totalIncidents: aggregatedStats.totalIncidents,
           totalOffenses: aggregatedStats.totalOffenses,
           crimesByType: stats.crimesByType,
           crimesByMonth: monthlyData,

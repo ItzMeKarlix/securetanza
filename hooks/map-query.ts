@@ -1,4 +1,4 @@
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { readJson } from "@/lib/read-json";
 import type { DateRange } from "./useTimeRangeData";
 
@@ -33,7 +33,7 @@ export function buildMapQueries(scope: MapQueryScope, ranges: DateRange[], endpo
   return (merged.length ? merged : [null]).map((range) => {
     const params = new URLSearchParams();
     if (barangay) params.set("barangay", barangay);
-    if (scope.selectedCrimeType) params.set("offenseCategory", toIncidentTypeParam(scope.selectedCrimeType));
+    if (scope.selectedCrimeType) params.set("offenseCategory", toCrimeTypeParam(scope.selectedCrimeType));
     if (scope.selectedFelonyStage) params.set("stageOfFelony", scope.selectedFelonyStage);
     if (range) {
       params.set(endpoint === "stats" ? "startDate" : "startDateCommitted", range.start.toISOString());
@@ -46,36 +46,32 @@ export function buildMapQueries(scope: MapQueryScope, ranges: DateRange[], endpo
   });
 }
 
+/** Every count is a count of offenses. */
 export interface MapStatsResponse {
-  totalCrimes?: number;
-  totalIncidents?: number;
   totalOffenses?: number;
   safetyIndex?: string;
   crimesByType?: Array<{ type: string; count: number }>;
   offensesByCategory?: Array<{ category: string; count: number }>;
+  /** Offenses per barangay. */
   barangayCounts?: Record<string, number>;
-  barangayOffenseCounts?: Record<string, number>;
   activeCases?: number;
   resolvedToday?: number;
   activity?: number[];
 }
 
 export function mergeMapStats(results: MapStatsResponse[]) {
-  let totalIncidents = 0;
   let totalOffenses = 0;
   let activeCases = 0;
   const types = new Map<string, number>();
   for (const result of results) {
-    totalIncidents += result.totalIncidents ?? result.totalCrimes ?? 0;
     activeCases += result.activeCases ?? 0;
     const distribution = result.offensesByCategory?.map(({ category, count }) => ({ type: category, count })) ?? result.crimesByType ?? [];
     totalOffenses += result.totalOffenses ?? distribution.reduce((sum, c) => sum + c.count, 0);
     for (const { type, count } of distribution) types.set(type, (types.get(type) ?? 0) + count);
   }
   return {
-    totalIncidents,
     totalOffenses,
-    safetyIndex: results.length === 1 && results[0].safetyIndex ? results[0].safetyIndex : `${totalIncidents ? Math.round(((totalIncidents - activeCases) / totalIncidents) * 100) : 100}%`,
+    safetyIndex: results.length === 1 && results[0].safetyIndex ? results[0].safetyIndex : `${totalOffenses ? Math.round(((totalOffenses - activeCases) / totalOffenses) * 100) : 100}%`,
     crimesByType: [...types].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count),
   };
 }
@@ -100,11 +96,10 @@ export async function readMapResponses(endpoint: "stats" | "barangay-counts", qu
   return responses;
 }
 
-export function mergeBarangayCounts(results: MapStatsResponse[], offenseRows = false) {
+export function mergeBarangayCounts(results: MapStatsResponse[]) {
   const counts: Record<string, number> = {};
   for (const result of results) {
-    const source = offenseRows ? result.barangayOffenseCounts ?? result.barangayCounts : result.barangayCounts;
-    for (const [name, count] of Object.entries(source ?? {})) counts[name] = (counts[name] ?? 0) + count;
+    for (const [name, count] of Object.entries(result.barangayCounts ?? {})) counts[name] = (counts[name] ?? 0) + count;
   }
   return counts;
 }

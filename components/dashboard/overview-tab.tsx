@@ -106,7 +106,7 @@ function OverviewSkeleton({
       <section>
         <SectionHeader no="02" title="Trends & Composition" theme={theme} />
         <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-[18px]">
-          <Panel theme={theme} title="Crime Trend" subtitle="Monthly incident activity" bodyClassName="justify-center" footer={footer}>
+          <Panel theme={theme} title="Crime Trend" subtitle="Monthly offense activity" bodyClassName="justify-center" footer={footer}>
             <div className="flex items-end" style={{ height: 240, gap: 3 }}>
               {areaHeights.map((h, i) => (
                 <div key={i} className={`flex-1 rounded-t-[3px] ${bone}`} style={{ height: `${h}%`, opacity: 0.7 }} />
@@ -156,7 +156,7 @@ function OverviewSkeleton({
 export default function OverviewTab({ barangayName }: OverviewTabProps) {
   const { theme, colorful, ramp, chartColor, crimeColor } = useDataColors();
   const dark = theme === "dark";
-  const { stats, activity, crimesByType, incidents, loading } = useDashboardData(barangayName);
+  const { stats, activity, crimesByType, crimesByStage, offenses, loading } = useDashboardData(barangayName);
   const { barangayCrimeCounts } = useThreatLevels();
   const router = useRouter();
   const { tooltip, bind, hide } = useChartTooltip(theme);
@@ -207,7 +207,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
     return timeString;
   };
 
-  // Critical area: the barangay with the most incidents (or the one being viewed)
+  // Critical area: the barangay with the most offenses (or the one being viewed)
   const criticalArea = isGeneralDashboard
     ? Object.entries(barangayCrimeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
     : barangayName;
@@ -216,13 +216,13 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
   // ─── Activity/Trend Area Chart Data ───
   const activityChartData = activity.map((val, i) => ({
     month: MONTH_LABELS[i] || `M${i + 1}`,
-    incidents: val,
+    offenses: val,
   }));
   const peakMonthIndex = activity.reduce((best, v, i) => (v > activity[best] ? i : best), 0);
   const peakMonthCount = activity[peakMonthIndex] ?? 0;
 
   const activityChartConfig: ChartConfig = {
-    incidents: { label: "Incidents", color: chartColor },
+    offenses: { label: "Offenses", color: chartColor },
   };
 
   // ─── Crime Distribution (top types, ranked) ───
@@ -272,22 +272,26 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <ShieldAlert className="h-3.5 w-3.5" />
-                Unique Incidents
+                Recorded Offenses
               </p>
-              <p className={valueClass}>{stats.totalCrimes.toLocaleString()}</p>
+              <p className={valueClass}>{stats.totalOffenses.toLocaleString()}</p>
               <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
-                {stats.multipleOffenseIncidents.toLocaleString()} with multiple offenses
+                Each offense counted on its own
               </p>
             </div>
 
             <div className="flex flex-1 min-w-0 flex-col" style={{ padding: "16px 22px" }}>
               <p className={labelClass} style={{ marginBottom: 8 }}>
                 <BarChart3 className="h-3.5 w-3.5" />
-                Recorded Offenses
+                Stage of Felony
               </p>
-              <p className={valueClass}>{stats.totalOffenses.toLocaleString()}</p>
-              <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
-                Classified by offense and felony stage
+              <p className={valueClass}>
+                {(crimesByStage.CONSUMMATED ?? 0).toLocaleString()}
+                <span className={`ml-1.5 text-[0.85rem] font-medium ${mutedText}`}>consummated</span>
+              </p>
+              <p className={`mt-auto pt-[5px] text-[0.78rem] tabular-nums ${mutedText}`}>
+                {(crimesByStage.FRUSTRATED ?? 0).toLocaleString()} frustrated · {(crimesByStage.ATTEMPTED ?? 0).toLocaleString()} attempted
+                {crimesByStage.UNKNOWN ? ` · ${crimesByStage.UNKNOWN.toLocaleString()} unknown` : ""}
               </p>
             </div>
 
@@ -313,7 +317,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
                 </p>
                 <p className={valueClass}>{criticalArea}</p>
                 <p className={`mt-auto pt-[5px] text-[0.78rem] ${mutedText}`}>
-                  {criticalCount > 0 ? `${criticalCount.toLocaleString()} incidents · most in Tanza` : "Most incidents in Tanza"}
+                  {criticalCount > 0 ? `${criticalCount.toLocaleString()} offenses · most in Tanza` : "Most offenses in Tanza"}
                 </p>
               </div>
             )}
@@ -329,14 +333,14 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <Panel
               theme={theme}
               title="Crime Trend"
-              subtitle="Monthly incident activity"
+              subtitle="Monthly offense activity"
               className="flex-1"
               footer={
                 <>
                   <div className="flex items-center gap-2 font-semibold leading-none">
                     {peakMonthCount > 0
-                      ? `Peaked in ${MONTH_LABELS[peakMonthIndex]} with ${peakMonthCount.toLocaleString()} incidents`
-                      : "No incidents recorded in this period"}
+                      ? `Peaked in ${MONTH_LABELS[peakMonthIndex]} with ${peakMonthCount.toLocaleString()} offenses`
+                      : "No offenses recorded in this period"}
                   </div>
                   <div className={mutedText}>{isGeneralDashboard ? "All barangays" : barangayName}</div>
                 </>
@@ -369,7 +373,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
                   <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
                   <Area
                     type="natural"
-                    dataKey="incidents"
+                    dataKey="offenses"
                     stroke={chartColor}
                     strokeWidth={2.5}
                     fill="url(#overviewGradient)"
@@ -417,7 +421,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
                           {
                             title: cleanLabel(item.type),
                             rows: [
-                              { label: "Incidents", value: item.count.toLocaleString(), swatch: fill },
+                              { label: "Offenses", value: item.count.toLocaleString(), swatch: fill },
                               { label: "Share", value: `${share}%` },
                               { label: "Rank", value: `${i + 1} of ${distribution.length}` },
                             ],
@@ -466,7 +470,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             className={`flex items-center justify-between border-b ${dark ? "border-white/[0.06]" : "border-slate-100"}`}
             style={{ padding: "16px 22px" }}
           >
-            <p className={`text-[0.78rem] ${mutedText}`}>Most recently committed incidents</p>
+            <p className={`text-[0.78rem] ${mutedText}`}>Most recently committed offenses</p>
             <Link
               data-tour="overview-view-cases"
               href={`/dashboard/cases${barangayName && barangayName !== "General Dashboard" ? `?name=${encodeURIComponent(barangayName)}` : ""}`}
@@ -496,78 +500,83 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
                 className={`divide-y ${dark ? "divide-white/[0.06]" : "divide-slate-100"}`}
                 onMouseLeave={() => setHoveredRow(null)}
               >
-                {incidents.length === 0 && (
+                {offenses.length === 0 && (
                   <tr>
                     <td colSpan={7} className={`px-[22px] py-10 text-center ${mutedText}`}>
-                      No incidents recorded
+                      No offenses recorded
                     </td>
                   </tr>
                 )}
-                {incidents.map((incident) => (
+                {offenses.map((offense) => (
                   <tr
-                    key={incident.id}
+                    key={offense.id}
                     role="link"
                     tabIndex={0}
                     title="Open in Cases"
-                    onMouseEnter={() => setHoveredRow(incident.id)}
-                    onFocus={() => setHoveredRow(incident.id)}
+                    onMouseEnter={() => setHoveredRow(offense.id)}
+                    onFocus={() => setHoveredRow(offense.id)}
                     onBlur={() => setHoveredRow(null)}
-                    onClick={(e) => openCase(incident.id, e.ctrlKey || e.metaKey)}
+                    onClick={(e) => openCase(offense.id, e.ctrlKey || e.metaKey)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        openCase(incident.id, e.ctrlKey || e.metaKey);
+                        openCase(offense.id, e.ctrlKey || e.metaKey);
                       }
                     }}
                     className={`cursor-pointer outline-none transition-[opacity,background-color] ${
-                      hoveredRow === incident.id ? (dark ? "bg-sky-400/[0.07]" : "bg-sky-50") : ""
-                    } ${hoveredRow !== null && hoveredRow !== incident.id ? "opacity-50" : ""}`}
+                      hoveredRow === offense.id ? (dark ? "bg-sky-400/[0.07]" : "bg-sky-50") : ""
+                    } ${hoveredRow !== null && hoveredRow !== offense.id ? "opacity-50" : ""}`}
                   >
                     <td className={`px-[22px] py-3 font-semibold ${dark ? "text-slate-100" : "text-slate-900"}`}>
-                      {incident.type}
+                      {offense.type}
+                      {offense.stage && offense.stage !== "CONSUMMATED" && (
+                        <span className={`block text-[0.72rem] font-medium ${mutedText}`}>
+                          {offense.stage[0] + offense.stage.slice(1).toLowerCase()}
+                        </span>
+                      )}
                     </td>
                     <td className={`px-[22px] py-3 ${dark ? "text-slate-400" : "text-slate-600"}`}>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5 opacity-50" />
-                        {incident.location}
+                        {offense.location}
                       </div>
                     </td>
                     <td className={`px-[22px] py-3 ${dark ? "text-slate-400" : "text-slate-600"}`}>
                       <div className="flex items-center gap-2">
                         <Clock className="h-3.5 w-3.5 opacity-50" />
-                        {formatTime(incident.timeReported)}
+                        {formatTime(offense.timeReported)}
                       </div>
                     </td>
                     <td className={`px-[22px] py-3 tabular-nums ${dark ? "text-slate-400" : "text-slate-600"}`}>
-                      {incident.dateCommitted ? new Date(incident.dateCommitted).toLocaleDateString() : "N/A"}
+                      {offense.dateCommitted ? new Date(offense.dateCommitted).toLocaleDateString() : "N/A"}
                     </td>
                     <td className={`px-[22px] py-3 ${dark ? "text-slate-400" : "text-slate-600"}`}>
                       <div className="flex items-center gap-2">
                         <Clock className="h-3.5 w-3.5 opacity-50" />
-                        {formatTime(incident.timeCommitted)}
+                        {formatTime(offense.timeCommitted)}
                       </div>
                     </td>
                     <td className="px-[22px] py-3">
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                          incident.status === "Cleared"
+                          offense.status === "Cleared"
                             ? "bg-emerald-500/10 text-emerald-500"
-                            : incident.status === "Under Investigation"
+                            : offense.status === "Under Investigation"
                               ? "bg-blue-500/10 text-blue-500"
-                              : incident.status === "Filed in Court"
+                              : offense.status === "Filed in Court"
                                 ? "bg-purple-500/10 text-purple-500"
-                                : incident.status === "Archived"
+                                : offense.status === "Archived"
                                   ? "bg-slate-500/10 text-slate-500"
                                   : "bg-yellow-500/10 text-yellow-600"
                         }`}
                       >
-                        {incident.status}
+                        {offense.status}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right">
                       <ChevronRight
                         className={`ml-auto h-4 w-4 transition-all ${
-                          hoveredRow === incident.id
+                          hoveredRow === offense.id
                             ? "translate-x-0 text-sky-500 opacity-100"
                             : "-translate-x-1 opacity-0"
                         }`}

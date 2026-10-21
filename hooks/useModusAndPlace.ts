@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { fetchCrimes } from "@/lib/api";
 import { useMapContext } from "@/context/MapContext";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { useTimeRangeData } from "./useTimeRangeData";
-import { uniqueIncidentRecords } from "@/lib/offense-classification";
 
 interface ModusData {
   modus: string;
@@ -46,7 +45,7 @@ export function useModusAndPlace(barangayName?: string): ModusAndPlaceData {
         // Fetch data for all date ranges in parallel
         const fetchPromises = dateRanges.map(async ({ start, end }) => {
           const offenseCategory = selectedCrimeType
-            ? toIncidentTypeParam(selectedCrimeType)
+            ? toCrimeTypeParam(selectedCrimeType)
             : undefined;
           const params =
             barangayName && barangayName !== "General Dashboard"
@@ -70,10 +69,8 @@ export function useModusAndPlace(barangayName?: string): ModusAndPlaceData {
         const results = await Promise.all(fetchPromises);
         if (!active) return;
 
-        // Aggregate all crimes
-        const allCrimes = uniqueIncidentRecords(
-          results.flat().filter((r) => r.isCrime),
-        );
+        // Every offense counts on its own.
+        const allCrimes = results.flat().filter((r) => r.isCrime);
 
         // Group by modus
         const modusMap = new Map<string, number>();

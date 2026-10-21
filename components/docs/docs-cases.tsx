@@ -12,7 +12,7 @@ export function DocsCases() {
           Case Blotter
         </h1>
         <p className="text-base text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-          The Case Blotter module provides detailed incident dossiers, investigative status tracking, statutory classifications, and geospatial context for individual crime reports.
+          The Case Blotter module provides detailed offense dossiers, investigative status tracking, statutory classifications, and geospatial context for individual crime reports.
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export function DocsCases() {
               <strong>Heinous Crime Flag:</strong> Flags serious capital offenses (e.g., murder, homicide, rape, robbery with homicide).
             </li>
             <li>
-              <strong>Sensational Crime Flag:</strong> Highlights incidents of significant public interest, community impact, or media attention.
+              <strong>Sensational Crime Flag:</strong> Highlights offenses of significant public interest, community impact, or media attention.
             </li>
             <li>
               <strong>Threat Group Involvement:</strong> Identifies potential involvement of organized crime syndicates or illicit groups.

@@ -13,13 +13,12 @@ const updateCrimeSchema = z.object({
   section: z.string().optional(),
   blotterNo: z.string().optional(),
   stn: z.string().optional(),
-  sourceIncidentType: z.string().min(1).optional(),
 }).refine(value => value.crimeType === undefined, {
   message: 'Crime classification is derived from offense and felony stage; update those fields instead.',
   path: ['crimeType'],
 });
 
-// GET /api/crimes/[id] - Get a specific crime incident (Cached)
+// GET /api/crimes/[id] - Get a specific offense (Cached)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,7 +29,7 @@ export async function GET(
 
     if (!crime) {
       return NextResponse.json(
-        { success: false, error: 'Crime incident not found' },
+        { success: false, error: 'Offense not found' },
         { status: 404 }
       );
     }
@@ -42,13 +41,13 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching crime:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch crime incident' },
+      { success: false, error: 'Failed to fetch offense' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/crimes/[id] - Update a crime incident (with cache invalidation)
+// PUT /api/crimes/[id] - Update a offense (with cache invalidation)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -66,17 +65,16 @@ export async function PUT(
     if (validatedData.barangay) updateData.barangay = validatedData.barangay;
     if (validatedData.date) updateData.dateCommitted = new Date(validatedData.date);
     if (validatedData.time) updateData.timeCommitted = validatedData.time;
-    if (validatedData.sourceIncidentType) updateData.incidentType = validatedData.sourceIncidentType;
     for (const field of ['offense','stageOfFelony','section','blotterNo','stn'] as const) {
       if (validatedData[field] !== undefined) updateData[field] = validatedData[field];
     }
 
-    const crime = await CrimeService.updateIncident(id, updateData);
+    const crime = await CrimeService.updateOffense(id, updateData);
 
     return NextResponse.json({
       success: true,
       data: crime,
-      message: 'Crime incident updated successfully',
+      message: 'Offense updated successfully',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -92,13 +90,13 @@ export async function PUT(
 
     console.error('Error updating crime:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update crime incident' },
+      { success: false, error: 'Failed to update offense' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/crimes/[id] - Delete a crime incident (with cache invalidation)
+// DELETE /api/crimes/[id] - Delete a offense (with cache invalidation)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -109,16 +107,16 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Administrative access required' }, { status: 403 });
     }
     const { id } = await params;
-    await CrimeService.deleteIncident(id);
+    await CrimeService.deleteOffense(id);
 
     return NextResponse.json({
       success: true,
-      message: 'Crime incident deleted successfully',
+      message: 'Offense deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting crime:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete crime incident' },
+      { success: false, error: 'Failed to delete offense' },
       { status: 500 }
     );
   }

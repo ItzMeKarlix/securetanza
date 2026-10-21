@@ -8,7 +8,7 @@ import { OVERLAY_SURFACE } from "@/lib/map-overlay";
 
 /**
  * A one-line key for the barangay shading: Secure → Critical with five colour
- * steps between. Kept tiny on purpose — the exact incident range for each step
+ * steps between. Kept tiny on purpose — the exact offense range for each step
  * is in its tooltip (from the same live thresholds that colour the map), and
  * clicking a step spotlights just those barangays.
  */
@@ -83,7 +83,7 @@ export default function ThreatScale() {
               onClick={() => setHoveredThreatLevel(selected ? null : step.key)}
               aria-pressed={selected}
               aria-label={step.label}
-              title={`${step.label} — ${step.range} incidents. Hover to preview; click to keep highlighted.`}
+              title={`${step.label} — ${step.range} offenses. Hover to preview; click to keep highlighted.`}
               disabled={loading}
               className={`group flex h-6 w-6 cursor-pointer items-center justify-center outline-none focus-visible:outline-none! ${
                 dimmed ? "opacity-35" : "opacity-100"

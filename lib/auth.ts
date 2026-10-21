@@ -145,7 +145,8 @@ async function loadUserValidation(userId: number): Promise<CachedUserValidation 
     relationLoadStrategy: 'join',
     include: { permissions: { include: { permission: true } } },
   });
-  if (!user) return null;
+  // Deleted accounts can't hold a session.
+  if (!user || user.deletedAt) return null;
 
   const activePermissions = user.permissions.map(p => p.permission.permissionName);
   // All permissions revoked: the account is no longer allowed in.

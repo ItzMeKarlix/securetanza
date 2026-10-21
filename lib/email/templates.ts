@@ -157,3 +157,32 @@ export function mfaChangedEmail(to: string, fullName: string, change: "enrolled"
 		...layout(`Hi ${fullName}`, [body], undefined, "If you didn't expect this, contact your system administrator immediately."),
 	};
 }
+
+export function scheduledExportEmail(
+	to: string,
+	fullName: string,
+	report: { frequency: string; periodLabel: string; offenses: number; fileName: string; content?: Buffer },
+	exportsUrl: string
+): MailMessage {
+	const count = report.offenses === 1 ? "1 offense" : `${report.offenses.toLocaleString("en-US")} offenses`;
+	const attached = Boolean(report.content);
+	return {
+		to,
+		subject: `${APP_NAME} ${report.frequency} offense report — ${report.periodLabel}`,
+		...layout(
+			`Your ${report.frequency} offense report`,
+			[
+				`Hi ${fullName}`,
+				`The offense report for ${report.periodLabel} is ready: ${count}.`,
+				attached
+					? `It's attached as ${report.fileName}, and kept in Data Exports in ${APP_NAME}.`
+					: `It was too large to attach. Download it from Data Exports in ${APP_NAME}.`,
+			],
+			{ label: "Open Data Exports", url: exportsUrl },
+			"You get this because you turned on scheduled exports. Turn them off in Settings → Data Exports."
+		),
+		attachments: report.content
+			? [{ filename: report.fileName, content: report.content, contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }]
+			: undefined,
+	};
+}

@@ -319,19 +319,19 @@ function PaneBody({
                 </>
               )}
               <span className="tabular-nums">
-                {hoveredCount.toLocaleString("en-US")} incident
+                {hoveredCount.toLocaleString("en-US")} offense
                 {hoveredCount === 1 ? "" : "s"}
               </span>
             </p>
           </>
         ) : firstLoad ? (
           <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
-            Counting incidents…
+            Counting offenses…
           </p>
         ) : (
           <>
             <p className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-white">
-              {total.toLocaleString("en-US")} incident{total === 1 ? "" : "s"}
+              {total.toLocaleString("en-US")} offense{total === 1 ? "" : "s"}
             </p>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
               Point at a barangay for its count

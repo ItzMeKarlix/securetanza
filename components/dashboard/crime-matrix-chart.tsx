@@ -60,7 +60,7 @@ export default function CrimeMatrixChart({
   const grandTotal = crimeTypeTotals.reduce((sum, item) => sum + item.total, 0);
   const topCrimeType = [...crimeTypeTotals].sort((a, b) => b.total - a.total)[0];
 
-  // Trim trailing months nobody has any incidents in — a 12-wide grid where
+  // Trim trailing months nobody has any offenses in — a 12-wide grid where
   // 8 columns are always empty just pushes the columns that matter into a
   // sliver. A month with zero for one row but data elsewhere still shows;
   // only wholesale-empty months at the tail get dropped.
@@ -110,7 +110,7 @@ export default function CrimeMatrixChart({
                 <ul className="space-y-1">
                   <li>• Each row = crime type</li>
                   <li>• Each column = month</li>
-                  <li>• Brighter cell = more incidents</li>
+                  <li>• Brighter cell = more offenses</li>
                 </ul>
               </div>
             </div>
@@ -203,13 +203,13 @@ export default function CrimeMatrixChart({
                               title: label,
                               subtitle: MONTH_LONG[colIdx],
                               rows: [
-                                { label: "Incidents", value: String(value) },
+                                { label: "Offenses", value: String(value) },
                                 { label: `All ${label}`, value: String(rowTotal) },
                                 { label: MONTH_LABELS[colIdx], value: String(monthlyTotals[colIdx]) },
                               ],
                               hint: clickable
-                                ? "Click to see these incidents"
-                                : "No incidents recorded",
+                                ? "Click to see these offenses"
+                                : "No offenses recorded",
                             },
                             () => setHoveredCell({ row: rowIdx, col: colIdx })
                           )}

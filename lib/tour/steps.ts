@@ -72,7 +72,7 @@ export const officerMapSteps: DriveStep[] = [
 		popover: {
 			title: "Tactical GIS Crime Map",
 			description:
-				"Inspect spatial crime density and live incident clusters across all 41 Tanza barangays with multi-layer boundary rendering.",
+				"Inspect spatial crime density and live offense clusters across all 41 Tanza barangays with multi-layer boundary rendering.",
 			side: "top",
 			align: "center",
 		},
@@ -94,7 +94,7 @@ export const officerMapSteps: DriveStep[] = [
 		popover: {
 			title: "Crime Type Legend",
 			description:
-				"Review incident volume per offense classification. Selecting a crime type filters the map and opens a panel listing the affected barangays and their counts.",
+				"Review offense volume per offense classification. Selecting a crime type filters the map and opens a panel listing the affected barangays and their counts.",
 			side: "left",
 			align: "start",
 		},
@@ -130,7 +130,7 @@ export const officerDocsSteps: DriveStep[] = [
 		popover: {
 			title: "Operational Quick Search",
 			description:
-				"Search incident schemas, reporting rules, crime categories, and troubleshooting guides instantaneously.",
+				"Search offense schemas, reporting rules, crime categories, and troubleshooting guides instantaneously.",
 			side: "bottom",
 			align: "start",
 		},
@@ -274,7 +274,7 @@ export const mapSteps: DriveStep[] = [
 		popover: {
 			title: "Location & Crime Filters",
 			description:
-				"Filter map density and incident records by specific barangay or crime category.",
+				"Filter map density and offense records by specific barangay or crime category.",
 			side: "bottom",
 			align: "start",
 		},
@@ -285,7 +285,7 @@ export const mapSteps: DriveStep[] = [
 		popover: {
 			title: "Crime Types & Timeline",
 			description:
-				"Track incident counts per crime type, click one for its barangay breakdown, and use the time controls to scrub through historical data.",
+				"Track offense counts per crime type, click one for its barangay breakdown, and use the time controls to scrub through historical data.",
 			side: "left",
 			align: "start",
 		},
@@ -344,9 +344,9 @@ export const compareSteps: DriveStep[] = [
 		element: '[data-tour="compare-ledger-totals"]',
 		skipMissingElement: true,
 		popover: {
-			title: "Municipal Net Incident Change",
+			title: "Municipal Net Offense Change",
 			description:
-				"Track total incident volume shifts between Period A and Period B, including net delta counts and overall percentage change.",
+				"Track total offense volume shifts between Period A and Period B, including net delta counts and overall percentage change.",
 			side: "left",
 			align: "start",
 		},
@@ -368,7 +368,7 @@ export const compareSteps: DriveStep[] = [
 		popover: {
 			title: "Barangay Shift Rankings",
 			description:
-				"Rank barangays by incident rises, falls, or all movements. Hovering over any row highlights both maps, and clicking zooms both viewports directly to that barangay.",
+				"Rank barangays by offense rises, falls, or all movements. Hovering over any row highlights both maps, and clicking zooms both viewports directly to that barangay.",
 			side: "left",
 			align: "start",
 		},
@@ -396,7 +396,7 @@ export const overviewSteps: DriveStep[] = [
 		popover: {
 			title: "Key Metrics Snapshot",
 			description:
-				"Instant overview of total incident volume, most prevalent offense types, and high-density hotspot areas.",
+				"Instant overview of total offense volume, most prevalent offense types, and high-density hotspot areas.",
 			side: "bottom",
 			align: "start",
 		},
@@ -418,7 +418,7 @@ export const overviewSteps: DriveStep[] = [
 		popover: {
 			title: "Recent Activity & Case Drill-down",
 			description:
-				"Browse the latest logged incidents with quick links to jump directly into filtered case records.",
+				"Browse the latest logged offenses with quick links to jump directly into filtered case records.",
 			side: "top",
 			align: "center",
 		},
@@ -435,7 +435,7 @@ export const casesSteps: DriveStep[] = [
 		popover: {
 			title: "Search & Filter Suite",
 			description:
-				"Find specific incidents instantly by Case ID, keyword, crime category, barangay, date range, or clearance status.",
+				"Find specific offenses instantly by Case ID, keyword, crime category, barangay, date range, or clearance status.",
 			side: "bottom",
 			align: "start",
 		},
@@ -446,7 +446,7 @@ export const casesSteps: DriveStep[] = [
 		popover: {
 			title: "Case Directory",
 			description:
-				"Browse matching incident records and select any case to inspect its complete dossier.",
+				"Browse matching offense records and select any case to inspect its complete dossier.",
 			side: "right",
 			align: "start",
 		},
@@ -457,7 +457,7 @@ export const casesSteps: DriveStep[] = [
 		popover: {
 			title: "Case Profile & Geo-Context",
 			description:
-				"Review comprehensive incident details including modus operandi, timeline, location, and map coordinates.",
+				"Review comprehensive offense details including modus operandi, timeline, location, and map coordinates.",
 			side: "left",
 			align: "start",
 		},
@@ -474,7 +474,7 @@ export const analyticsSteps: DriveStep[] = [
 		popover: {
 			title: "Executive KPI Cards",
 			description:
-				"Quarterly crime trend percentages, peak incident hours, case resolution rates, and community safety score.",
+				"Quarterly crime trend percentages, peak offense hours, case resolution rates, and community safety score.",
 			side: "bottom",
 			align: "start",
 		},
@@ -676,7 +676,7 @@ export const docsSteps: DriveStep[] = [
 		popover: {
 			title: "Quick Topic Search",
 			description:
-				"Search topics, incident schemas, operational playbooks, and troubleshooting guides instantaneously.",
+				"Search topics, offense schemas, operational playbooks, and troubleshooting guides instantaneously.",
 			side: "bottom",
 			align: "start",
 		},

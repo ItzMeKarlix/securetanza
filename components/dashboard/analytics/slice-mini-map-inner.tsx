@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap } from 
 import type { Layer } from "leaflet";
 import L from "leaflet";
 import { TANZA_CENTER, TILE_URL, MAP_ATTR } from "@/constants/map-constants";
-import type { CrimeIncident } from "@/lib/api";
+import type { OffenseRecord } from "@/lib/api";
 import { useDataColors } from "@/hooks/useDataColors";
 import { normalizeBarangayName as norm } from "@/lib/analytics-slice";
 
@@ -208,10 +208,10 @@ function ZoomControls({ bounds, theme }: { bounds: L.LatLngBounds | null; theme:
 }
 
 export default function SliceMiniMapInner({
-  incidents,
+  offenses,
   theme,
 }: {
-  incidents: CrimeIncident[];
+  offenses: OffenseRecord[];
   theme: string;
 }) {
   const { palette, colorful, ramp } = useDataColors();
@@ -233,16 +233,16 @@ export default function SliceMiniMapInner({
     };
   }, []);
 
-  /** How many of this slice's incidents fall in each barangay. */
+  /** How many of this slice's offenses fall in each barangay. */
   const countsByBarangay = useMemo(() => {
     const counts = new Map<string, number>();
-    incidents.forEach((c) => {
+    offenses.forEach((c) => {
       const key = norm(c.barangay);
       if (!key) return;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
     return counts;
-  }, [incidents]);
+  }, [offenses]);
 
   const maxCount = useMemo(
     () => Math.max(...Array.from(countsByBarangay.values()), 1),
@@ -251,10 +251,10 @@ export default function SliceMiniMapInner({
 
   const pins = useMemo(
     () =>
-      incidents.filter(
+      offenses.filter(
         (c) => typeof c.latitude === "number" && typeof c.longitude === "number"
       ),
-    [incidents]
+    [offenses]
   );
 
   // Colour the involved barangays on the same ramp the bars use, so the map
@@ -281,7 +281,7 @@ export default function SliceMiniMapInner({
     const name = feature?.properties?.adm4_en;
     const count = countsByBarangay.get(norm(name)) ?? 0;
     if (count > 0) {
-      layer.bindTooltip(`${name}: ${count} incident${count === 1 ? "" : "s"}`, { sticky: true });
+      layer.bindTooltip(`${name}: ${count} offense${count === 1 ? "" : "s"}`, { sticky: true });
     }
   };
 
@@ -332,7 +332,7 @@ export default function SliceMiniMapInner({
           pathOptions={{ color: "#ffffff", weight: 1.5, fillColor: accent, fillOpacity: 0.95 }}
         >
           <Tooltip>
-            {c.blotterNo ?? "Incident"} · {c.barangay}
+            {c.blotterNo ?? "Offense"} · {c.barangay}
           </Tooltip>
         </CircleMarker>
       ))}

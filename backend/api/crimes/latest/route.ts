@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrimeService } from '@/backend/services/crime.service';
 
-// GET /api/crimes/latest - Fetch latest crime incident and database metadata (Cached)
+// GET /api/crimes/latest - Fetch the latest offense and database metadata (Cached)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

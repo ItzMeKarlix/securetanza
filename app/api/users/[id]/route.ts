@@ -5,7 +5,8 @@ import { validateRolePermissions } from '@/lib/auth-routes';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { z } from 'zod';
 import { idParam, personNameField } from '@/lib/input-sanitize';
-import { emailField, emailTaken } from '@/lib/account-emails';
+import { SOFT_DELETE_RETENTION_DAYS } from '@/lib/soft-delete';
+import { emailConflict, emailField } from '@/lib/account-emails';
 import { sendMail } from '@/lib/email/mailer';
 import { emailChangedEmail } from '@/lib/email/templates';
 
@@ -41,7 +42,7 @@ export async function PUT(
       where: { id: userId },
     });
 
-    if (!existingUser) {
+    if (!existingUser || existingUser.deletedAt) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -49,8 +50,9 @@ export async function PUT(
     }
 
     const emailChanged = validatedData.email !== undefined && validatedData.email !== existingUser.email;
-    if (emailChanged && (await emailTaken(validatedData.email!, userId))) {
-      return NextResponse.json({ error: 'Another account already uses that email address' }, { status: 409 });
+    const conflict = emailChanged ? await emailConflict(validatedData.email!, userId) : null;
+    if (conflict) {
+      return NextResponse.json({ error: conflict }, { status: 409 });
     }
 
     if (validatedData.permissionIds) {
@@ -195,10 +197,23 @@ export async function DELETE(
       );
     }
 
-    // Delete user (permissions will be deleted automatically due to CASCADE)
-    await prisma.user.delete({
-      where: { id: userId },
-    });
+    if (existingUser.deletedAt) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Soft delete: hidden and unable to sign in, restorable for
+    // SOFT_DELETE_RETENTION_DAYS, then purged by the worker. Bumping the session
+    // version ends every open session now; pending invite/reset links and
+    // trusted browsers are voided, so a restore always starts from a fresh sign-in.
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { deletedAt: new Date(), deletedBy: session.accountNumber, sessionVersion: { increment: 1 } },
+      }),
+      prisma.authToken.deleteMany({ where: { userId } }),
+      prisma.trustedDevice.deleteMany({ where: { userId } }),
+      prisma.exportSchedule.updateMany({ where: { userId }, data: { enabled: false } }),
+    ]);
 
     invalidateSessionCache(userId);
 
@@ -211,7 +226,7 @@ export async function DELETE(
         session: session.sessionId,
         userAgent: getUserAgent(request),
         resource: `User:${existingUser.accountNumber}`,
-        details: `Deleted user account ${existingUser.accountNumber}`,
+        details: `Deleted user account ${existingUser.accountNumber} (restorable for ${SOFT_DELETE_RETENTION_DAYS} days)`,
         severity: 'high',
         outcome: 'success',
       },
@@ -219,7 +234,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'User deleted successfully',
+      message: `Account deleted. It can be restored for ${SOFT_DELETE_RETENTION_DAYS} days.`,
     });
   } catch (error) {
     console.error('Error deleting user:', error);

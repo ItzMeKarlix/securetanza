@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     });
 
     let outcome: string;
-    if (!user) {
+    if (!user || user.deletedAt) {
       outcome = 'No account for this address';
     } else if (!user.emailVerifiedAt && user._count.authTokens > 0) {
       // Pending invites set a first password through the invite, not a reset.

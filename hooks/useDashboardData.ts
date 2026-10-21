@@ -2,18 +2,16 @@ import { useState, useEffect } from "react";
 import {
   fetchCrimes,
   fetchCrimeStats,
-  transformCrimeToIncident,
+  toOffenseSummary,
 } from "@/lib/api";
-import { Incident } from "@/constants/dummy";
+import type { OffenseSummary } from "@/constants/dummy";
 import { useMapContext } from "@/context/MapContext";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { useTimeRangeData } from "./useTimeRangeData";
 
 interface DashboardData {
   stats: {
-    totalCrimes: number;
     totalOffenses: number;
-    multipleOffenseIncidents: number;
     activeCases: number;
     resolvedToday: number;
     safetyIndex: string;
@@ -21,7 +19,10 @@ interface DashboardData {
   };
   activity: number[];
   crimesByType: Array<{ type: string; count: number }>;
-  incidents: Incident[];
+  /** Offenses per stage of felony (CONSUMMATED, FRUSTRATED, ATTEMPTED, UNKNOWN). */
+  crimesByStage: Record<string, number>;
+  /** Most recent offenses, newest first. */
+  offenses: OffenseSummary[];
   loading: boolean;
   error: string | null;
 }
@@ -31,9 +32,7 @@ export function useDashboardData(barangayName?: string) {
   const dateRanges = useTimeRangeData();
   const [data, setData] = useState<DashboardData>({
     stats: {
-      totalCrimes: 0,
       totalOffenses: 0,
-      multipleOffenseIncidents: 0,
       activeCases: 0,
       resolvedToday: 0,
       safetyIndex: "0%",
@@ -41,7 +40,8 @@ export function useDashboardData(barangayName?: string) {
     },
     activity: Array(12).fill(0),
     crimesByType: [],
-    incidents: [],
+    crimesByStage: {},
+    offenses: [],
     loading: true,
     error: null,
   });
@@ -72,7 +72,7 @@ export function useDashboardData(barangayName?: string) {
         // Fetch data for all date ranges in parallel
         const fetchPromises = dateRanges.map(async ({ start, end }) => {
           const offenseCategory = selectedCrimeType
-            ? toIncidentTypeParam(selectedCrimeType)
+            ? toCrimeTypeParam(selectedCrimeType)
             : undefined;
           const statsParams =
             barangayName && barangayName !== "General Dashboard"
@@ -111,21 +111,17 @@ export function useDashboardData(barangayName?: string) {
         // Aggregate all results
         let allCrimes: any[] = [];
         const aggregatedStats = {
-          totalCrimes: 0,
           totalOffenses: 0,
-          multipleOffenseIncidents: 0,
           activeCases: 0,
           resolvedToday: 0,
           crimesByType: new Map<string, number>(),
+          crimesByStage: {} as Record<string, number>,
           activity: Array(12).fill(0),
         };
 
         results.forEach(({ stats, crimes }) => {
           if (stats) {
-            aggregatedStats.totalCrimes += stats.totalCrimes;
             aggregatedStats.totalOffenses += stats.totalOffenses;
-            aggregatedStats.multipleOffenseIncidents +=
-              stats.multipleOffenseIncidents;
             aggregatedStats.activeCases += stats.activeCases;
             aggregatedStats.resolvedToday += stats.resolvedToday;
 
@@ -133,6 +129,10 @@ export function useDashboardData(barangayName?: string) {
             stats.crimesByType.forEach((item: any) => {
               const current = aggregatedStats.crimesByType.get(item.type) || 0;
               aggregatedStats.crimesByType.set(item.type, current + item.count);
+            });
+
+            stats.crimesByStage.forEach(({ stage, count }) => {
+              aggregatedStats.crimesByStage[stage] = (aggregatedStats.crimesByStage[stage] ?? 0) + count;
             });
 
             // Aggregate monthly activity
@@ -146,19 +146,19 @@ export function useDashboardData(barangayName?: string) {
 
         // Calculate safety index from aggregated data
         const safetyIndex =
-          aggregatedStats.totalCrimes > 0
-            ? `${Math.round(((aggregatedStats.totalCrimes - aggregatedStats.activeCases) / aggregatedStats.totalCrimes) * 100)}%`
+          aggregatedStats.totalOffenses > 0
+            ? `${Math.round(((aggregatedStats.totalOffenses - aggregatedStats.activeCases) / aggregatedStats.totalOffenses) * 100)}%`
             : "100%";
 
-        // Transform crimes to incidents (limit to 50 most recent)
-        const incidents = allCrimes
+        // The 50 most recent offenses
+        const offenses = allCrimes
           .sort(
             (a, b) =>
               new Date(b.dateCommitted).getTime() -
               new Date(a.dateCommitted).getTime(),
           )
           .slice(0, 50)
-          .map(transformCrimeToIncident);
+          .map(toOffenseSummary);
 
         // Calculate active patrols (mock calculation based on active cases)
         const activePatrols = Math.max(
@@ -168,9 +168,7 @@ export function useDashboardData(barangayName?: string) {
 
         setData({
           stats: {
-            totalCrimes: aggregatedStats.totalCrimes,
             totalOffenses: aggregatedStats.totalOffenses,
-            multipleOffenseIncidents: aggregatedStats.multipleOffenseIncidents,
             activeCases: aggregatedStats.activeCases,
             resolvedToday: aggregatedStats.resolvedToday,
             safetyIndex,
@@ -180,7 +178,8 @@ export function useDashboardData(barangayName?: string) {
           crimesByType: Array.from(aggregatedStats.crimesByType.entries()).map(
             ([type, count]) => ({ type, count }),
           ),
-          incidents,
+          crimesByStage: aggregatedStats.crimesByStage,
+          offenses,
           loading: false,
           error: null,
         });

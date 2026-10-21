@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchCrimes } from "@/lib/api";
 import { useMapContext } from "@/context/MapContext";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { useTimeRangeData } from "./useTimeRangeData";
 
 interface CrimeMatrixData {
@@ -30,7 +30,7 @@ export function useCrimeMatrix(barangayName?: string) {
         // Fetch data for all date ranges in parallel
         const fetchPromises = dateRanges.map(async ({ start, end }) => {
           const offenseCategory = selectedCrimeType
-            ? toIncidentTypeParam(selectedCrimeType)
+            ? toCrimeTypeParam(selectedCrimeType)
             : undefined;
           const params =
             barangayName && barangayName !== "General Dashboard"
@@ -70,7 +70,7 @@ export function useCrimeMatrix(barangayName?: string) {
         allCrimes.forEach((crime) => {
           const crimeDate = new Date(crime.dateCommitted);
           const month = crimeDate.getMonth(); // 0-11
-          const type = crime.incidentType;
+          const type = crime.crimeType;
 
           if (!crimeTypeMap.has(type)) {
             crimeTypeMap.set(type, Array(12).fill(0));

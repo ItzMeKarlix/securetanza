@@ -151,7 +151,7 @@ const LandingPreviewDashboard = () => (
 	</div>
 );
 
-// Cases preview — incident records list / data table mockup
+// Cases preview — offense records list / data table mockup
 const LandingPreviewCases = () => (
 	<div className="w-full rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 bg-[#f1f5f9] dark:bg-[#0f172a] flex flex-col" style={{ height: 96 }}>
 		<PreviewNav active="Cases" />
@@ -209,6 +209,6 @@ const LandingPreviewAnalytics = () => (
 export const landingOptions = [
 	{ id: "map", label: "Map", description: "Geographic crime map", icon: Map, Preview: LandingPreviewMap },
 	{ id: "overview", label: "Overview", description: "General dashboard & stats", icon: LayoutDashboard, Preview: LandingPreviewDashboard },
-	{ id: "cases", label: "Cases", description: "Blotter & incident records", icon: Shield, Preview: LandingPreviewCases },
+	{ id: "cases", label: "Cases", description: "Blotter & offense records", icon: Shield, Preview: LandingPreviewCases },
 	{ id: "analytics", label: "Analytics", description: "Crime trends & insights", icon: Table2, Preview: LandingPreviewAnalytics },
 ];

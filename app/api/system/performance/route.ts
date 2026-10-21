@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
       recentImports,
       recentExports,
     ] = await Promise.all([
-      prisma.crimeIncident.count(),
-      prisma.user.count(),
+      prisma.offense.count(),
+      prisma.user.count({ where: { deletedAt: null } }),
       prisma.auditLog.count(),
       prisma.exportSchedule.count({ where: { enabled: true } }),
       prisma.exportSchedule.count(),
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
         },
         database: {
           tables: {
-            crimeIncidents: crimeCount,
+            offenses: crimeCount,
             users: userCount,
             auditLogs: auditLogCount,
             exportSchedules: totalSchedules,

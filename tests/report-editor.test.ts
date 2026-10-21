@@ -13,7 +13,7 @@ const config: ReportConfig = {
   includeGeographicHighlights: off, includeCrimeMatrix: all, includeRecommendations: all,
 };
 const data: ReportData = {
-  barangayName: 'All Barangays', timeRange: 'January - December 2026', totalCrimes: 48, totalOffenses: 52,
+  barangayName: 'All Barangays', timeRange: 'January - December 2026', totalOffenses: 52,
   generatedBy: 'Sample reviewer',
   analyticsData: {
     crimesByType: [{ type: 'Theft', count: 28 }, { type: 'Physical Injury', count: 24 }],
@@ -51,7 +51,7 @@ async function fixture(name: string, blob: Blob) {
 }
 
 test('report typography defaults and bounds are deterministic', () => {
-  assert.equal(DEFAULT_REPORT_EDITS.title, 'Incident Pattern and Trend Report');
+  assert.equal(DEFAULT_REPORT_EDITS.title, 'Offense Pattern and Trend Report');
   assert.equal(DEFAULT_REPORT_EDITS.subtitle, '');
   assert.equal(DEFAULT_REPORT_EDITS.fontSize, 9.5);
   assert.equal(normalizeReportEdits({ fontSize: Infinity, lineSpacing: NaN }).fontSize, 9.5);

@@ -63,7 +63,6 @@ export interface ReportData {
   /** Display name of the crime type / group the data is narrowed to, or null for all types. */
   crimeType?: string | null;
   analyticsData: AnalyticsData;
-  totalCrimes: number;
   totalOffenses: number;
   generatedBy?: string;
 }
@@ -718,7 +717,7 @@ export class PDFReportGenerator {
     this.doc.text(feature.name, x, y + mapH + 7);
     this.type(this.T.micro);
     this.ink(INK_SOFT);
-    this.doc.text(`${count.toLocaleString()} incident${count === 1 ? '' : 's'} · ${this.titleCase(level)}`, x, y + mapH + 11.5);
+    this.doc.text(`${count.toLocaleString()} offense${count === 1 ? '' : 's'} · ${this.titleCase(level)}`, x, y + mapH + 11.5);
   }
 
   /* ── Tables ─────────────────────────────────────────────────────────────── */
@@ -840,7 +839,7 @@ export class PDFReportGenerator {
 
     const meta: Array<[string, string]> = [
       ['Reference', this.reference],
-      ['Total incidents', data.totalCrimes.toLocaleString()],
+      ['Total offenses', data.totalOffenses.toLocaleString()],
       ['Recorded offenses', data.totalOffenses.toLocaleString()],
       ['Sections included', String(sectionCount)],
       ['Generated', new Date().toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })],
@@ -924,7 +923,7 @@ export class PDFReportGenerator {
         : `Barangay ${data.barangayName}`;
 
     this.paragraph(
-      `${data.totalCrimes.toLocaleString()} unique incidents with ${data.totalOffenses.toLocaleString()} recorded offenses${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
+      `${data.totalOffenses.toLocaleString()} offenses${data.crimeType ? ` (${data.crimeType})` : ''} were recorded across ${scope} during ${data.timeRange}. ` +
         `The current quarterly threat rating is ${trends.currentThreatLevel.toLowerCase()}, ` +
         `${
           trends.trendDirection === 'improved' ? 'down from' : trends.trendDirection === 'worsened' ? 'up from' : 'unchanged against'
@@ -940,7 +939,7 @@ export class PDFReportGenerator {
     const previousLabel = trends.previousQuarterLabel || 'the previous quarter';
     const peakCount = data.analyticsData.timePatterns.hourlyDistribution[data.analyticsData.timePatterns.peakHour] ?? 0;
     const findings: string[] = [
-      `Incident volume moved ${trends.monthlyChange > 0 ? 'up' : trends.monthlyChange < 0 ? 'down' : 'sideways'} by ${Math.abs(
+      `Offense volume moved ${trends.monthlyChange > 0 ? 'up' : trends.monthlyChange < 0 ? 'down' : 'sideways'} by ${Math.abs(
         trends.monthlyChange
       )}% between ${previousLabel} (${trends.previousQuarterCrimes}) and ${currentLabel} (${
         trends.currentQuarterCrimes
@@ -949,9 +948,9 @@ export class PDFReportGenerator {
         ? `${topType.type} is the leading offense category at ${topType.count} ${
             topType.count === 1 ? 'offense' : 'offenses'
           }${data.totalOffenses ? ` (${((topType.count / data.totalOffenses) * 100).toFixed(1)}% of recorded offenses)` : ''}.`
-        : 'No incident types were recorded in this period, so no leading category can be identified.',
+        : 'No offense types were recorded in this period, so no leading category can be identified.',
       // Full time-of-day breakdown lives in Temporal Analysis — this just flags the busiest window.
-      `Roughly ${peakCount} incident${peakCount === 1 ? '' : 's'} cluster in the ${hourBand(
+      `Roughly ${peakCount} offense${peakCount === 1 ? '' : 's'} cluster in the ${hourBand(
         data.analyticsData.timePatterns.peakHour
       )} window, the busiest stretch of the day.`,
     ];
@@ -970,7 +969,7 @@ export class PDFReportGenerator {
 
     if (opts.includeText) {
       this.paragraph(
-        `${data.totalCrimes.toLocaleString()} incidents were recorded across the reporting period. ` +
+        `${data.totalOffenses.toLocaleString()} offenses were recorded across the reporting period. ` +
           `The figures below summarise the current situation at a glance.`
       );
       this.gap(3);
@@ -978,7 +977,7 @@ export class PDFReportGenerator {
 
     if (opts.includeCharts) {
       this.figureBand([
-        { label: 'Total incidents', value: data.totalCrimes.toLocaleString(), caption: data.timeRange },
+        { label: 'Total offenses', value: data.totalOffenses.toLocaleString(), caption: data.timeRange },
         { label: 'Cleared', value: `${trends.resolutionRate}%`, caption: 'Cases marked cleared' },
         { label: 'Safety index', value: `${trends.safetyIndex}%`, caption: 'Cleared or solved' },
       ]);
@@ -986,7 +985,7 @@ export class PDFReportGenerator {
     }
 
     if (!byType.length) {
-      this.emptyNotice('incident data');
+      this.emptyNotice('offense data');
       return;
     }
 
@@ -996,7 +995,7 @@ export class PDFReportGenerator {
           label: crime.type,
           value: crime.count,
         })),
-        { caption: 'Leading incident types' }
+        { caption: 'Leading offense types' }
       );
       this.gap(2);
     }
@@ -1010,14 +1009,14 @@ export class PDFReportGenerator {
     const { trends, crimesByMonth } = data.analyticsData;
     const direction =
       trends.trendDirection === 'improved'
-        ? 'Improving — incidents decreased'
+        ? 'Improving — offenses decreased'
         : trends.trendDirection === 'worsened'
-        ? 'Deteriorating — incidents increased'
+        ? 'Deteriorating — offenses increased'
         : 'Stable — no material change';
 
     if (opts.includeText) {
       this.paragraph(
-        `Quarter-on-quarter comparison of recorded incidents and the resulting quarterly threat rating. ` +
+        `Quarter-on-quarter comparison of recorded offenses and the resulting quarterly threat rating. ` +
           `Change is capped at ±90% so that low-count quarters do not distort the reading.`
       );
       this.gap(4);
@@ -1025,7 +1024,7 @@ export class PDFReportGenerator {
 
     if (opts.includeTables) {
       this.table({
-        head: ['Period', 'Incidents', 'Quarterly Rating'],
+        head: ['Period', 'Offenses', 'Quarterly Rating'],
         body: [
           [trends.currentQuarterLabel || 'Current quarter', trends.currentQuarterCrimes.toLocaleString(), this.titleCase(trends.currentThreatLevel)],
           [trends.previousQuarterLabel || 'Previous quarter', trends.previousQuarterCrimes.toLocaleString(), this.titleCase(trends.previousThreatLevel)],
@@ -1051,11 +1050,11 @@ export class PDFReportGenerator {
         const peakMonth = monthly.reduce((best, m, i) => (m.count > monthly[best].count ? i : best), 0);
         this.columnChart(
           monthly.map((m) => ({ label: MONTHS_SHORT[m.month - 1] ?? `M${m.month}`, value: m.count })),
-          { caption: 'Incidents by month', height: 38, highlight: peakMonth }
+          { caption: 'Offenses by month', height: 38, highlight: peakMonth }
         );
 
         this.note(
-          `Highest monthly volume: ${MONTHS_SHORT[monthly[peakMonth].month - 1] ?? '—'} with ${monthly[peakMonth].count} incidents.`
+          `Highest monthly volume: ${MONTHS_SHORT[monthly[peakMonth].month - 1] ?? '—'} with ${monthly[peakMonth].count} offenses.`
         );
       }
     }
@@ -1072,7 +1071,7 @@ export class PDFReportGenerator {
 
     if (!total) {
       if (opts.includeText) {
-        this.paragraph('Distribution of incidents across the 24-hour cycle, derived from the recorded time of commission.');
+        this.paragraph('Distribution of offenses across the 24-hour cycle, derived from the recorded time of commission.');
       }
       this.emptyNotice('time-of-day data');
       return;
@@ -1080,8 +1079,8 @@ export class PDFReportGenerator {
 
     if (opts.includeText) {
       this.paragraph(
-        `Distribution of incidents across the 24-hour cycle, derived from the recorded time of commission. ` +
-          `Peak activity falls in the ${hourBand(timePatterns.peakHour)} band with ${hours[timePatterns.peakHour]} incidents.`
+        `Distribution of offenses across the 24-hour cycle, derived from the recorded time of commission. ` +
+          `Peak activity falls in the ${hourBand(timePatterns.peakHour)} band with ${hours[timePatterns.peakHour]} offenses.`
       );
       this.gap(5);
     }
@@ -1089,7 +1088,7 @@ export class PDFReportGenerator {
     if (opts.includeCharts) {
       this.columnChart(
         hours.map((count, hour) => ({ label: String(hour).padStart(2, '0'), value: count })),
-        { caption: 'Incidents by hour of day (00-23)', height: 38, highlight: timePatterns.peakHour }
+        { caption: 'Offenses by hour of day (00-23)', height: 38, highlight: timePatterns.peakHour }
       );
       this.gap(8);
     }
@@ -1103,7 +1102,7 @@ export class PDFReportGenerator {
       ];
 
       this.table({
-        head: ['Day part', 'Window', 'Incidents', 'Share', ''],
+        head: ['Day part', 'Window', 'Offenses', 'Share', ''],
         body: bands.map(([name, window, count]) => [name, window, count.toLocaleString(), this.share(count, total), '']),
         columnStyles: {
           1: { cellWidth: 34, textColor: [INK_SOFT[0], INK_SOFT[1], INK_SOFT[2]] },
@@ -1125,13 +1124,13 @@ export class PDFReportGenerator {
 
     if (opts.includeText) {
       this.paragraph(
-        'Recorded offenses grouped by offense and felony stage. One incident may contain several offenses.'
+        'Recorded offenses grouped by offense and stage of felony.'
       );
       this.gap(4);
     }
 
     if (!byType.length) {
-      this.emptyNotice('incident data');
+      this.emptyNotice('offense data');
       return;
     }
 
@@ -1172,8 +1171,8 @@ export class PDFReportGenerator {
     if (opts.includeText) {
       this.paragraph(
         scoped
-          ? `Incident volume for Barangay ${data.barangayName} set against the other barangays of Tanza, Cavite.`
-          : 'Incident volume across the barangays of Tanza, Cavite, ranked by recorded cases.'
+          ? `Offense volume for Barangay ${data.barangayName} set against the other barangays of Tanza, Cavite.`
+          : 'Offense volume across the barangays of Tanza, Cavite, ranked by recorded cases.'
       );
       this.gap(4);
     }
@@ -1243,7 +1242,7 @@ export class PDFReportGenerator {
 
       if (opts.includeText) {
         this.paragraph(
-          `Barangay ${data.barangayName} recorded ${count.toLocaleString()}${data.crimeType ? ` ${data.crimeType}` : ''} incident${count === 1 ? '' : 's'} in ${data.timeRange}, ` +
+          `Barangay ${data.barangayName} recorded ${count.toLocaleString()}${data.crimeType ? ` ${data.crimeType}` : ''} offense${count === 1 ? '' : 's'} in ${data.timeRange}, ` +
             `placing it in the ${level} risk band relative to other barangays this period.`,
           { width: MEASURE }
         );
@@ -1252,7 +1251,7 @@ export class PDFReportGenerator {
           // Comparative Analysis already reports, so it's new information here.
           this.gap(2);
           this.note(
-            `That is ${(count / avgPerBarangay).toFixed(1)}× the townwide average of ${avgPerBarangay.toFixed(1)} incidents per barangay this period.`
+            `That is ${(count / avgPerBarangay).toFixed(1)}× the townwide average of ${avgPerBarangay.toFixed(1)} offenses per barangay this period.`
           );
         } else {
           this.gap(4);
@@ -1292,14 +1291,14 @@ export class PDFReportGenerator {
           : "No barangay falls in this report's high or critical risk band.",
         { width: MEASURE }
       );
-      if (hotspots.length && data.totalCrimes > 0) {
+      if (hotspots.length && data.totalOffenses > 0) {
         // A concentration figure — how much of the town's total these flagged
         // barangays carry — which isn't stated anywhere else in the report.
         const hotspotTotal = hotspots.reduce((sum, h) => sum + h.count, 0);
-        const share = (hotspotTotal / data.totalCrimes) * 100;
+        const share = (hotspotTotal / data.totalOffenses) * 100;
         this.gap(2);
         this.note(
-          `${hotspots.length === 1 ? 'This barangay accounts' : 'Together, these barangays account'} for ${hotspotTotal.toLocaleString()} of ${data.totalCrimes.toLocaleString()} incidents recorded across Tanza this period (${share.toFixed(1)}%).`
+          `${hotspots.length === 1 ? 'This barangay accounts' : 'Together, these barangays account'} for ${hotspotTotal.toLocaleString()} of ${data.totalOffenses.toLocaleString()} offenses recorded across Tanza this period (${share.toFixed(1)}%).`
         );
       } else {
         this.gap(4);
@@ -1337,7 +1336,7 @@ export class PDFReportGenerator {
 
     if (opts.includeText) {
       this.paragraph(
-        'Monthly offense counts by category and felony stage. One incident may contribute several offenses; a dash marks a month with no recorded offenses.'
+        'Monthly offense counts by category and stage of felony; a dash marks a month with no recorded offenses.'
       );
       this.gap(5);
     }
@@ -1369,12 +1368,12 @@ export class PDFReportGenerator {
 
       this.subhead('1 · Respond to the trend');
       if (trends.trendDirection === 'worsened') {
-        this.paragraph('Incidents are trending upward against last quarter, per Trend Analysis. Treat this as an active escalation.');
+        this.paragraph('Offenses are trending upward against last quarter, per Trend Analysis. Treat this as an active escalation.');
         this.listItem('Raise patrol frequency and visibility in the highest-volume barangays identified in the comparative analysis.');
         this.listItem('Stand up community watch coordination with barangay officials in those areas.');
         this.listItem('Run a prevention awareness campaign targeted at the leading offence category.');
       } else if (trends.trendDirection === 'improved') {
-        this.paragraph('Incidents are trending downward against last quarter, per Trend Analysis. Protect what is working.');
+        this.paragraph('Offenses are trending downward against last quarter, per Trend Analysis. Protect what is working.');
         this.listItem('Hold current patrol schedules and community engagement cadence rather than reallocating away from them.');
         this.listItem('Document the interventions in force this quarter so they can be replicated in lagging barangays.');
         this.listItem('Watch neighbouring areas for displacement rather than genuine reduction.');
@@ -1386,7 +1385,7 @@ export class PDFReportGenerator {
 
       this.subhead('2 · Target the leading offence');
       if (topType) {
-        this.paragraph(`${topType.type} remains the leading offence category this period, as detailed in Incident Classification.`);
+        this.paragraph(`${topType.type} remains the leading offence category this period, as detailed in Offense Classification.`);
         this.listItem('Assign officers with specific experience in this offence category to the affected areas.');
         this.listItem('Direct awareness messaging at the population most exposed to it.');
         this.listItem('Confirm that reporting and response channels for this offence are published and staffed.');
@@ -1412,7 +1411,7 @@ export class PDFReportGenerator {
       }
 
       this.subhead('5 · Sustain community partnership');
-      this.listItem('Hold a standing barangay forum on incident trends using this report as the shared reference.');
+      this.listItem('Hold a standing barangay forum on offense trends using this report as the shared reference.');
       this.listItem('Run youth engagement programmes in the barangays carrying the largest share of cases.');
       this.listItem('Bring local businesses into area security arrangements where commercial premises are affected.');
     }
@@ -1430,7 +1429,7 @@ export class PDFReportGenerator {
     this.y += this.T.sub.lead + 1;
 
     this.note(
-      `Figures are drawn from incident records held in the Secure Tanza system for ${data.timeRange}, filtered to the reporting scope stated on the cover${data.crimeType ? `, and limited to the crime type ${data.crimeType}. Quarterly threat ratings still use the thresholds set for all crime types combined, so they read lower for a single type or group` : ''}. Counts reflect records present at the time of generation and will move as cases are updated.`
+      `Figures are drawn from offense records held in the Secure Tanza system for ${data.timeRange}, filtered to the reporting scope stated on the cover${data.crimeType ? `, and limited to the crime type ${data.crimeType}. Quarterly threat ratings still use the thresholds set for all crime types combined, so they read lower for a single type or group` : ''}. Counts reflect records present at the time of generation and will move as cases are updated.`
     );
 
     const definitions: Array<[string, string]> = [

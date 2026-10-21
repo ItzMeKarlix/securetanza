@@ -161,9 +161,9 @@ type ImageItemKey =
  *  separate from the PDF's SECTIONS above since "export this one image" is a
  *  different mental model from "assemble a document". */
 const IMAGE_ITEMS: Array<{ key: ImageItemKey; label: string; desc: string }> = [
-  { key: "trend", label: "Trend chart", desc: "Incidents by month" },
-  { key: "timeOfDay", label: "Time-of-day chart", desc: "Incidents by hour, peak highlighted" },
-  { key: "crimeType", label: "Crime-type chart", desc: "Leading incident types, ranked" },
+  { key: "trend", label: "Trend chart", desc: "Offenses by month" },
+  { key: "timeOfDay", label: "Time-of-day chart", desc: "Offenses by hour, peak highlighted" },
+  { key: "crimeType", label: "Crime-type chart", desc: "Leading offense types, ranked" },
   { key: "barangayComparison", label: "Barangay comparison chart", desc: "Highest-volume barangays, ranked" },
   { key: "matrixHeatmap", label: "Monthly heatmap", desc: "Incidence matrix grid" },
   { key: "tanzaMap", label: "Tanza-wide map", desc: "Whole-town barangay risk map" },
@@ -268,10 +268,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
   };
 
   const timeRangeText = getTimeRangeText();
-  const totalCrimes = useMemo(
-    () => analyticsData.totalIncidents,
-    [analyticsData.totalIncidents]
-  );
+  const totalOffenses = analyticsData.totalOffenses;
 
   const selectedSections = SECTIONS.filter((section) => reportConfig[section.key].enabled);
   const selectedCount = selectedSections.length;
@@ -302,8 +299,7 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
         timePatterns: analyticsData.timePatterns,
         trends: analyticsData.trends,
       },
-      totalCrimes,
-      totalOffenses: analyticsData.totalOffenses,
+      totalOffenses,
       generatedBy: user?.fullName || user?.accountNumber || 'System',
     };
   };
@@ -805,8 +801,8 @@ export default function ReportsTab({ barangayName }: ReportsTabProps) {
                 <dl className="mt-auto border-t border-slate-400 pt-1.5">
                   {[
                     {
-                      label: "Total incidents",
-                      value: analyticsData.loading ? "—" : totalCrimes.toLocaleString(),
+                      label: "Total offenses",
+                      value: analyticsData.loading ? "—" : totalOffenses.toLocaleString(),
                     },
                     { label: "Sections included", value: String(selectedCount) },
                   ].map((row) => (

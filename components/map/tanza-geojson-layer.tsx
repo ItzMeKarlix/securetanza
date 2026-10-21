@@ -291,9 +291,8 @@ const TanzaBarangayLayer: React.FC<BarangayLayerProps> = ({
     const count = barangayCrimeCounts[normalizedName] ?? barangayCrimeCounts[name] ?? 0;
     const level = getThreatLevel(name);
     const matchingHover = hoverStats && hoveredBarangay?.toUpperCase() === normalizedName;
-    const countLabel = matchingHover
-      ? `${hoverStats.totalIncidents} incidents · ${hoverStats.totalOffenses} offenses`
-      : `${count} incidents · offenses loading…`;
+    const offenses = matchingHover ? hoverStats.totalOffenses : count;
+    const countLabel = `${offenses} offense${offenses === 1 ? "" : "s"}`;
     return `<div class="map-tip">
       <p class="map-tip__label">Barangay</p>
       <p class="map-tip__name">${name}</p>

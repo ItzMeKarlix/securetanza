@@ -1,5 +1,5 @@
 "use client";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
@@ -38,7 +38,7 @@ interface DayTimeline {
   total: number;
 }
 
-/** One scrubber stop: an hour on a date that recorded at least one incident. */
+/** One scrubber stop: an hour on a date that recorded at least one offense. */
 interface TimelineStop {
   dateIndex: number;
   hour: number;
@@ -83,8 +83,8 @@ function formatShortDate(date: Date) {
   });
 }
 
-function pluralIncidents(count: number) {
-  return `${count} ${count === 1 ? "incident" : "incidents"}`;
+function pluralOffenses(count: number) {
+  return `${count} ${count === 1 ? "offense" : "offenses"}`;
 }
 
 /**
@@ -151,7 +151,7 @@ export default function TimeFilter({
   const [days, setDays] = useState<DayTimeline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Index into `stops` — every position is an hour that recorded incidents
+  // Index into `stops` — every position is an hour that recorded offenses
   const [cursor, setCursor] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] =
     useState<(typeof PLAYBACK_SPEEDS)[number]>(1);
@@ -189,7 +189,7 @@ export default function TimeFilter({
         const params = new URLSearchParams();
         if (selectedYear) params.set("year", selectedYear.toString());
         if (selectedCrimeType)
-          params.set("offenseCategory", toIncidentTypeParam(selectedCrimeType));
+          params.set("offenseCategory", toCrimeTypeParam(selectedCrimeType));
         if (selectedFelonyStage)
           params.set("stageOfFelony", selectedFelonyStage);
 
@@ -225,7 +225,7 @@ export default function TimeFilter({
     };
   }, [selectedYear, selectedCrimeType, selectedFelonyStage]);
 
-  // Flatten every incident hour into one ordered scrub track
+  // Flatten every offense hour into one ordered scrub track
   const stops = useMemo(() => {
     const flattened: TimelineStop[] = [];
     days.forEach((day, dateIndex) => {
@@ -270,7 +270,7 @@ export default function TimeFilter({
     onFilterChange,
   ]);
 
-  // Playback hops from one incident hour to the next, rolling into older dates
+  // Playback hops from one offense hour to the next, rolling into older dates
   useEffect(() => {
     if (!isPlaying || stops.length === 0) return;
 
@@ -329,7 +329,7 @@ export default function TimeFilter({
     onPlayPauseToggle();
   }, [isPlaying, safeCursor, maxCursor, onPlayPauseToggle]);
 
-  // Quartile thresholds over this day's incident hours, so the nodes line up
+  // Quartile thresholds over this day's offense hours, so the nodes line up
   // with the threat colours the map legend already uses.
   const hourThresholds = useMemo(() => {
     const counts = (currentDay?.activeHours ?? [])
@@ -408,7 +408,7 @@ export default function TimeFilter({
             {count}
           </span>
           <span className="text-[11.5px] font-medium leading-none text-slate-500 dark:text-slate-400">
-            {count === 1 ? "incident" : "incidents"}
+            {count === 1 ? "offense" : "offenses"}
           </span>
         </span>
       </button>
@@ -486,7 +486,7 @@ export default function TimeFilter({
             </div>
             <div className="mt-1.5 flex items-center gap-2">
               <span className="text-[12.5px] font-semibold leading-none text-slate-700 dark:text-slate-200">
-                {pluralIncidents(currentHourCount)}
+                {pluralOffenses(currentHourCount)}
               </span>
               <span className="ml-auto flex items-center gap-0.5">
                 {PLAYBACK_SPEEDS.map((speed) => (
@@ -544,7 +544,7 @@ export default function TimeFilter({
                   {formatShortDate(currentDay.date)}
                 </span>
                 <span className="block truncate text-[11.5px] leading-tight text-slate-500 dark:text-slate-400 tabular-nums">
-                  {pluralIncidents(currentDay.total)} · {dateIndex + 1}/
+                  {pluralOffenses(currentDay.total)} · {dateIndex + 1}/
                   {days.length}
                 </span>
               </span>
@@ -601,11 +601,11 @@ export default function TimeFilter({
         </div>
       </div>
 
-      {/* ── Timeline: only the hours that recorded incidents ── */}
+      {/* ── Timeline: only the hours that recorded offenses ── */}
       <div
         className="dropdown-scroll min-h-0 flex-1 overflow-y-auto border-t border-slate-100 px-3 py-2 dark:border-white/[0.06]"
         role="group"
-        aria-label={`Hours with incidents on ${formatFullDate(currentDay.date)}`}
+        aria-label={`Hours with offenses on ${formatFullDate(currentDay.date)}`}
       >
         {activeHours.map((hour, position) =>
           renderHourEntry(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchCrimes, type CrimeIncident } from "@/lib/api";
+import { fetchCrimes, type OffenseRecord } from "@/lib/api";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "./useTimeRangeData";
 import { buildMapQueries, readMapCrimes } from "./map-query";
@@ -10,7 +10,7 @@ export function useFilteredCrimes() {
   const scope = useMapContext();
   const ranges = useTimeRangeData();
   const key = JSON.stringify(buildMapQueries(scope, ranges, "barangay-counts", scope.selectedBarangay).map(query => query.toString()));
-  const [settled, setSettled] = useState<{ key: string; crimes: CrimeIncident[] } | null>(null);
+  const [settled, setSettled] = useState<{ key: string; crimes: OffenseRecord[] } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     void (async () => {

@@ -1,10 +1,7 @@
-/** Cached offense queries with separate incident and offense counting contracts. */
+/** Cached offense queries. Every count is a count of offenses. */
 import { prisma } from "@/backend/lib/prisma";
 import { cacheService, CacheKeys, TTL } from "@/backend/cache";
-import type {
-  aggregateCrimeStats,
-  incidentTimeline,
-} from "@/backend/lib/crime-analytics";
+import type { CrimeStats, offenseTimeline } from "@/backend/lib/crime-analytics";
 import {
   insertCrimeRecords,
   updateCrimeRecord,
@@ -17,14 +14,11 @@ import {
   loadCrimeTimeline,
   loadCrimeAnalysis,
 } from "@/backend/lib/crime-query-aggregates";
-import { loadIncidentSummaries } from "@/backend/lib/incident-summaries";
 
-export type CrimeStatsResult = ReturnType<typeof aggregateCrimeStats>;
+export type CrimeStatsResult = CrimeStats;
 export interface BarangayCountsResult {
+  /** Offenses per barangay. */
   barangayCounts: Record<string, number>;
-  barangayOffenseCounts: Record<string, number>;
-  totalCrimes: number;
-  totalIncidents: number;
   totalOffenses: number;
   barangayCount: number;
 }
@@ -33,7 +27,7 @@ export interface HourlyTimelineBucket {
   hour: number | null;
   count: number;
 }
-export type HourlyTimelineResult = ReturnType<typeof incidentTimeline>;
+export type HourlyTimelineResult = ReturnType<typeof offenseTimeline>;
 import {
   buildCrimeWhere,
   type CrimeFilters,
@@ -43,20 +37,14 @@ export type { CrimeFilters } from "@/backend/lib/crime-query-filters";
 type StatsFilters = Pick<
   CrimeFilters,
   | "barangay"
-  | "incidentType"
+  | "crimeType"
   | "offenseCategory"
   | "year"
   | "hour"
   | "stageOfFelony"
 > & { startDate?: string | null; endDate?: string | null };
 
-const parentSummary = {
-  select: {
-    offenseCount: true,
-    hasMultipleOffenses: true,
-    offenses: { select: { caseStatus: true, updatedAt: true } },
-  },
-} as const;
+const withCategory = { offenseDefinition: { select: { label: true } } } as const;
 
 export class CrimeService {
   static async getStats(filters: StatsFilters): Promise<CrimeStatsResult> {
@@ -82,7 +70,7 @@ export class CrimeService {
     filters: Pick<
       CrimeFilters,
       | "barangay"
-      | "incidentType"
+      | "crimeType"
       | "offenseCategory"
       | "year"
       | "hour"
@@ -103,15 +91,10 @@ export class CrimeService {
         });
         return {
           barangayCounts: Object.fromEntries(
-            stats.crimesByBarangay.map((r) => [r.barangay, r.count]),
-          ),
-          barangayOffenseCounts: Object.fromEntries(
             stats.offensesByBarangay.map((r) => [r.barangay, r.count]),
           ),
-          totalCrimes: stats.totalIncidents,
-          totalIncidents: stats.totalIncidents,
           totalOffenses: stats.totalOffenses,
-          barangayCount: stats.crimesByBarangay.length,
+          barangayCount: stats.offensesByBarangay.length,
         };
       },
     );
@@ -120,7 +103,7 @@ export class CrimeService {
   static async getHourlyTimeline(
     filters: Pick<
       CrimeFilters,
-      "year" | "incidentType" | "offenseCategory" | "barangay" | "stageOfFelony"
+      "year" | "crimeType" | "offenseCategory" | "barangay" | "stageOfFelony"
     >,
   ): Promise<HourlyTimelineResult> {
     return cacheService.getOrSet(
@@ -150,19 +133,14 @@ export class CrimeService {
             limit,
             skip,
           );
-        const rows = await prisma.crimeIncident.findMany({
+        const rows = await prisma.offense.findMany({
           where: buildCrimeWhere(filters),
           orderBy: [{ dateCommitted: "desc" }, { id: "asc" }],
           take: limit,
           skip,
+          include: withCategory,
         });
-        const parents = await loadIncidentSummaries(
-          rows.map((row) => row.incidentId),
-          prisma,
-        );
-        return rows.map((row) =>
-          presentCrimeRecord({ ...row, incident: parents.get(row.incidentId) }),
-        );
+        return rows.map(presentCrimeRecord);
       },
     );
   }
@@ -174,7 +152,7 @@ export class CrimeService {
       async () => {
         const rows = await prisma.$queryRaw<
           Array<{ year: number }>
-        >`SELECT DISTINCT EXTRACT(YEAR FROM date_committed)::integer AS year FROM crime_incidents ORDER BY year DESC`;
+        >`SELECT DISTINCT EXTRACT(YEAR FROM date_committed)::integer AS year FROM offenses ORDER BY year DESC`;
         return rows.map((r) => r.year);
       },
     );
@@ -190,10 +168,10 @@ export class CrimeService {
         };
         const where = buildCrimeWhere(filters);
         const [latest, stats, lastUpload] = await Promise.all([
-          prisma.crimeIncident.findFirst({
+          prisma.offense.findFirst({
             where,
             orderBy: [{ dateCommitted: "desc" }, { createdAt: "desc" }],
-            include: { incident: parentSummary },
+            include: withCategory,
           }),
           this.getStats(filters),
           prisma.auditLog.findFirst({
@@ -205,9 +183,7 @@ export class CrimeService {
           }),
         ]);
         return {
-          latestIncident: latest ? presentCrimeRecord(latest) : null,
-          totalCount: stats.totalIncidents,
-          totalIncidents: stats.totalIncidents,
+          latestOffense: latest ? presentCrimeRecord(latest) : null,
           totalOffenses: stats.totalOffenses,
           lastUpload: lastUpload
             ? {
@@ -227,16 +203,16 @@ export class CrimeService {
       CacheKeys.crimes.detail(id),
       TTL.CRIME_DETAIL,
       async () => {
-        const row = await prisma.crimeIncident.findUnique({
+        const row = await prisma.offense.findUnique({
           where: { id },
-          include: { incident: parentSummary },
+          include: withCategory,
         });
         return row ? presentCrimeRecord(row) : null;
       },
     );
   }
 
-  static async createIncident(data: CrimeInput) {
+  static async createOffense(data: CrimeInput) {
     const [created] = await insertCrimeRecords([data], prisma);
     if (!created)
       throw new Error(
@@ -248,13 +224,13 @@ export class CrimeService {
     return result;
   }
 
-  static async updateIncident(id: string, data: Partial<CrimeInput>) {
+  static async updateOffense(id: string, data: Partial<CrimeInput>) {
     await updateCrimeRecord(id, data, prisma);
     await cacheService.deleteByPattern(CacheKeys.crimes.pattern());
     return this.getById(id);
   }
 
-  static async deleteIncident(id: string) {
+  static async deleteOffense(id: string) {
     const row = await deleteCrimeRecord(id, prisma);
     await cacheService.deleteByPattern(CacheKeys.crimes.pattern());
     return row;

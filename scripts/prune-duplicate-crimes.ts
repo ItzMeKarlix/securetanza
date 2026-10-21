@@ -19,8 +19,8 @@ async function main() {
   console.log(`Mode: ${isExecute ? '⚠️ EXECUTE (Permanent Deletion)' : '🔍 DRY-RUN (Report Only)'}`);
   console.log(`======================================================\n`);
 
-  console.log('1. Loading all crime incidents from database...');
-  const allIncidents = await prisma.crimeIncident.findMany({
+  console.log('1. Loading all offenses from database...');
+  const allOffenses = await prisma.offense.findMany({
     select: {
       id: true,
       blotterNo: true,
@@ -29,7 +29,6 @@ async function main() {
       barangay: true,
       dateCommitted: true,
       timeCommitted: true,
-      incidentType: true,
       offense: true,
       stageOfFelony: true,
       section: true,
@@ -40,7 +39,7 @@ async function main() {
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
 
-  console.log(`Loaded ${allIncidents.length} total records.\n`);
+  console.log(`Loaded ${allOffenses.length} total records.\n`);
 
   const seenFingerprints = new Map<string, { id: string; createdAt: Date }>();
   const duplicatesToDelete: Array<{
@@ -52,21 +51,21 @@ async function main() {
     createdAt: Date;
   }> = [];
 
-  for (const incident of allIncidents) {
-    const fingerprint = generateCrimeFingerprint(incident);
+  for (const offense of allOffenses) {
+    const fingerprint = generateCrimeFingerprint(offense);
 
     if (seenFingerprints.has(fingerprint)) {
       const original = seenFingerprints.get(fingerprint)!;
       duplicatesToDelete.push({
-        id: incident.id,
+        id: offense.id,
         originalId: original.id,
         fingerprint,
-        blotterNo: incident.blotterNo,
-        barangay: incident.barangay,
-        createdAt: incident.createdAt,
+        blotterNo: offense.blotterNo,
+        barangay: offense.barangay,
+        createdAt: offense.createdAt,
       });
     } else {
-      seenFingerprints.set(fingerprint, { id: incident.id, createdAt: incident.createdAt });
+      seenFingerprints.set(fingerprint, { id: offense.id, createdAt: offense.createdAt });
     }
   }
 

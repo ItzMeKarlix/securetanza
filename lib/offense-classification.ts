@@ -1,4 +1,4 @@
-/** Analytical labels describe the recorded offense, never the incident mechanism. */
+/** Analytical labels describe the recorded offense and its stage of felony. */
 export const FELONY_STAGES = [
   "CONSUMMATED",
   "FRUSTRATED",
@@ -58,22 +58,16 @@ export const OFFENSE_LABELS: Record<string, string> = {
     "Cable Television and Internet Tapping Law (RA 10515)",
 };
 
-export function classifyOffense(
-  offense: unknown,
-  stage: unknown,
-  sourceIncidentType: unknown = "",
-) {
+/** An offense's category and its stage-qualified analytical label. */
+export function classifyOffense(offense: unknown, stage: unknown) {
   const code = normalizeOffenseText(offense);
   const felonyStage = normalizeFelonyStage(stage);
-  const source = String(sourceIncidentType ?? "")
-    .replace(/^\((?:Incident|Operation)\)\s*/i, "")
-    .trim();
   const title = code
     .split(/\s+-\s+/)[0]
     .replace(/\b\w/g, (c) => c.toUpperCase());
   const category =
     OFFENSE_LABELS[code] ??
-    (code ? title : `Unclassified${source ? ` · ${source}` : ""}`);
+    (code ? title : "Unclassified");
   const prefix =
     felonyStage === "ATTEMPTED"
       ? "Attempted "
@@ -83,23 +77,11 @@ export function classifyOffense(
           ? "Unknown Stage · "
           : "";
   return {
-    code: code || `unclassified:${normalizeOffenseText(source)}`,
+    code: code || "unclassified",
     category,
     felonyStage,
     crimeType: `${prefix}${category}`,
     classificationNeedsReview:
       !code || felonyStage === "UNKNOWN" || /\b(ra|pd|bp)\b/.test(code),
   };
-}
-
-/** Collapse records by parent identity, never by their classification. */
-export function uniqueIncidentRecords<
-  T extends { id: string; incidentId?: string | null },
->(records: T[]): T[] {
-  const parents = new Map<string, T>();
-  for (const row of records) {
-    const key = row.incidentId || row.id;
-    if (!parents.has(key)) parents.set(key, row);
-  }
-  return [...parents.values()];
 }

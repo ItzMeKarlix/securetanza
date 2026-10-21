@@ -1,15 +1,15 @@
 import type { Prisma } from "./generated/prisma";
 import { mapGeoJsonToDb } from "./barangay-mapper";
 import {
-  buildIncidentTypeWhere,
+  buildCrimeTypeWhere,
   buildOffenseCategoryWhere,
 } from "@/lib/crime-groups";
 import { normalizeFelonyStage } from "@/lib/offense-classification";
 import { escapeLike, isoDateParam, queryText } from "@/lib/input-sanitize";
 
 const TEXT_FILTERS = [
-  "barangay", "incidentId", "offenseCategory", "region", "province", "municipal",
-  "incidentType", "modeReporting", "stageOfFelony", "caseStatus", "offenseType", "modus", "typeOfPlace",
+  "barangay", "blotterNo", "stn", "offenseCategory", "region", "province", "municipal",
+  "crimeType", "modeReporting", "stageOfFelony", "caseStatus", "offenseType", "modus", "typeOfPlace",
 ] as const;
 const DATE_FILTERS = ["startDateReported", "endDateReported", "startDateCommitted", "endDateCommitted"] as const;
 
@@ -29,12 +29,16 @@ function cleanFilters(filters: CrimeFilters): CrimeFilters {
 }
 export interface CrimeFilters {
   barangay?: string | null;
-  incidentId?: string | null;
+  /** Exact blotter number (case-insensitive): the other offenses recorded on one blotter. */
+  blotterNo?: string | null;
+  /** Station, to keep blotter numbers from different stations apart. */
+  stn?: string | null;
   offenseCategory?: string | null;
   region?: string | null;
   province?: string | null;
   municipal?: string | null;
-  incidentType?: string | null;
+  /** Stage-qualified analytical type ("Frustrated Murder"), or a crime group's keywords. */
+  crimeType?: string | null;
   startDateReported?: string | null;
   endDateReported?: string | null;
   startDateCommitted?: string | null;
@@ -55,12 +59,14 @@ export interface CrimeFilters {
 export function buildCrimeWhere(
   rawFilters: CrimeFilters,
   crimesOnly = false,
-): Prisma.CrimeIncidentWhereInput {
+): Prisma.OffenseWhereInput {
   const filters = cleanFilters(rawFilters);
-  const and: Prisma.CrimeIncidentWhereInput[] = crimesOnly
+  const and: Prisma.OffenseWhereInput[] = crimesOnly
     ? [{ isCrime: true }]
     : [];
-  if (filters.incidentId) and.push({ incidentId: filters.incidentId });
+  if (filters.blotterNo)
+    and.push({ blotterNo: { equals: filters.blotterNo, mode: "insensitive" } });
+  if (filters.stn) and.push({ stn: { equals: filters.stn, mode: "insensitive" } });
   if (filters.offenseCategory)
     and.push(buildOffenseCategoryWhere(filters.offenseCategory));
   if (filters.barangay)
@@ -84,8 +90,8 @@ export function buildCrimeWhere(
     // Escaped so % and _ match literally instead of acting as wildcards.
     if (value) and.push({ [field]: { contains: escapeLike(value), mode: "insensitive" } });
   }
-  if (filters.incidentType)
-    and.push(buildIncidentTypeWhere(filters.incidentType));
+  if (filters.crimeType)
+    and.push(buildCrimeTypeWhere(filters.crimeType));
   if (filters.stageOfFelony)
     and.push({ felonyStage: normalizeFelonyStage(filters.stageOfFelony) });
   for (const [field, start, end] of [

@@ -27,7 +27,7 @@ export function categoryColorForTheme(label: string, theme: DataColorTheme) {
 }
 /** Crime families keep one color regardless of stage, order, and filters. */
 export function colorfulCrimeColor(type: string, theme: DataColorTheme) {
-  const family = type.replace(/^\((?:Incident|Operation)\)\s*/i, "")
+  const family = type
     .replace(/^(?:attempted|frustrated|consummated)\s+/i, "").trim();
   return categoryColorForTheme(family, theme);
 }

@@ -13,7 +13,7 @@ async function main() {
 
   try {
     const result = await CrimeService.getHourlyTimeline({ year });
-    console.log(`year=${year} totalCrimes=${result.totalCrimes} buckets=${result.buckets.length}`);
+    console.log(`year=${year} totalOffenses=${result.totalOffenses} buckets=${result.buckets.length}`);
     console.log('first 10 buckets:', result.buckets.slice(0, 10));
 
     const unknownHour = result.buckets.filter(b => b.hour === null);

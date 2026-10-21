@@ -68,11 +68,6 @@ function normalizeBarangayName(name: string): string {
   return BARANGAY_NAME_MAP[upperName] || name
 }
 
-function extractIncidentType(incidentType: string): string {
-  // Remove "(Incident)" prefix if present
-  return incidentType.replace(/^\(Incident\)\s*/i, '').trim()
-}
-
 function parseDateTime(dateStr: string, timeStr: string): Date {
   if (!dateStr || !timeStr) {
     throw new Error(`Invalid date/time: ${dateStr} ${timeStr}`)
@@ -150,10 +145,9 @@ function processExcelRow(row: any): any {
       dateReported: row.dateReported,
       timeReported: row.timeReported,
       
-      // Incident Information
+      // When it was committed
       dateCommitted: row.dateCommitted,
       timeCommitted: row.timeCommitted,
-      incidentType: extractIncidentType(row.incidentType || ''),
       isCrime: parseBoolean(row.iscime),
       
       // Process Information
@@ -177,7 +171,6 @@ function processExcelRow(row: any): any {
       // Threat Group Information
       threatGrp: parseBoolean(row.threatGrp),
       grpAffiliation: row.grpAffiliation || null,
-      incidentTypeThreatGrp: row.incidenttypethreatgrp || null,
       mrs: row.mrs || null,
       
       // Suspect Information
@@ -244,8 +237,7 @@ async function main() {
 
     // Clear existing data
     console.log('🗑️ Clearing existing data...')
-    await prisma.crimeIncident.deleteMany()
-    await prisma.incident.deleteMany()
+    await prisma.offense.deleteMany()
     await prisma.offenseDefinition.deleteMany()
     await prisma.barangay.deleteMany()
 
@@ -261,8 +253,8 @@ async function main() {
       })
     }
 
-    // Process and create crime incidents
-    console.log('🚨 Processing and creating crime incidents from Excel...')
+    // Process and create offenses
+    console.log('🚨 Processing and creating offenses from Excel...')
     
     let successCount = 0
     let errorCount = 0
@@ -303,10 +295,9 @@ async function main() {
             dateReported: parseDateTime(processedData.dateReported, processedData.timeReported),
             timeReported: processedData.timeReported,
             
-            // Incident Information
+            // When it was committed
             dateCommitted: parseDateTime(processedData.dateCommitted, processedData.timeCommitted),
             timeCommitted: processedData.timeCommitted,
-            incidentType: processedData.incidentType,
             isCrime: processedData.isCrime,
             
             // Process Information
@@ -330,7 +321,6 @@ async function main() {
             // Threat Group Information
             threatGrp: processedData.threatGrp,
             grpAffiliation: processedData.grpAffiliation,
-            incidentTypeThreatGrp: processedData.incidentTypeThreatGrp,
             mrs: processedData.mrs,
             
             // Suspect Information
@@ -365,24 +355,22 @@ async function main() {
 
     console.log('✅ Database seeded successfully!')
     console.log(`📊 Created ${TANZA_BARANGAYS.length} barangays`)
-    console.log(`🚨 Successfully imported ${successCount} crime incidents`)
+    console.log(`🚨 Successfully imported ${successCount} offenses`)
     if (errorCount > 0) {
       console.log(`⚠️ Failed to import ${errorCount} rows`)
     }
     
     // Get statistics
-    const totalCrimes = await prisma.crimeIncident.count()
-    const crimesByType = await prisma.crimeIncident.groupBy({
-      by: ['incidentType'],
-      _count: {
-        incidentType: true
-      }
+    const totalOffenses = await prisma.offense.count()
+    const offensesByType = await prisma.offense.groupBy({
+      by: ['crimeType'],
+      _count: { crimeType: true },
     })
-    
-    console.log(`📈 Total crimes in database: ${totalCrimes}`)
-    console.log('📊 Crimes by type:')
-    crimesByType.forEach(crime => {
-      console.log(`   ${crime.incidentType}: ${crime._count.incidentType}`)
+
+    console.log(`📈 Total offenses in database: ${totalOffenses}`)
+    console.log('📊 Offenses by type:')
+    offensesByType.forEach(row => {
+      console.log(`   ${row.crimeType}: ${row._count.crimeType}`)
     })
 
   } catch (error) {

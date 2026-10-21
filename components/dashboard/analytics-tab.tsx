@@ -22,7 +22,7 @@ import { useModusAndPlace } from "@/hooks/useModusAndPlace";
 import CrimeMatrixChart from "./crime-matrix-chart";
 import { SectionHeader, Panel } from "./section-primitives";
 import { useChartTooltip } from "./analytics/chart-tooltip";
-import IncidentDetailModal from "./analytics/incident-detail-modal";
+import OffenseDetailModal from "./analytics/offense-detail-modal";
 import { ACCENT, rgbToCss } from "@/lib/report-theme";
 import {
   type AnalyticsSlice,
@@ -135,14 +135,14 @@ function ColumnChart({
                 {
                   title: d.fullLabel ?? d.label,
                   rows: [
-                    { label: "Incidents", value: String(d.value) },
+                    { label: "Offenses", value: String(d.value) },
                     { label: "Share", value: `${share}%` },
                     ...(isPeak ? [{ label: "Peak", value: "Yes" }] : []),
                   ],
                   hint: clickable
-                    ? "Click to see these incidents"
+                    ? "Click to see these offenses"
                     : d.value === 0
-                      ? "No incidents recorded"
+                      ? "No offenses recorded"
                       : undefined,
                 },
                 () => setHovered(i),
@@ -232,14 +232,14 @@ function RankedBars({
                 title: item.fullLabel,
                 rows: [
                   {
-                    label: "Incidents",
+                    label: "Offenses",
                     value: String(item.count),
                     swatch: item.fill,
                   },
                   { label: "Share", value: `${share}%` },
                   { label: "Rank", value: `${i + 1} of ${items.length}` },
                 ],
-                hint: onSelect ? "Click to see these incidents" : undefined,
+                hint: onSelect ? "Click to see these offenses" : undefined,
               },
               () => setHovered(i),
             )}
@@ -419,7 +419,7 @@ function AnalyticsSkeleton({
           <dt
             className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${dark ? "text-slate-500" : "text-slate-400"}`}
           >
-            Total Incidents
+            Total Offenses
           </dt>
           <dd className="mt-1.5 flex justify-end">
             <AnalyticsBone bone={bone} className="h-6 w-16" />
@@ -468,7 +468,7 @@ function AnalyticsSkeleton({
           <Panel
             theme={theme}
             title="Monthly Trend"
-            subtitle={`Incidents per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
+            subtitle={`Offenses per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
             className="min-w-0"
             bodyClassName="justify-center"
             footer={footer}
@@ -478,7 +478,7 @@ function AnalyticsSkeleton({
           <Panel
             theme={theme}
             title="Hour of Day"
-            subtitle="24-hour incident distribution"
+            subtitle="24-hour offense distribution"
             className="min-w-0"
             bodyClassName="justify-center"
             footer={footer}
@@ -495,7 +495,7 @@ function AnalyticsSkeleton({
           <Panel
             theme={theme}
             title="Crime Types Distribution"
-            subtitle="Most common incident categories"
+            subtitle="Most common offense categories"
             footer={footer}
           >
             <AnalyticsRanked
@@ -580,7 +580,6 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
   const { theme, colorful, ramp, crimeColor, categoryColor } = useDataColors();
 
   const {
-    totalIncidents,
     totalOffenses,
     crimesByType,
     crimesByMonth,
@@ -675,7 +674,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
     fill: colorful ? categoryColor(item.place) : ramp(item.count / placeMax),
   }));
 
-  // ─── Total incidents for footer stats ───
+  // ─── Total offenses for footer stats ───
   const topCrimeType = crimesByType[0]?.type
     ? cleanLabel(crimesByType[0].type)
     : "N/A";
@@ -721,17 +720,12 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
           <dt
             className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}
           >
-            Total Incidents
+            Total Offenses
           </dt>
           <dd
             className={`mt-1.5 text-lg font-semibold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >
-            {totalIncidents.toLocaleString()}
-            <span
-              className={`block text-sm font-normal ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}
-            >
-              {totalOffenses.toLocaleString()} recorded offenses
-            </span>
+            {totalOffenses.toLocaleString()}
           </dd>
         </dl>
       </header>
@@ -943,12 +937,12 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
                       <p
                         className={`text-xs ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}
                       >
-                        Analyzes all crime incidents by hour of day (0-23):
+                        Analyzes all crime offenses by hour of day (0-23):
                       </p>
                       <div
                         className={`text-xs font-mono p-2 rounded ${theme === "dark" ? "bg-slate-900 text-purple-400" : "bg-slate-100 text-purple-600"}`}
                       >
-                        Hour with MAX(incident count)
+                        Hour with MAX(offense count)
                       </div>
                       <p
                         className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}
@@ -968,7 +962,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
                   className="text-[0.78rem] text-slate-500"
                   style={{ marginTop: 5 }}
                 >
-                  Most incidents
+                  Most offenses
                 </p>
               </div>
 
@@ -1110,7 +1104,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
           <Panel
             theme={theme}
             title="Monthly Trend"
-            subtitle={`Incidents per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
+            subtitle={`Offenses per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
             className="min-w-0"
             bodyClassName="justify-center"
             footer={
@@ -1162,7 +1156,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
           <Panel
             theme={theme}
             title="Hour of Day"
-            subtitle="24-hour incident distribution"
+            subtitle="24-hour offense distribution"
             className="min-w-0"
             bodyClassName="justify-center"
             footer={
@@ -1177,7 +1171,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
                       theme === "dark" ? "text-slate-400" : "text-slate-500"
                     }
                   >
-                    24-hour incident distribution
+                    24-hour offense distribution
                   </div>
                 </>
               )
@@ -1274,7 +1268,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
                     className={`text-xs space-y-1 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}
                   >
                     <li>• Identifying crime patterns</li>
-                    <li>• Preventing similar incidents</li>
+                    <li>• Preventing similar offenses</li>
                     <li>• Training law enforcement</li>
                     <li>• Public awareness campaigns</li>
                   </ul>
@@ -1451,11 +1445,10 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
         )}
       </section>
 
-      <IncidentDetailModal
+      <OffenseDetailModal
         slice={activeSlice}
         allCrimes={allCrimes}
         loading={detailsLoading}
-        totalIncidents={totalIncidents}
         totalOffenses={totalOffenses}
         theme={theme}
         onClose={() => setActiveSlice(null)}

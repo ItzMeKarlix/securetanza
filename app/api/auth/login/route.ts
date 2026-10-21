@@ -43,9 +43,10 @@ export async function POST(request: NextRequest) {
     // works, but only for accounts that have not been given an email yet —
     // once an administrator sets one, the account number stops signing in.
     // Remove this branch once no users.email IS NULL rows remain.
+    // A deleted account answers exactly like a missing one.
     const user = identifier.includes('@')
-      ? await prisma.user.findUnique({ where: { email: normalizeEmail(identifier) }, include, relationLoadStrategy })
-      : await prisma.user.findFirst({ where: { accountNumber: identifier, email: null }, include, relationLoadStrategy });
+      ? await prisma.user.findFirst({ where: { email: normalizeEmail(identifier), deletedAt: null }, include, relationLoadStrategy })
+      : await prisma.user.findFirst({ where: { accountNumber: identifier, email: null, deletedAt: null }, include, relationLoadStrategy });
 
     if (!user) {
       await prisma.auditLog.create({

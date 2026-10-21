@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({ where: { id: peeked.token.userId } });
-    if (!user) {
+    if (!user || user.deletedAt) {
       return NextResponse.json({ error: PROBLEM_MESSAGES.invalid, problem: 'invalid' }, { status: 400 });
     }
 

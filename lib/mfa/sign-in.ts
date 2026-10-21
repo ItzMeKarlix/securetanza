@@ -7,7 +7,7 @@ import { getClientIp, getUserAgent } from "@/lib/request-context";
 export const signInInclude = { permissions: { include: { permission: true } } } as const;
 
 export function loadSignInUser(userId: number) {
-	return prisma.user.findUnique({ where: { id: userId }, relationLoadStrategy: "join", include: signInInclude });
+	return prisma.user.findFirst({ where: { id: userId, deletedAt: null }, relationLoadStrategy: "join", include: signInInclude });
 }
 
 export type SignInUser = NonNullable<Awaited<ReturnType<typeof loadSignInUser>>>;

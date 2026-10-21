@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ConfigService } from '@/backend/services/config.service';
 import { getSession, canOperateSession } from '@/lib/auth';
 import { z } from 'zod';
+import { prisma } from '@/backend/lib/prisma';
+import { nextOccurrence } from '@/lib/export-schedule';
 
 const scheduleSchema = z.object({
   enabled: z.boolean(),
@@ -22,9 +24,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const schedule = await ConfigService.getExportSchedule(session.userId);
+    // Straight from the database: the worker updates run times from another
+    // process, which this server's cache would never hear about.
+    const schedule = await prisma.exportSchedule.findFirst({ where: { userId: session.userId } });
+    const now = new Date();
 
-    return NextResponse.json({ schedule });
+    return NextResponse.json({
+      schedule,
+      nextRunAt: schedule?.enabled ? nextOccurrence(schedule, now).toISOString() : null,
+      timeZone: 'Asia/Manila (UTC+8)',
+    });
   } catch (error) {
     console.error('Error fetching export schedule:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -47,7 +56,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid schedule' }, { status: 400 });
     }
 
-    const updatedSchedule = await ConfigService.saveExportSchedule(session.userId, parsed.data);
+    // savedAt: a run time that has already passed today doesn't fire just because it was saved.
+    const updatedSchedule = await ConfigService.saveExportSchedule(session.userId, {
+      ...parsed.data,
+      savedAt: new Date(),
+      lastRunError: null,
+    });
 
     return NextResponse.json({ success: true, schedule: updatedSchedule });
   } catch (error) {

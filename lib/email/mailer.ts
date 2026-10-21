@@ -11,11 +11,18 @@ import nodemailer, { type Transporter } from "nodemailer";
  * instead, so invite and reset links can be followed locally.
  */
 
+export interface MailAttachment {
+	filename: string;
+	content: Buffer;
+	contentType: string;
+}
+
 export interface MailMessage {
 	to: string;
 	subject: string;
 	text: string;
 	html: string;
+	attachments?: MailAttachment[];
 }
 
 let transporter: Transporter | null = null;
@@ -43,8 +50,9 @@ export async function sendMail(message: MailMessage): Promise<boolean> {
 			console.error("[mail] SMTP_HOST is not set — cannot send:", message.subject, "to", message.to);
 			return false;
 		}
+		const attached = message.attachments?.map((a) => `${a.filename} (${a.content.length} bytes)`).join(", ");
 		console.info(
-			`\n[mail:dev] To: ${message.to}\n[mail:dev] Subject: ${message.subject}\n${message.text}\n`
+			`\n[mail:dev] To: ${message.to}\n[mail:dev] Subject: ${message.subject}${attached ? `\n[mail:dev] Attachments: ${attached}` : ""}\n${message.text}\n`
 		);
 		return true;
 	}

@@ -1,3 +1,5 @@
+> **Superseded (2026-10-21):** the system no longer groups offenses into incidents. See `docs/offense-only-model.md`. The steps below (including `scripts/recover-crime-workbook.ts`, now removed) no longer apply.
+
 # Incident and offense counting implementation plan
 
 **Goal:** Preserve multiple offenses under a blotter and display unique incidents and recorded offenses independently.

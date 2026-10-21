@@ -116,7 +116,7 @@ export function hasMapAccess(permissions?: string[] | null): boolean {
 }
 
 /**
- * Check if the user is authorized to view cases and incidents.
+ * Check if the user is authorized to view cases and offenses.
  */
 export function hasCasesAccess(permissions?: string[] | null): boolean {
   if (!permissions) return false;

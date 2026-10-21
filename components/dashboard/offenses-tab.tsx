@@ -7,10 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/context/ThemeContext";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "@/hooks/useTimeRangeData";
-import { extractCrimeType } from "@/hooks/useCrimeTypes";
-import { fetchCrimes, CrimeIncident } from "@/lib/api";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
-import { caseBlotterLabel, caseStatusLabel, groupCaseIncidents, filterCaseGroups, findCaseDeepLink, mergeCaseOffenses, createCaseRequestGuard, type CaseGroup } from "@/lib/case-grouping";
+import { fetchCrimes, OffenseRecord } from "@/lib/api";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
+import { caseBlotterLabel, caseStatusLabel, createCaseRequestGuard, filterOffenses, groupByBlotter, stageCounts } from "@/lib/offense-register";
 import { readJson } from "@/lib/read-json";
 import {
   Dialog,
@@ -18,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-interface IncidentsTabProps {
+interface OffensesTabProps {
   barangayName?: string;
 }
 
@@ -170,31 +169,42 @@ function FilterSelect({
   );
 }
 
-export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
+export default function OffensesTab({ barangayName }: OffensesTabProps) {
   const { theme } = useTheme();
   const { timeRange, selectedCrimeType, setSelectedCrimeType, selectedFelonyStage, setSelectedFelonyStage } = useMapContext();
   const dateRanges = useTimeRangeData();
-  const [cases, setCases] = useState<CrimeIncident[]>([]);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [siblingCases, setSiblingCases] = useState<Record<string, CrimeIncident[]>>({});
-  const [loadingGroups, setLoadingGroups] = useState<Set<string>>(new Set());
-  const [incompleteGroups, setIncompleteGroups] = useState<Set<string>>(new Set());
-  const siblingRequests = useRef(new Set<string>());
-  const listId = useId();
-  const [selectedCase, setSelectedCase] = useState<CrimeIncident | null>(null);
-  const [modalGroupKey, setModalGroupKey] = useState<string | null>(null);
+  const [cases, setCases] = useState<OffenseRecord[]>([]);
+  const [selectedCase, setSelectedCase] = useState<OffenseRecord | null>(null);
   const listRequests = useRef(createCaseRequestGuard());
   const detailRequests = useRef(createCaseRequestGuard());
   const selectionVersion = useRef(0);
-  const [caseDetails, setCaseDetails] = useState<{ id: string; record: CrimeIncident | null; error: string | null }>({ id: "", record: null, error: null });
+  const [caseDetails, setCaseDetails] = useState<{ id: string; record: OffenseRecord | null; error: string | null }>({ id: "", record: null, error: null });
   const [detailRetry, setDetailRetry] = useState(0);
-  const chooseCase = useCallback((crime: CrimeIncident | null) => {
+  const chooseCase = useCallback((crime: OffenseRecord | null) => {
     selectionVersion.current++;
     setSelectedCase(crime);
   }, []);
   const selectedCaseId = selectedCase?.id;
   const hydratedCase = caseDetails.id === selectedCaseId ? caseDetails.record : null;
   const detailError = caseDetails.id === selectedCaseId ? caseDetails.error : null;
+
+  // The other offenses recorded on the selected offense's blotter. They are
+  // listed beside the record — each stays its own record, nothing is merged.
+  const [sameBlotter, setSameBlotter] = useState<{ key: string; rows: OffenseRecord[] }>({ key: "", rows: [] });
+  const blotterNo = hydratedCase?.blotterNo?.trim() || "";
+  const blotterStation = hydratedCase?.stn?.trim() || "";
+  const blotterKey = blotterNo ? `${blotterStation}|${blotterNo}` : "";
+  useEffect(() => {
+    if (!blotterKey) return;
+    let active = true;
+    void fetchCrimes({ blotterNo, stn: blotterStation || undefined, view: "analysis", limit: 50 }).then((rows) => {
+      if (!active) return;
+      const sorted = [...rows].sort((a, b) => (a.offenseCategory || a.crimeType).localeCompare(b.offenseCategory || b.crimeType));
+      setSameBlotter({ key: blotterKey, rows: sorted });
+    });
+    return () => { active = false; };
+  }, [blotterKey, blotterNo, blotterStation]);
+  const blotterOffenses = blotterKey && sameBlotter.key === blotterKey ? sameBlotter.rows : [];
 
   useEffect(() => {
     const guard = detailRequests.current;
@@ -203,7 +213,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
     setCaseDetails({ id: selectedCaseId, record: null, error: null });
     async function loadDetails() {
       try {
-        const result = await readJson<{ success: boolean; data: CrimeIncident }>(`/api/crimes/${encodeURIComponent(selectedCaseId!)}`);
+        const result = await readJson<{ success: boolean; data: OffenseRecord }>(`/api/crimes/${encodeURIComponent(selectedCaseId!)}`);
         if (!result.success || !result.data || result.data.id !== selectedCaseId) throw new Error("Full case record unavailable");
         request.commit(() => setCaseDetails({ id: selectedCaseId!, record: result.data, error: null }));
       } catch {
@@ -286,7 +296,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
 
           // Add crime type filter
           if (crimeTypeFilter !== "(All)") {
-            params.offenseCategory = toIncidentTypeParam(crimeTypeFilter);
+            params.offenseCategory = toCrimeTypeParam(crimeTypeFilter);
           }
 
           if (selectedFelonyStage) params.stageOfFelony = selectedFelonyStage;
@@ -327,108 +337,59 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
     return () => guard.cancel();
   }, [barangayName, isGeneralDashboard, crimeTypeFilter, dateRangeFilter, statusFilter, selectedFelonyStage, timeRange, dateRanges, chooseCase]);
 
-  const groups = useMemo(() => groupCaseIncidents(cases), [cases]);
-  const filteredGroups = useMemo(() => filterCaseGroups(groups, searchQuery), [groups, searchQuery]);
-  const matchingOffenseCount = filteredGroups.reduce((count, group) => count + group.matchingOffenses.length, 0);
-  const totalPages = Math.ceil(filteredGroups.length / itemsPerPage);
+  // Every offense is its own record and is counted on its own. For reading,
+  // offenses recorded on the same blotter share one collapsible table row.
+  const filteredOffenses = useMemo(() => filterOffenses(cases, searchQuery), [cases, searchQuery]);
+  const stages = useMemo(() => stageCounts(filteredOffenses), [filteredOffenses]);
+  const blotterRows = useMemo(() => groupByBlotter(filteredOffenses), [filteredOffenses]);
+  const totalPages = Math.ceil(blotterRows.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentGroups = filteredGroups.slice(startIndex, endIndex);
-
-  const loadSiblingOffenses = useCallback(async (group: CaseGroup) => {
-    const incidentId = group.representative.incidentId;
-    if (group.complete || !incidentId || siblingRequests.current.has(group.key)) return;
-    siblingRequests.current.add(group.key);
-    setLoadingGroups(previous => new Set(previous).add(group.key));
-    try {
-      const siblings = await fetchCrimes({ incidentId, view: "analysis" });
-      setSiblingCases(previous => ({ ...previous, [group.key]: siblings }));
-      setIncompleteGroups(previous => {
-        const next = new Set(previous);
-        if (mergeCaseOffenses(group, siblings).complete) next.delete(group.key);
-        else next.add(group.key);
-        return next;
-      });
-    } finally {
-      siblingRequests.current.delete(group.key);
-      setLoadingGroups(previous => {
-        const next = new Set(previous);
-        next.delete(group.key);
-        return next;
-      });
-    }
-  }, []);
-
-  const toggleGroup = (group: CaseGroup) => {
-    const opening = !expandedGroups.has(group.key);
-    setExpandedGroups(previous => {
+  const currentRows = blotterRows.slice(startIndex, endIndex);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const listId = useId();
+  const toggleRow = (key: string) =>
+    setExpandedRows((previous) => {
       const next = new Set(previous);
-      if (opening) next.add(group.key);
-      else next.delete(group.key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
-    if (opening) void loadSiblingOffenses(mergeCaseOffenses(group, siblingCases[group.key] || []));
-  };
 
-  const openGroupDetails = useCallback((group: CaseGroup, offense = group.offenses[0] || group.representative) => {
-    setModalGroupKey(group.key);
+  const openCaseDetails = useCallback((offense: OffenseRecord | null) => {
+    if (!offense) return;
     chooseCase(offense);
     setIsModalOpen(true);
-    if (!group.complete) void loadSiblingOffenses(group);
-  }, [chooseCase, loadSiblingOffenses]);
-
-  const openCaseDetails = useCallback((offense: CrimeIncident | null) => {
-    if (!offense) return;
-    const group = groups.find(candidate => candidate.offenses.some(item => item.id === offense.id));
-    if (group) openGroupDetails(mergeCaseOffenses(group, siblingCases[group.key] || []), offense);
-    else {
-      setModalGroupKey(null);
-      chooseCase(offense);
-      setIsModalOpen(true);
-    }
-  }, [chooseCase, groups, openGroupDetails, siblingCases]);
-
-  const modalGroup = modalGroupKey
-    ? (() => {
-        const group = groups.find(candidate => candidate.key === modalGroupKey);
-        return group ? mergeCaseOffenses(group, siblingCases[group.key] || []) : null;
-      })()
-    : null;
-  const modalOffenses = modalGroup?.offenses || (selectedCase ? [selectedCase] : []);
+  }, [chooseCase]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [crimeTypeFilter, dateRangeFilter, statusFilter, selectedFelonyStage, searchQuery, cases]);
 
-  // Deep links keep the offense identity, even though pagination uses parent blotters.
+  // A link to /dashboard/cases?case=<offense id> opens that offense on its page.
   useEffect(() => {
     if (!targetCaseId || loading || handledCaseRef.current === targetCaseId) return;
-    const link = findCaseDeepLink(filteredGroups, targetCaseId, itemsPerPage);
+    const index = blotterRows.findIndex(row => row.offenses.some(offense => offense.id === targetCaseId));
     let active = true;
     const selectionAtStart = selectionVersion.current;
     async function openLinkedCase() {
-      let offense = link?.offense;
+      let offense: OffenseRecord | undefined = index >= 0 ? blotterRows[index].offenses.find(o => o.id === targetCaseId) : undefined;
       if (!offense) {
-        const result = await readJson<{ success: boolean; data: CrimeIncident }>(`/api/crimes/${encodeURIComponent(targetCaseId!)}`).catch(() => null);
+        const result = await readJson<{ success: boolean; data: OffenseRecord }>(`/api/crimes/${encodeURIComponent(targetCaseId!)}`).catch(() => null);
         if (!active || !result?.success || !result.data) return;
         offense = result.data;
       }
       if (!active || !offense || selectionVersion.current !== selectionAtStart) return;
       handledCaseRef.current = targetCaseId;
-      const linkedGroup = link ? groups.find(group => group.key === link.groupKey) : null;
-      if (linkedGroup) openGroupDetails(mergeCaseOffenses(linkedGroup, siblingCases[linkedGroup.key] || []), offense);
-      else openCaseDetails(offense);
-      const index = link ? filteredGroups.findIndex(group => group.key === link.groupKey) : filteredGroups.findIndex(group => group.representative.incidentId && group.representative.incidentId === offense?.incidentId);
       if (index >= 0) {
-        const group = filteredGroups[index];
         setCurrentPage(Math.floor(index / itemsPerPage) + 1);
-        setExpandedGroups(previous => new Set(previous).add(group.key));
-        void loadSiblingOffenses(group);
+        if (blotterRows[index].offenses.length > 1) setExpandedRows(previous => new Set(previous).add(blotterRows[index].key));
       }
+      openCaseDetails(offense);
     }
     void openLinkedCase();
     return () => { active = false; };
-  }, [targetCaseId, loading, filteredGroups, groups, siblingCases, itemsPerPage, loadSiblingOffenses, chooseCase, openGroupDetails, openCaseDetails]);
+  }, [targetCaseId, loading, blotterRows, itemsPerPage, openCaseDetails]);
 
   // Get unique values for filters
   const statuses = ["(All)", "Cleared", "Under Investigation", "Filed in Court", "Archived", "Pending"];
@@ -476,7 +437,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
   // this one takes the sky accent used for section headers elsewhere so the two tiers
   // are told apart at a glance instead of by reading order alone.
   const sectionLabelClass = "text-[0.72rem] font-bold uppercase tracking-[0.11em] text-sky-600 dark:text-sky-400";
-  const columns = "1.3fr 1.7fr 1fr 1.2fr";
+  const columns = "1.7fr 0.95fr 1.3fr 0.9fr 1.15fr";
 
   // Text-only color for a status label — no pill, for places (like the full-detail
   // header) where a badge reads as a small compact-card widget rather than part of
@@ -494,8 +455,22 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
             : "text-amber-600 dark:text-amber-500";
   };
 
+  /** Stage of felony as quiet text — the status pill beside it stays the row's one chip. */
+  const stageChip = (stage?: string) => {
+    const value = (stage || "UNKNOWN").toUpperCase();
+    const tone =
+      value === "FRUSTRATED"
+        ? "text-amber-700 dark:text-amber-400"
+        : value === "ATTEMPTED"
+          ? "text-sky-700 dark:text-sky-400"
+          : value === "CONSUMMATED"
+            ? dark ? "text-slate-300" : "text-slate-700"
+            : mutedText;
+    return <span className={`text-xs font-semibold ${tone}`}>{value === "UNKNOWN" ? "Unknown stage" : value[0] + value.slice(1).toLowerCase()}</span>;
+  };
+
   const statusChip = (caseStatus?: string) => {
-    const label = ["Multiple statuses", "Status unavailable", "Resolved"].includes(caseStatus || "") ? caseStatus! : getStatusLabel(caseStatus);
+    const label = caseStatus === "Multiple statuses" ? caseStatus : getStatusLabel(caseStatus);
     const tone =
       label === "Cleared"
         ? "bg-emerald-500/10 text-emerald-500"
@@ -512,6 +487,44 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
       </span>
     );
   };
+
+  /** "Offenses on this blotter" — shown only when the blotter lists more than one. */
+  const sameBlotterList = (current: OffenseRecord, heading: string, divided = true) =>
+    blotterOffenses.length > 1 && (
+      <div className={divided ? `border-t pt-4 ${hairline}` : ""}>
+        <h4 className={`${heading} mb-2`}>Offenses on this blotter ({blotterOffenses.length})</h4>
+        <ul className="space-y-1">
+          {blotterOffenses.map((offense) => {
+            const isCurrent = offense.id === current.id;
+            return (
+              <li key={offense.id}>
+                <button
+                  type="button"
+                  onClick={() => chooseCase(offense)}
+                  disabled={isCurrent}
+                  aria-current={isCurrent ? "true" : undefined}
+                  title={isCurrent ? "This offense" : "Open this offense's record"}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-[0.82rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:cursor-default ${
+                    isCurrent ? (dark ? "bg-sky-400/10" : "bg-sky-50") : dark ? "hover:bg-white/5" : "hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className={`block truncate font-medium ${dark ? "text-slate-100" : "text-slate-800"}`}>
+                      {offense.offenseCategory || offense.crimeType}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {stageChip(offense.stageOfFelony)}
+                      {isCurrent && <span className={`text-xs ${mutedText}`}>· Viewing</span>}
+                    </span>
+                  </span>
+                  {statusChip(offense.caseStatus)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
 
   const filtersActive =
     searchQuery !== "" ||
@@ -541,7 +554,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
           <div className="max-w-lg">
             <h2 className={`text-3xl font-bold tracking-tight mb-1.5 ${dark ? "text-white" : "text-slate-900"}`}>Crime Cases</h2>
             <p className={`text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}>
-              {isGeneralDashboard ? "All recorded cases across Tanza, Cavite" : `Recorded cases in Brgy. ${barangayName}`}
+              {isGeneralDashboard ? "Every recorded offense across Tanza, Cavite, with its stage of felony" : `Recorded offenses in Brgy. ${barangayName}, with their stage of felony`}
             </p>
           </div>
           <dl className="text-right">
@@ -629,17 +642,19 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
             Crime Cases
           </h2>
           <p className={`text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}>
-            {isGeneralDashboard ? "All recorded cases across Tanza, Cavite" : `Recorded cases in Brgy. ${barangayName}`}
+            {isGeneralDashboard ? "Every recorded offense across Tanza, Cavite, with its stage of felony" : `Recorded offenses in Brgy. ${barangayName}, with their stage of felony`}
           </p>
         </div>
         <dl className="text-right">
           <dt className={`text-[12px] font-semibold uppercase tracking-[0.14em] ${dark ? "text-slate-500" : "text-slate-400"}`}>
-            {filtersActive ? "Matching Blotters" : "Recorded Blotters"}
+            {filtersActive ? "Matching Offenses" : "Recorded Offenses"}
           </dt>
           <dd className={`mt-1.5 text-lg font-semibold ${dark ? "text-white" : "text-slate-900"}`}>
-            {filteredGroups.length.toLocaleString()}
+            {filteredOffenses.length.toLocaleString()}
           </dd>
-          <dd className={`mt-1 text-xs ${mutedText}`}>{matchingOffenseCount.toLocaleString()} matching recorded offenses</dd>
+          <dd className={`mt-1 text-xs tabular-nums ${mutedText}`}>
+            {stages.map(({ stage, count }) => `${count.toLocaleString()} ${stage.toLowerCase()}`).join(" · ") || "No offenses"}
+          </dd>
         </dl>
       </header>
 
@@ -679,7 +694,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
           {filtersActive && (
             <div className={`flex items-center justify-between border-t pt-3 text-xs ${hairline}`}>
               <span className={mutedText}>
-                {filteredGroups.length.toLocaleString()} matching blotters · {matchingOffenseCount.toLocaleString()} matching recorded offenses
+                {filteredOffenses.length.toLocaleString()} matching offenses on {blotterRows.length.toLocaleString()} blotters
               </span>
               <button
                 onClick={clearFilters}
@@ -703,15 +718,15 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                   className={`grid gap-4 border-b ${hairline}`}
                   style={{ gridTemplateColumns: columns, padding: "12px 22px" }}
                 >
-                  {["Blotter No.", "Location", "Date", "Status"].map((h) => (
+                  {["Offense", "Stage of felony", "Location", "Date", "Status"].map((h) => (
                     <span key={h} className={labelClass}>{h}</span>
                   ))}
                 </div>
 
                 <div className="max-h-[640px] overflow-y-auto">
-                  {filteredGroups.length === 0 ? (
+                  {filteredOffenses.length === 0 ? (
                     <div className={`flex h-56 flex-col items-center justify-center gap-1 text-sm ${mutedText}`}>
-                      <p>No cases found</p>
+                      <p>No offenses found</p>
                       {filtersActive && (
                         <button onClick={clearFilters} className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400">
                           Clear filters
@@ -719,22 +734,20 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                       )}
                     </div>
                   ) : (
-                    currentGroups.map((matchingGroup) => {
-                      const group = mergeCaseOffenses(matchingGroup, siblingCases[matchingGroup.key] || []);
-                      const crime = group.representative;
-                      const selected = group.offenses.some(offense => offense.id === selectedCase?.id);
-                      const expanded = expandedGroups.has(group.key);
-                      const childrenId = `${listId}-offenses-${encodeURIComponent(group.key)}`;
-                      const matchingIds = new Set(group.matchingOffenses.map(offense => offense.id));
-                      // Clicking the blotter row returns the quick view to its first
-                      // matching offense, even if the modal had another offense active.
-                      const selectParent = () => chooseCase(matchingGroup.matchingOffenses[0] || crime);
+                    currentRows.map((row) => {
+                      const crime = row.primary;
+                      const grouped = row.offenses.length > 1;
+                      const expanded = grouped && expandedRows.has(row.key);
+                      const selected = row.offenses.some(offense => offense.id === selectedCase?.id);
+                      const childrenId = `${listId}-blotter-${encodeURIComponent(row.key)}`;
+                      const location = crime.street ? `${crime.street}, ${crime.barangay}` : crime.barangay;
+                      const names = row.offenses.map(o => o.offenseCategory || o.crimeType).join(", ");
                       return (
-                        <React.Fragment key={group.key}>
+                        <React.Fragment key={row.key}>
                           <div
-                            onClick={selectParent}
-                            onDoubleClick={() => openGroupDetails(group)}
-                            title="Double-click this row to open full case details"
+                            onClick={() => chooseCase(crime)}
+                            onDoubleClick={() => openCaseDetails(crime)}
+                            title={grouped ? "Expand to see each offense; double-click to open the full record" : "Double-click this row to open the full offense record"}
                             className={`grid cursor-pointer items-center gap-4 border-b text-[0.82rem] transition-colors ${hairline} ${
                               selected
                                 ? dark ? "bg-sky-400/[0.08] shadow-[inset_3px_0_0_#38bdf8]" : "bg-sky-50 shadow-[inset_3px_0_0_#0369a1]"
@@ -743,15 +756,15 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                             style={{ gridTemplateColumns: columns, padding: "13px 22px" }}
                           >
                             <div className="flex min-w-0 items-center gap-2">
-                              {group.hasMultipleOffenses && (
+                              {grouped && (
                                 <button
                                   type="button"
-                                  aria-label={`${expanded ? "Collapse" : "Expand"} offenses for blotter ${getCaseId(crime)}`}
+                                  aria-label={`${expanded ? "Collapse" : "Expand"} the ${row.offenses.length} offenses on blotter ${getCaseId(crime)}`}
                                   aria-expanded={expanded}
                                   aria-controls={childrenId}
-                                  onClick={event => { event.stopPropagation(); toggleGroup(group); }}
+                                  onClick={event => { event.stopPropagation(); toggleRow(row.key); }}
                                   onDoubleClick={event => event.stopPropagation()}
-                                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${mutedText}`}
+                                  className={`-ml-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${mutedText}`}
                                 >
                                   <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} />
                                 </button>
@@ -759,61 +772,67 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                               <button
                                 type="button"
                                 onKeyDown={event => {
-                                  if (event.key === "Enter" && selected) { event.preventDefault(); openGroupDetails(group); }
+                                  if (event.key === "Enter" && selected) { event.preventDefault(); openCaseDetails(selectedCase); }
                                 }}
                                 aria-pressed={selected}
-                                title="Select blotter; double-click to open full details"
+                                title={grouped ? names : "Select offense; double-click to open the full record"}
                                 className={`min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${dark ? "text-slate-100" : "text-slate-900"}`}
                               >
-                                <span className="block break-all font-semibold leading-snug tabular-nums" title={getCaseId(crime)}>{getCaseId(crime)}</span>
-                                {group.hasMultipleOffenses && <span className={`block text-[0.7rem] ${mutedText}`}>{group.offenseCount} recorded offenses</span>}
+                                {grouped ? (
+                                  <>
+                                    {/* The blotter is what this row is, so it leads and is never cut off. */}
+                                    <span className="block break-all font-semibold leading-snug tabular-nums">{getCaseId(crime)}</span>
+                                    <span className={`block truncate text-[0.7rem] ${mutedText}`}>{row.offenses.length} offenses on this blotter</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="block truncate font-semibold leading-snug" title={crime.offenseCategory || crime.crimeType}>
+                                      {crime.offenseCategory || crime.crimeType}
+                                    </span>
+                                    <span className={`block truncate text-[0.7rem] tabular-nums ${mutedText}`} title={`Blotter ${getCaseId(crime)}`}>
+                                      Blotter {getCaseId(crime)}
+                                    </span>
+                                  </>
+                                )}
                               </button>
                             </div>
-                            <span className={`truncate ${dark ? "text-slate-400" : "text-slate-600"}`} title={crime.street ? `${crime.street}, ${crime.barangay}` : crime.barangay}>
-                              {crime.street ? `${crime.street}, ${crime.barangay}` : crime.barangay}
+                            {row.stage ? stageChip(row.stage) : <span className={`text-xs font-semibold ${mutedText}`}>Mixed stages</span>}
+                            <span className={`truncate ${dark ? "text-slate-400" : "text-slate-600"}`} title={location}>
+                              {location}
                             </span>
                             <span className={`tabular-nums ${mutedText}`}>{formatDate(crime.dateCommitted)}</span>
-                            {statusChip(group.status)}
+                            {statusChip(grouped ? row.status : crime.caseStatus)}
                           </div>
-                          {group.hasMultipleOffenses && (
+                          {grouped && (
                             <div id={childrenId} hidden={!expanded} className={`border-b ${hairline} ${dark ? "bg-[#0f172a]/40" : "bg-slate-50/70"}`}>
-                              {expanded && (
-                                <>
-                                  <div className={`flex items-center justify-between gap-3 px-[22px] py-2 text-xs ${mutedText}`}>
-                                    <span>{group.matchingOffenses.length} matching · {group.offenseCount} recorded offenses in this blotter</span>
-                                    {!group.complete && <span role="status">{loadingGroups.has(group.key) ? "Loading all offenses…" : `${group.offenses.length} of ${group.offenseCount} offenses loaded`}</span>}
-                                  </div>
-                                  {group.offenses.map(offense => (
-                                    <button
-                                      type="button"
-                                      key={offense.id}
-                                      onClick={() => chooseCase(offense)}
-                                      onDoubleClick={() => openGroupDetails(group, offense)}
-                                      onKeyDown={event => {
-                                        if (event.key === "Enter" && selectedCase?.id === offense.id) { event.preventDefault(); openGroupDetails(group, offense); }
-                                      }}
-                                      aria-pressed={selectedCase?.id === offense.id}
-                                      className={`grid w-full grid-cols-[1.7fr_0.8fr_1fr] items-center gap-4 px-[22px] py-3 pl-[54px] text-left text-[0.82rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${selectedCase?.id === offense.id ? "bg-sky-500/10" : dark ? "hover:bg-white/5" : "hover:bg-slate-100"}`}
-                                    >
-                                      <span className={`min-w-0 ${dark ? "text-slate-200" : "text-slate-800"}`}>
-                                        <span className="block font-medium">{offense.crimeType || extractCrimeType(offense.incidentType)}</span>
-                                        {!matchingIds.has(offense.id) && <span className={`block text-[0.68rem] ${mutedText}`}>Outside current filters</span>}
-                                      </span>
-                                      <span className={`text-xs ${mutedText}`}>{offense.stageOfFelony || "Unknown stage"}</span>
-                                      {statusChip(offense.caseStatus)}
-                                    </button>
-                                  ))}
-                                  {!group.complete && !loadingGroups.has(group.key) && (
-                                    <div className={`px-[22px] py-3 text-xs ${mutedText}`}>
-                                      {crime.incidentId ? (
-                                        <button className="font-semibold text-sky-600 dark:text-sky-400" onClick={() => void loadSiblingOffenses(group)}>
-                                          {incompleteGroups.has(group.key) ? "Retry loading all offenses" : "Load all offenses"}
-                                        </button>
-                                      ) : "The complete offense list is unavailable for this legacy blotter."}
-                                    </div>
-                                  )}
-                                </>
-                              )}
+                              {expanded && row.offenses.map(offense => {
+                                const current = offense.id === selectedCase?.id;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={offense.id}
+                                    onClick={() => chooseCase(offense)}
+                                    onDoubleClick={() => openCaseDetails(offense)}
+                                    onKeyDown={event => {
+                                      if (event.key === "Enter" && current) { event.preventDefault(); openCaseDetails(offense); }
+                                    }}
+                                    aria-pressed={current}
+                                    title="Select this offense; double-click to open its full record"
+                                    className={`grid w-full items-center gap-4 text-left text-[0.82rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${
+                                      current ? "bg-sky-500/10" : dark ? "hover:bg-white/5" : "hover:bg-slate-100"
+                                    }`}
+                                    style={{ gridTemplateColumns: columns, padding: "10px 22px 10px 52px" }}
+                                  >
+                                    <span className={`min-w-0 line-clamp-2 font-medium leading-snug ${dark ? "text-slate-200" : "text-slate-800"}`} title={offense.offenseCategory || offense.crimeType}>
+                                      {offense.offenseCategory || offense.crimeType}
+                                    </span>
+                                    {stageChip(offense.stageOfFelony)}
+                                    <span />
+                                    <span />
+                                    {statusChip(offense.caseStatus)}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </React.Fragment>
@@ -825,10 +844,10 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
             </div>
 
             {/* Pagination */}
-            {filteredGroups.length > 0 && (
+            {blotterRows.length > 0 && (
               <div className={`flex flex-wrap items-center justify-between gap-3 border-t ${hairline}`} style={{ padding: "12px 22px" }}>
                 <div className={`text-xs ${mutedText}`}>
-                  Showing {startIndex + 1}–{Math.min(endIndex, filteredGroups.length)} of {filteredGroups.length.toLocaleString()} blotters
+                  Showing {startIndex + 1}–{Math.min(endIndex, blotterRows.length)} of {blotterRows.length.toLocaleString()} blotters · {filteredOffenses.length.toLocaleString()} offenses
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -947,7 +966,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                         <h3
                           className={`font-heading mt-1 text-lg font-bold leading-snug ${dark ? "text-white" : "text-slate-900"}`}
                         >
-                          {c.crimeType || extractCrimeType(c.incidentType)}
+                          {c.crimeType}
                         </h3>
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           {statusChip(c.caseStatus)}
@@ -982,6 +1001,8 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                           ))}
                         </dl>
                       )}
+
+                      {sameBlotterList(c, labelClass)}
 
                       {/* Long text, previewed — the rest is in the full view (opened via
                           the "Full details" button pinned at the top of this panel). */}
@@ -1034,94 +1055,6 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
               dark ? "bg-[#1e293b] border-white/[0.06]" : "bg-white border-slate-200"
             }`}
           >
-            {(modalOffenses.length > 1 || modalGroup?.hasMultipleOffenses) && (
-              <div className={`shrink-0 border-b pb-3 ${hairline}`}>
-                {(() => {
-                  const selectedIndex = Math.max(0, modalOffenses.findIndex(offense => offense.id === selectedCase?.id));
-                  const currentOffense = modalOffenses[selectedIndex];
-                  const currentName = currentOffense?.crimeType || extractCrimeType(currentOffense?.incidentType || "");
-                  return (
-                    <div className="flex w-full min-w-0 max-w-[440px] items-center gap-1.5">
-                      <button
-                        type="button"
-                        aria-label="Previous offense"
-                        disabled={selectedIndex === 0}
-                        onClick={() => currentOffense && chooseCase(modalOffenses[selectedIndex - 1])}
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${dark ? "border-white/[0.08] text-slate-300 hover:bg-white/[0.05]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <Select
-                        value={currentOffense?.id}
-                        onValueChange={id => {
-                          const offense = modalOffenses.find(item => item.id === id);
-                          if (offense) chooseCase(offense);
-                        }}
-                      >
-                        <SelectTrigger
-                          aria-label="Choose offense in this blotter"
-                          className={`h-9 min-w-0 flex-1 rounded-lg px-2.5 text-left text-[13px] ${dark ? "border-white/10 bg-[#0f172a] text-slate-100 hover:bg-[#0f172a]" : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"}`}
-                        >
-                          <SelectValue>
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className={`shrink-0 text-[0.62rem] font-bold uppercase tracking-wide ${mutedText}`}>{selectedIndex + 1} of {modalOffenses.length}</span>
-                              <span className="truncate text-[13px] font-semibold">{currentName}</span>
-                            </span>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          className={`max-h-[min(50vh,360px)] rounded-xl border p-1 shadow-lg ${dark ? "border-white/10 bg-[#1e293b] text-slate-100" : "border-slate-200 bg-white text-slate-900"}`}
-                        >
-                          {modalOffenses.map((offense, index) => {
-                            const name = offense.crimeType || extractCrimeType(offense.incidentType);
-                            const stage = offense.stageOfFelony || "Unknown stage";
-                            return (
-                              <SelectItem
-                                key={offense.id}
-                                value={offense.id}
-                                textValue={`Offense ${index + 1}: ${name}, ${stage}`}
-                                className={`rounded-lg py-2 focus-visible:outline-none! ${dark ? "focus:bg-white/10 focus:text-white data-[state=checked]:bg-sky-400/15 data-[state=checked]:text-sky-300" : "focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-sky-50 data-[state=checked]:text-sky-700"}`}
-                              >
-                                <span className="min-w-0">
-                                  <span className="block truncate text-sm font-semibold">{name}</span>
-                                  <span className="mt-0.5 block truncate text-xs opacity-70">Offense {index + 1} · {stage}</span>
-                                </span>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                      <button
-                        type="button"
-                        aria-label="Next offense"
-                        disabled={selectedIndex >= modalOffenses.length - 1}
-                        onClick={() => currentOffense && chooseCase(modalOffenses[selectedIndex + 1])}
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${dark ? "border-white/[0.08] text-slate-300 hover:bg-white/[0.05]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  );
-                })()}
-                {modalGroup && !modalGroup.complete && (
-                  <div className={`mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs ${mutedText}`} role="status" aria-live="polite">
-                    <span>
-                      {!modalGroup.representative.incidentId
-                        ? "The complete offense list is unavailable for this legacy blotter."
-                        : loadingGroups.has(modalGroup.key)
-                          ? `Loading offenses · ${modalOffenses.length} of ${modalGroup.offenseCount} found`
-                          : `${modalOffenses.length} of ${modalGroup.offenseCount} offenses loaded`}
-                    </span>
-                    {modalGroup.representative.incidentId && !loadingGroups.has(modalGroup.key) && (
-                      <button type="button" onClick={() => void loadSiblingOffenses(modalGroup)} className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400">
-                        Load remaining offenses
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             {!hydratedCase ? (
               detailError ? (
                 <div className={`flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center text-sm ${mutedText}`} role="alert">
@@ -1162,7 +1095,6 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
               ].filter((p) => p.text);
 
               const classification = [
-                { label: "Source incident description", value: c.sourceIncidentType },
                 { label: "Offense classification", value: c.offenseType },
                 { label: "Legal section", value: c.section },
                 { label: "Stage of felony", value: c.stageOfFelony },
@@ -1180,7 +1112,6 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
               // for. Grouped last, in a quieter card, instead of mixed into the story.
               const filing = [
                 { label: "Blotter number", value: c.blotterNo },
-                { label: "Offenses in this blotter", value: String(c.offenseCount ?? 1) },
                 { label: "Type of place", value: c.typeOfPlace },
                 { label: "Police community precinct", value: c.pcp },
                 { label: "Station", value: c.stn },
@@ -1211,7 +1142,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
                         <DialogTitle
                           className={`font-heading text-2xl font-bold leading-snug ${dark ? "text-white" : "text-slate-900"}`}
                         >
-                          {c.crimeType || extractCrimeType(c.incidentType)}
+                          {c.crimeType}
                         </DialogTitle>
                         {/* Status and flags as plain, colored text — a pill reads like a
                             compact-card widget; this is a full record, not a table row. */}
@@ -1288,6 +1219,7 @@ export default function IncidentsTab({ barangayName }: IncidentsTabProps) {
 
                     {/* Where, and the paperwork trail */}
                     <div className="space-y-4">
+                      {sameBlotterList(c, sectionLabelClass, false)}
                       {hasMap && (
                         <div className={`relative h-48 rounded-lg border overflow-hidden ${hairline}`}>
                           <CaseLocationFrame lat={c.latitude!} lon={c.longitude!} />

@@ -9,25 +9,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { CrimeIncident } from "@/lib/api";
+import type { OffenseRecord } from "@/lib/api";
 import {
   type AnalyticsSlice,
   cleanLabel,
-  filterIncidents,
+  filterOffensesBySlice,
   sliceKindLabel,
   sliceLabel,
 } from "@/lib/analytics-slice";
 import SliceMiniMap from "./slice-mini-map";
 import { toInputDate } from "@/lib/date-input";
 import { useMapContext } from "@/context/MapContext";
-import { uniqueIncidentRecords } from "@/lib/offense-classification";
 
 interface Props {
   /** null closes the dialog. */
   slice: AnalyticsSlice | null;
-  allCrimes: CrimeIncident[];
-  /** Page-wide incident count, used for the "share of all incidents" readout. */
-  totalIncidents: number;
+  allCrimes: OffenseRecord[];
   totalOffenses: number;
   theme: string;
   onClose: () => void;
@@ -68,10 +65,10 @@ function formatTime(time?: string): string {
   return `${display}:${min ?? "00"} ${suffix}`;
 }
 
-/** Most frequent value of a field across the sliced incidents. */
+/** Most frequent value of a field across the sliced offenses. */
 function topValue(
-  crimes: CrimeIncident[],
-  pick: (c: CrimeIncident) => string | undefined,
+  crimes: OffenseRecord[],
+  pick: (c: OffenseRecord) => string | undefined,
 ) {
   const counts = new Map<string, number>();
   crimes.forEach((c) => {
@@ -86,10 +83,9 @@ function topValue(
   return best as { value: string; count: number } | null;
 }
 
-export default function IncidentDetailModal({
+export default function OffenseDetailModal({
   slice,
   allCrimes,
-  totalIncidents,
   totalOffenses,
   theme,
   onClose,
@@ -98,26 +94,21 @@ export default function IncidentDetailModal({
   const dark = theme === "dark";
   const { customDateRange } = useMapContext();
 
-  const incidents = useMemo(() => {
-    if (!slice) return [];
-    const matching = filterIncidents(allCrimes, slice);
-    return slice.kind === "crimeType" || slice.kind === "matrixCell"
-      ? matching
-      : uniqueIncidentRecords(matching);
-  }, [slice, allCrimes]);
+  // Each offense counts on its own, whatever chart the slice came from.
+  const offenses = useMemo(() => (slice ? filterOffensesBySlice(allCrimes, slice) : []), [slice, allCrimes]);
 
   const summary = useMemo(() => {
     if (!slice) return null;
-    const cleared = incidents.filter((c) =>
+    const cleared = offenses.filter((c) =>
       (c.caseStatus ?? "").toLowerCase().includes("cleared"),
     ).length;
     return {
-      topBarangay: topValue(incidents, (c) => c.barangay),
-      topPlace: topValue(incidents, (c) => c.typeOfPlace),
-      topType: topValue(incidents, (c) => c.incidentType),
+      topBarangay: topValue(offenses, (c) => c.barangay),
+      topPlace: topValue(offenses, (c) => c.typeOfPlace),
+      topType: topValue(offenses, (c) => c.crimeType),
       cleared,
     };
-  }, [incidents, slice]);
+  }, [offenses, slice]);
 
   if (!slice) return null;
 
@@ -132,11 +123,7 @@ export default function IncidentDetailModal({
     return `/dashboard/cases?${params}`;
   };
 
-  const offenseSlice =
-    slice.kind === "crimeType" || slice.kind === "matrixCell";
-  const total = offenseSlice ? totalOffenses : totalIncidents;
-  const unit = offenseSlice ? "offense" : "incident";
-  const share = total > 0 ? Math.round((incidents.length / total) * 100) : 0;
+  const share = totalOffenses > 0 ? Math.round((offenses.length / totalOffenses) * 100) : 0;
 
   const chipClass = `rounded-md px-2.5 py-1.5 ${
     dark ? "bg-white/[0.04] text-slate-300" : "bg-slate-50 text-slate-600"
@@ -172,9 +159,9 @@ export default function IncidentDetailModal({
               "Loading case records…"
             ) : (
               <>
-                {sliceKindLabel(slice)} · {incidents.length} {unit}
-                {incidents.length === 1 ? "" : "s"}
-                {share > 0 && ` · ${share}% of all ${unit}s`}
+                {sliceKindLabel(slice)} · {offenses.length} offense
+                {offenses.length === 1 ? "" : "s"}
+                {share > 0 && ` · ${share}% of all offenses`}
               </>
             )}
           </DialogDescription>
@@ -188,7 +175,7 @@ export default function IncidentDetailModal({
           >
             Loading case records…
           </div>
-        ) : incidents.length === 0 ? (
+        ) : offenses.length === 0 ? (
           <div
             className={`py-10 text-center text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}
           >
@@ -228,13 +215,13 @@ export default function IncidentDetailModal({
               <div className={chipClass}>
                 Cleared{" "}
                 <span className={chipValueClass}>{summary?.cleared ?? 0}</span>{" "}
-                of {incidents.length}
+                of {offenses.length}
               </div>
             </div>
 
-            <SliceMiniMap incidents={incidents} theme={theme} />
+            <SliceMiniMap offenses={offenses} theme={theme} />
 
-            {/* Incident list */}
+            {/* Offense list */}
             <div className={`rounded-lg border ${rowBorder} overflow-hidden`}>
               <div
                 className={`grid gap-3 px-3 py-2 ${headClass} ${
@@ -252,10 +239,10 @@ export default function IncidentDetailModal({
                 <span>Status</span>
               </div>
               <div className="max-h-[320px] overflow-y-auto">
-                {incidents.map((c, i) => (
+                {offenses.map((c, i) => (
                   <Link
                     key={c.id ?? i}
-                    // Opens this case in the Cases view (?case= is read by IncidentsTab).
+                    // Opens this case in the Cases view (?case= is read by OffensesTab).
                     href={casesHref(c.id)}
                     title="Open in Cases"
                     className={`grid gap-3 px-3 py-2 text-[0.78rem] border-t ${rowBorder} cursor-pointer transition-colors ${
@@ -282,8 +269,8 @@ export default function IncidentDetailModal({
                     <span className="truncate" title={c.barangay}>
                       {c.barangay ?? "—"}
                     </span>
-                    <span className="truncate" title={c.incidentType}>
-                      {cleanLabel(c.incidentType ?? "—")}
+                    <span className="truncate" title={c.crimeType}>
+                      {cleanLabel(c.crimeType ?? "—")}
                     </span>
                     <span className="truncate" title={c.caseStatus}>
                       {c.caseStatus ?? "—"}

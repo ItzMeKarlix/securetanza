@@ -31,7 +31,7 @@ interface ChangeLedgerProps {
 const SECTION = "text-[11.5px] font-semibold uppercase tracking-[0.11em] text-slate-500 dark:text-slate-400";
 const COLUMNS = "grid grid-cols-[minmax(0,1fr)_2.75rem_2.75rem_4.75rem] items-center gap-2";
 
-/** Each band's incident range on the shared scale. A band the data leaves empty reads "none". */
+/** Each band's offense range on the shared scale. A band the data leaves empty reads "none". */
 function bands(t: ThreatThresholds): { level: ThreatLevel; label: string; range: string }[] {
   const span = (lo: number, hi: number) => (lo > hi ? "none" : lo === hi ? `${lo}` : `${lo}–${hi}`);
   return [
@@ -138,9 +138,9 @@ export default function ChangeLedger({
 
   const emptyMessage =
     sort === "rises"
-      ? "No barangay has more incidents in B than in A."
+      ? "No barangay has more offenses in B than in A."
       : sort === "falls"
-        ? "No barangay has fewer incidents in B than in A."
+        ? "No barangay has fewer offenses in B than in A."
         : "No barangays to list yet.";
 
   return (

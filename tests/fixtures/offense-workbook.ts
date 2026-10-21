@@ -2,7 +2,7 @@ import * as XLSX from "xlsx";
 import { existsSync, readFileSync } from "node:fs";
 
 /** Sanitized fixture excludes narratives, names and other unneeded personal fields. */
-export function loadIncidentWorkbook() {
+export function loadOffenseWorkbook() {
   const source = "data/incidentrep_20160100448_2026-01-01-2026-09-29.xlsx";
   if (existsSync(source)) return XLSX.readFile(source);
   const rows = JSON.parse(

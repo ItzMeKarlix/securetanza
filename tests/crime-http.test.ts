@@ -9,7 +9,7 @@ const base = process.env.TEST_BASE_URL;
 const httpTest = base && process.env.TEST_DATABASE_URL ? test : test.skip;
 
 httpTest(
-  "authenticated upload isolates invalid rows, tracks Excel rows and preserves source labels",
+  "authenticated upload isolates invalid rows, tracks Excel rows and stores each offense on its own",
   async () => {
     const target = new URL(base!);
     assert.ok(
@@ -143,10 +143,11 @@ httpTest(
         r.offense === "LIGHT THREATS - RPC ART. 283",
     );
     assert.equal(second.sourceRow, 4);
-    assert.equal(second.sourceIncidentType, "(Incident) Shooting");
-    assert.equal(second.incidentType, "Light Threats");
-    assert.equal(second.hasMultipleOffenses, true);
-    assert.equal(second.offenseCount, 2);
+    assert.equal(second.crimeType, "Light Threats");
+    assert.equal(second.stageOfFelony, "CONSUMMATED");
+    // The workbook's Incident Type column is ignored, and offenses are never grouped.
+    for (const field of ["incidentType", "sourceIncidentType", "incidentId", "offenseCount", "hasMultipleOffenses"])
+      assert.equal(field in second, false, field);
     const denied = await fetch(`${base}/api/crimes/${second.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

@@ -11,7 +11,7 @@ export interface PaneReport {
   /** The period as the picker words it: "Jan–Sep 2025", "Q2 2026", "Mar 3, 2026 – Apr 1, 2026". */
   label: string;
   crimeType: string | null;
-  /** Incidents per barangay, keyed by `countKey`. */
+  /** Offenses per barangay, keyed by `countKey`. */
   counts: Record<string, number>;
   total: number;
   status: PaneStatus;
@@ -31,7 +31,7 @@ export const countKey = (name: string) =>
 
 /**
  * One ruler for both maps: the bands come from both periods' barangay counts
- * together, so the same colour means the same number of incidents on either side.
+ * together, so the same colour means the same number of offenses on either side.
  */
 export function sharedThresholds(a: Record<string, number>, b: Record<string, number>): ThreatThresholds {
   return calculateDynamicThresholds([...Object.values(a), ...Object.values(b)]);
@@ -108,7 +108,7 @@ export function formatPercent(a: number, b: number): string | null {
   return `${rounded > 0 ? "+" : MINUS}${Math.abs(rounded)}%`;
 }
 
-/** Text colour for a change: a rise in incidents reads red, a fall green, no change quiet. */
+/** Text colour for a change: a rise in offenses reads red, a fall green, no change quiet. */
 export function deltaTone(delta: number): string {
   if (delta > 0) return "text-red-700 dark:text-red-400";
   if (delta < 0) return "text-emerald-700 dark:text-emerald-400";

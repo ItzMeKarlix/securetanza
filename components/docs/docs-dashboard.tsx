@@ -12,7 +12,7 @@ export function DocsDashboard() {
           Overview Dashboard
         </h1>
         <p className="text-base text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
-          The Executive Dashboard provides an operational summary of incident volume, statutory offense distribution, and recent blotter entries across Tanza, Cavite.
+          The Executive Dashboard provides an operational summary of offense volume, statutory offense distribution, and recent blotter entries across Tanza, Cavite.
         </p>
       </div>
 
@@ -28,7 +28,7 @@ export function DocsDashboard() {
               Total Crimes
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-              Cumulative count of recorded blotter incidents within the active date range and selected barangay scope.
+              Cumulative count of recorded offenses within the active date range and selected barangay scope.
             </p>
           </div>
 
@@ -63,7 +63,7 @@ export function DocsDashboard() {
             12-Month Crime Volume Trajectory
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Displays monthly incident totals over time, highlighting upward or downward momentum and identifying seasonal surges (e.g., holiday or summer peaks).
+            Displays monthly offense totals over time, highlighting upward or downward momentum and identifying seasonal surges (e.g., holiday or summer peaks).
           </p>
         </div>
 

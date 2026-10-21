@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import { Switch } from "@/components/ui/switch";
 import {
 	Select,
@@ -11,20 +14,58 @@ import {
 } from "@/components/ui/select";
 import { OperatorOnly } from "../_components/settings-shell";
 import {
+	DataRow,
+	EmptyState,
 	Field,
+	Notice,
 	PageHeader,
+	Panel,
 	Row,
 	Rows,
 	SaveState,
 	Section,
 	PAGE_FORM,
 	SplitLayout,
+	SkeletonRows,
+	btnOutline,
 } from "../_components/settings-ui";
 import { cn } from "@/lib/utils";
 import { UnsavedChangesBar } from "../_components/unsaved-changes";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_OF_MONTH = Array.from({ length: 28 }, (_, i) => i + 1);
+
+interface ExportFile {
+	id: string;
+	fileName: string;
+	label: string | null;
+	periodLabel: string | null;
+	sizeBytes: number;
+	createdAt: string;
+}
+
+interface RunStatus {
+	nextRunAt: string | null;
+	lastRunAt: string | null;
+	lastRunError: string | null;
+}
+
+/** Schedule times are station time, so show them in station time whatever the browser's zone. */
+function stationTime(iso: string) {
+	return new Date(iso).toLocaleString("en-PH", {
+		timeZone: "Asia/Manila",
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	});
+}
+
+function fileSize(bytes: number) {
+	return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function DataExportsPage() {
 	return (
@@ -43,6 +84,50 @@ function DataExports() {
 	const [timeOfDay, setTimeOfDay] = useState("00:00");
 	const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	const { user } = useAuth();
+	const [status, setStatus] = useState<RunStatus | null>(null);
+	const [files, setFiles] = useState<ExportFile[] | null>(null);
+	const [exporting, setExporting] = useState(false);
+
+	const loadStatus = useCallback(() => {
+		fetch("/api/exports/schedule")
+			.then((res) => res.json())
+			.then((data) =>
+				setStatus({
+					nextRunAt: data.nextRunAt ?? null,
+					lastRunAt: data.schedule?.lastRunAt ?? null,
+					lastRunError: data.schedule?.lastRunError ?? null,
+				})
+			)
+			.catch(() => {});
+		fetch("/api/exports/history")
+			.then((res) => res.json())
+			.then((data) => setFiles(Array.isArray(data.data) ? data.data : []))
+			.catch(() => setFiles([]));
+	}, []);
+
+	React.useEffect(() => {
+		loadStatus();
+	}, [loadStatus]);
+
+	const exportNow = async () => {
+		setExporting(true);
+		try {
+			const res = await fetch("/api/exports/run", { method: "POST" });
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(data.error || "The export failed. Please try again.");
+			toast.success(
+				data.emailed
+					? `Report for ${data.periodLabel} sent to ${user?.email} (${data.offenses} offenses).`
+					: `Report for ${data.periodLabel} is ready below (${data.offenses} offenses).`
+			);
+			loadStatus();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "The export failed. Please try again.");
+		} finally {
+			setExporting(false);
+		}
+	};
 
 	React.useEffect(() => {
 		fetch("/api/exports/schedule")
@@ -71,6 +156,7 @@ function DataExports() {
 			if (!res.ok) throw new Error("Failed to save schedule");
 			setSaveState("saved");
 			setHasUnsavedChanges(false);
+			loadStatus();
 			setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 3000);
 		} catch (error) {
 			console.error("Error saving schedule:", error);
@@ -85,7 +171,7 @@ function DataExports() {
 			<SplitLayout>
 			<Section
 				title="Scheduled Exports"
-				description="Automatically generate incident reports on a recurring schedule."
+				description="Automatically generate an offense report on a recurring schedule. Each report covers the complete day, week or month before it runs."
 			>
 				<Rows>
 					<Row
@@ -169,7 +255,7 @@ function DataExports() {
 							</Field>
 						)}
 
-						<Field label="Generate at" htmlFor="time-of-day">
+						<Field label="Generate at" description="Station time (Philippine Standard Time, UTC+8)." htmlFor="time-of-day">
 							<div className="max-w-[23.75rem]">
 								<input
 									id="time-of-day"
@@ -185,10 +271,68 @@ function DataExports() {
 					</div>
 
 					<p className="pt-8 text-[0.8125rem] leading-relaxed text-slate-500 dark:text-slate-400">
-						Scheduled exports are saved in Settings → Backups. Open Backups to download them.
+						{user?.email
+							? `Each report is emailed to ${user.email} as an Excel file, and kept under Your reports for 14 days.`
+							: "Your account has no email address, so reports are only kept under Your reports (for 14 days)."}
 					</p>
-
 				</fieldset>
+			</Section>
+
+			<Section
+				title="Your reports"
+				description="What has run, what runs next, and the reports you can download."
+			>
+				<Rows>
+					<DataRow label="Next report" value={status?.nextRunAt ? stationTime(status.nextRunAt) : "Scheduled exports are off"} />
+					<DataRow label="Last scheduled report" value={status?.lastRunAt ? stationTime(status.lastRunAt) : "None yet"} />
+					<Row
+						label="Export now"
+						description={`Makes the ${frequency} report for the latest complete period right away${user?.email ? " and emails it to you" : ""}.`}
+					>
+						<button type="button" onClick={() => void exportNow()} disabled={exporting} className={btnOutline}>
+							{exporting && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+							{exporting ? "Exporting…" : "Export now"}
+						</button>
+					</Row>
+				</Rows>
+
+				{status?.lastRunError && (
+					<div className="pt-4">
+						<Notice tone="error">{status.lastRunError}</Notice>
+					</div>
+				)}
+
+				<div className="pt-6">
+					{files === null ? (
+						<SkeletonRows count={2} />
+					) : files.length === 0 ? (
+						<Panel>
+							<EmptyState title="No reports yet" hint="Reports appear here when the schedule runs, or when you use Export now." />
+						</Panel>
+					) : (
+						<Panel>
+							<ul className="divide-y divide-slate-200 dark:divide-white/[0.08]">
+								{files.map((file) => (
+									<li key={file.id} className="flex items-center justify-between gap-4 px-4 py-3">
+										<div className="min-w-0">
+											<p className="truncate text-[0.875rem] font-medium text-slate-900 dark:text-slate-100">
+												{file.periodLabel ?? file.fileName}
+											</p>
+											<p className="truncate text-[0.78rem] tabular-nums text-slate-500 dark:text-slate-400">
+												{file.label} · {fileSize(file.sizeBytes)} · made {stationTime(file.createdAt)}
+											</p>
+										</div>
+										<a href={`/api/exports/${file.id}`} className={btnOutline} download>
+											<Download className="h-3.5 w-3.5" aria-hidden="true" />
+											<span className="sr-only">Download report for {file.periodLabel ?? file.fileName}</span>
+											<span aria-hidden="true">Download</span>
+										</a>
+									</li>
+								))}
+							</ul>
+						</Panel>
+					)}
+				</div>
 			</Section>
 			</SplitLayout>
 

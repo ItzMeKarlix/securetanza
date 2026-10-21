@@ -31,7 +31,7 @@ export async function POST(
 
     const existingUser = await prisma.user.findUnique({ where: { id: userId } });
 
-    if (!existingUser) {
+    if (!existingUser || existingUser.deletedAt) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

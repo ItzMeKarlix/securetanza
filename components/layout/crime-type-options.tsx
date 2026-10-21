@@ -13,7 +13,7 @@ import {
 } from "@/lib/map-overlay";
 
 /**
- * The crime type picker's body — "All", the preset groups, then every incident
+ * The crime type picker's body — "All", the preset groups, then every offense
  * type recorded in the current period with its count. Reads and writes the
  * nearest MapProvider, so the map's filter bar and each side of the compare
  * view get the same list. `onPick` closes whatever dropdown holds it.

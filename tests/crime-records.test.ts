@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
 import { generateCrimeFingerprint } from "../backend/lib/crime-deduplication";
 import { normaliseHeader } from "../components/upload/upload-meta";
-import { loadIncidentWorkbook } from "./fixtures/incident-workbook";
+import { loadOffenseWorkbook } from "./fixtures/offense-workbook";
 import {
   fetchCrimes,
-  transformCrimeToIncident,
-  type CrimeIncident,
+  toOffenseSummary,
+  type OffenseRecord,
 } from "../lib/api";
 
 const record = {
@@ -18,7 +18,6 @@ const record = {
   timeCommitted: "17:20:00",
   dateReported: "2026-01-01",
   timeReported: "18:00:00",
-  incidentType: "(Incident) Alarms and Scandals",
   offense: "ALARMS AND SCANDALS - RPC ART. 155",
   stageOfFelony: "CONSUMMATED",
   section: "",
@@ -64,11 +63,12 @@ test("consummated felony stage does not mark a case as cleared", () => {
   const crime = {
     ...record,
     id: "test",
+    crimeType: "Alarms And Scandals",
     createdAt: "",
     updatedAt: "",
     isCrime: true,
-  } as CrimeIncident;
-  assert.equal(transformCrimeToIncident(crime).status, "Pending");
+  } as OffenseRecord;
+  assert.equal(toOffenseSummary(crime).status, "Pending");
 });
 test("analytics reads all pages and hour filtering uses timeCommitted", async () => {
   const original = globalThis.fetch;
@@ -90,7 +90,7 @@ test("analytics reads all pages and hour filtering uses timeCommitted", async ()
   }
 });
 test("the analyzed workbook retains all 424 offense signatures", () => {
-  const book = loadIncidentWorkbook();
+  const book = loadOffenseWorkbook();
   const source = XLSX.utils.sheet_to_json<Record<string, unknown>>(
     book.Sheets[book.SheetNames[0]],
     { defval: "" },
@@ -107,7 +107,6 @@ test("the analyzed workbook retains all 424 offense signatures", () => {
       timeCommitted: String(r.time_committed),
       dateReported: String(r.date_reported),
       timeReported: String(r.time_reported),
-      incidentType: String(r.incident_type),
       offense: String(r.offense),
       stageOfFelony: String(r.stage_of_felony),
       section: String(r.section),

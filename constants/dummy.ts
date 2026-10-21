@@ -1,6 +1,8 @@
-export interface Incident {
+export interface OffenseSummary {
   id: string;
   type: string;
+  /** Stage of felony: CONSUMMATED, FRUSTRATED, ATTEMPTED or UNKNOWN. */
+  stage?: string;
   date: string;
   status: "Active" | "Solved" | "Investigating" | "Pending" | "Cleared" | "Under Investigation" | "Filed in Court" | "Archived";
   severity: "High" | "Medium" | "Low";
@@ -10,7 +12,7 @@ export interface Incident {
   timeCommitted?: string;
 }
 
-export interface HistoricalIncident extends Incident {
+export interface HistoricalOffense extends OffenseSummary {
   month: string;
   year: string;
 }
@@ -29,7 +31,7 @@ export interface BarangayData {
     risk: string;
   };
   activity: number[];
-  incidents: Incident[];
+  offenses: OffenseSummary[];
   analysis: {
     safetyPerformance: string;
     description: string;
@@ -59,11 +61,11 @@ export const GENERAL_DASHBOARD_DATA: BarangayData = {
     risk: "Moderate",
   },
   activity: [40, 55, 30, 85, 45, 90, 60, 75, 45, 90, 65, 80],
-  incidents: [
-    { id: "INC-2026-001X", type: "Security Breach", date: "1h ago", status: "Active", severity: "High", location: "Sector A" },
-    { id: "INC-2026-002B", type: "Asset Theft", date: "3h ago", status: "Solved", severity: "Medium", location: "Sector F" },
-    { id: "INC-2026-003C", type: "Unauthorized Access", date: "5h ago", status: "Investigating", severity: "High", location: "Sector D" },
-    { id: "INC-2026-004P", type: "Public Nuisance", date: "Yesterday", status: "Solved", severity: "Low", location: "Sector B" },
+  offenses: [
+    { id: "OFF-2026-001X", type: "Security Breach", date: "1h ago", status: "Active", severity: "High", location: "Sector A" },
+    { id: "OFF-2026-002B", type: "Asset Theft", date: "3h ago", status: "Solved", severity: "Medium", location: "Sector F" },
+    { id: "OFF-2026-003C", type: "Unauthorized Access", date: "5h ago", status: "Investigating", severity: "High", location: "Sector D" },
+    { id: "OFF-2026-004P", type: "Public Nuisance", date: "Yesterday", status: "Solved", severity: "Low", location: "Sector B" },
   ],
   analysis: {
     safetyPerformance: "Stable Output",
@@ -78,7 +80,7 @@ export const GENERAL_DASHBOARD_DATA: BarangayData = {
 };
 
 // Historical data generator
-export const getHistoricalIncidents = (barangayName: string, month: string, year: string): HistoricalIncident[] => {
+export const getHistoricalOffenses = (barangayName: string, month: string, year: string): HistoricalOffense[] => {
   const seed = (barangayName.length + month.length + year.length) % 10;
   const types = ["Theft", "Public Disorder", "Aggravated Assault", "Property Damage", "Trespass"];
   
@@ -106,7 +108,7 @@ export const generateBarangayData = (name: string, month: string = "Apr", year: 
   // Simple deterministic seed from name length and date
   const s = name.length + month.length + year.length;
   const isHotspot = getHotspotSectorForDate(month, year) === name;
-  const historicalIncidents = getHistoricalIncidents(name, month, year);
+  const historicalOffenses = getHistoricalOffenses(name, month, year);
   
   return {
     name,
@@ -119,7 +121,7 @@ export const generateBarangayData = (name: string, month: string = "Apr", year: 
       risk: isHotspot ? "High" : (s % 4 === 0) ? "Low" : "Medium",
     },
     activity: Array.from({ length: 12 }, (_, i) => (isHotspot ? 40 : 20) + ((s + i * 7) % 50)),
-    incidents: historicalIncidents,
+    offenses: historicalOffenses,
     analysis: {
       safetyPerformance: isHotspot ? "Critical Zone" : "Stable Output",
       description: `Targeted metrics for ${name} during ${month} ${year}. This sector is currently designated as ${isHotspot ? "HIGH THREAT" : "NOMINAL"}.`,

@@ -156,7 +156,7 @@ export function DocsIntro({ onReplayTour, role, permissions: propPerms }: DocsIn
                   Interactive GIS Crime Map
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                  Visualizes multi-layer geospatial incident pins, 41 barangay polygon boundaries, threat level risk heatmaps, and timeline playback scrubbers for spatial analysis.
+                  Visualizes multi-layer geospatial offense pins, 41 barangay polygon boundaries, threat level risk heatmaps, and timeline playback scrubbers for spatial analysis.
                 </p>
               </div>
 
@@ -194,10 +194,10 @@ export function DocsIntro({ onReplayTour, role, permissions: propPerms }: DocsIn
           {canCases && (
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                Incident Blotter & Case Dossiers
+                Offense Register & Case Dossiers
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                Enables searching and inspecting detailed incident blotter records, clearance statuses, heinous/sensational crime flags, and investigator assignments.
+                Enables searching and inspecting detailed offense records, clearance statuses, heinous/sensational crime flags, and investigator assignments.
               </p>
             </div>
           )}
@@ -248,9 +248,9 @@ export function DocsIntro({ onReplayTour, role, permissions: propPerms }: DocsIn
         title="Ready to get started?"
         suggestion={
           canMap
-            ? "Explore the GIS Crime Map for spatial incidents, or review key statistics on the Overview Dashboard."
+            ? "Explore the GIS Crime Map for spatial offenses, or review key statistics on the Overview Dashboard."
             : canCases
-            ? "Search incident blotter records and inspect case dossiers."
+            ? "Search offense records and inspect case dossiers."
             : "Review analytical trends and indicators on your dashboard."
         }
         actions={

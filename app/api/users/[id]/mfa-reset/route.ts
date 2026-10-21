@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!user || user.deletedAt) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     await resetMfa(userId);
     invalidateSessionCache(userId);

@@ -152,15 +152,15 @@ async function runTests() {
   const t0 = performance.now();
   const stats1 = await CrimeService.getStats({});
   const missLatency = performance.now() - t0;
-  console.log(`     Miss Latency: ${missLatency.toFixed(1)}ms | Total Crimes: ${stats1.totalCrimes}`);
+  console.log(`     Miss Latency: ${missLatency.toFixed(1)}ms | Total Crimes: ${stats1.totalOffenses}`);
 
   console.log('  🔍 Fetching Crime Stats (Request 2 - Cache Hit)...');
   const t1 = performance.now();
   const stats2 = await CrimeService.getStats({});
   const hitLatency = performance.now() - t1;
-  console.log(`     Hit Latency: ${hitLatency.toFixed(2)}ms | Total Crimes: ${stats2.totalCrimes}`);
+  console.log(`     Hit Latency: ${hitLatency.toFixed(2)}ms | Total Crimes: ${stats2.totalOffenses}`);
 
-  assert(stats1.totalCrimes === stats2.totalCrimes, 'Cached stats payload matches original query');
+  assert(stats1.totalOffenses === stats2.totalOffenses, 'Cached stats payload matches original query');
   assert(hitLatency < missLatency, `Cache hit (${hitLatency.toFixed(2)}ms) significantly faster than DB query (${missLatency.toFixed(1)}ms)`);
 
   console.log('  🔍 Fetching Distinct Years (Cached)...');

@@ -35,12 +35,9 @@ export const CRIME_TYPE_COLORS: Record<string, string> = {
   "Other": "#64748B",
 };
 
-// Helper function to extract crime type from incident type
-// Handles formats like "(Incident) Theft" or "(Operation) Buy Bust"
-export function extractCrimeType(incidentType: string): string {
-  // Remove "(Incident)" or "(Operation)" prefix
-  const cleaned = incidentType.replace(/^\((?:Incident|Operation)\)\s*/i, '').trim();
-  return cleaned;
+/** Crime type as shown in lists and legends. */
+export function extractCrimeType(crimeType: string): string {
+  return crimeType.trim();
 }
 
 // Helper function to get color for a crime type

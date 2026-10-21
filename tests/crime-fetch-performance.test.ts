@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fetchCrimes } from "../lib/api";
 import { presentCrimeRecord } from "../backend/lib/crime-records";
-import { aggregateCrimeStats } from "../backend/lib/crime-analytics";
 import { readJson } from "../lib/read-json";
 
 test("failed shared reads can be retried without retaining rejected promises", async () => {
@@ -53,36 +52,17 @@ test("simultaneous chart consumers share one offense-list request", async () => 
   }
 });
 
-test("compact parent summaries preserve case status outside a narrow offense filter", () => {
-  const row = {
+test("an offense record exposes its normalised stage, recorded stage and category", () => {
+  const record = presentCrimeRecord({
     id: "a",
-    incidentId: "one",
-    incidentType: "Stabbing",
     crimeType: "Frustrated Homicide",
     felonyStage: "FRUSTRATED",
-    barangay: "PUNTA I",
-    dateCommitted: new Date("2026-01-01"),
-    timeCommitted: "17:20:00",
-    caseStatus: "Cleared",
-    updatedAt: new Date("2026-01-02"),
-    incident: {
-      offenseCount: 3,
-      hasMultipleOffenses: true,
-      allOffensesCleared: false,
-      allOffensesResolved: false,
-      lastOffenseUpdatedAt: new Date("2026-01-02"),
-    },
-  };
-  const record = presentCrimeRecord(row);
-  assert.equal(record.incidentCleared, false);
-  assert.equal(record.incidentResolved, false);
-  const stats = aggregateCrimeStats([row], new Date("2026-01-02"));
-  assert.equal(stats.totalIncidents, 1);
-  assert.equal(stats.totalOffenses, 1);
-  assert.equal(stats.multipleOffenseIncidents, 1);
-  assert.equal(
-    stats.activeCases,
-    1,
-    "a pending sibling must keep the whole incident active",
-  );
+    stageOfFelony: " frustrated ",
+    offenseDefinition: { label: "Homicide" },
+  });
+  assert.equal(record.stageOfFelony, "FRUSTRATED");
+  assert.equal(record.sourceStageOfFelony, " frustrated ");
+  assert.equal(record.offenseCategory, "Homicide");
+  assert.equal("offenseDefinition" in record, false);
+  assert.equal("incidentId" in record, false);
 });

@@ -14,10 +14,16 @@ export const emailField = z
 	.refine(isValidEmail, "Enter a valid email address")
 	.refine(isAllowedEmailDomain, "That email domain isn't allowed for Secure Tanza accounts");
 
-/** True when another account already uses this address. */
-export async function emailTaken(email: string, exceptUserId?: number) {
-	const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-	return Boolean(existing && existing.id !== exceptUserId);
+/**
+ * Why another account can't take this address, or null if it's free. A
+ * deleted account keeps its address while it can still be restored.
+ */
+export async function emailConflict(email: string, exceptUserId?: number): Promise<string | null> {
+	const existing = await prisma.user.findUnique({ where: { email }, select: { id: true, deletedAt: true } });
+	if (!existing || existing.id === exceptUserId) return null;
+	return existing.deletedAt
+		? "That email belongs to a deleted account. Restore it from Recently deleted instead."
+		: "Another account already uses that email address";
 }
 
 type MailableUser = { id: number; email: string | null; fullName: string };

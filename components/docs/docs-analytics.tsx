@@ -27,10 +27,10 @@ export function DocsAnalytics() {
             Resolution Rate (%)
           </h3>
           <div className="my-2 p-2.5 font-mono text-xs bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded border border-slate-200 dark:border-slate-800">
-            Resolution Rate = (Cleared Cases + Solved Cases) / Total Incidents × 100%
+            Resolution Rate = (Cleared Cases + Solved Cases) / Total Offenses × 100%
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Measures investigative efficiency by computing the proportion of recorded incidents that have been resolved, identified, or referred to court.
+            Measures investigative efficiency by computing the proportion of recorded offenses that have been resolved, identified, or referred to court.
           </p>
         </div>
 
@@ -39,7 +39,7 @@ export function DocsAnalytics() {
             Safety Index Score
           </h3>
           <div className="my-2 p-2.5 font-mono text-xs bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded border border-slate-200 dark:border-slate-800">
-            Safety Index = 100 - (Critical Incident Rate Weight + Unresolved Penalty)
+            Safety Index = 100 - (Critical Offense Rate Weight + Unresolved Penalty)
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             A normalized composite score from 0 to 100 reflecting the relative safety profile of the municipality or individual barangay.
@@ -58,7 +58,7 @@ export function DocsAnalytics() {
             24-Hour Radar Time Pattern
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Distributes incident frequencies across each hour of the day on a circular polar radar plot. Used by station commanders to align roving shifts and vehicle deployments with peak incident windows (e.g., 20:00 to 02:00).
+            Distributes offense frequencies across each hour of the day on a circular polar radar plot. Used by station commanders to align roving shifts and vehicle deployments with peak offense windows (e.g., 20:00 to 02:00).
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export function DocsAnalytics() {
             Location Type Distribution
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Classifies incidents by environment (Residential, Commercial, Public Thoroughfare, Highway) to inform municipal lighting, checkpoint locations, and CCTV camera placements.
+            Classifies offenses by environment (Residential, Commercial, Public Thoroughfare, Highway) to inform municipal lighting, checkpoint locations, and CCTV camera placements.
           </p>
         </div>
 

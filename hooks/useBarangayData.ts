@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { fetchCrimes, transformCrimeToIncident } from '@/lib/api'
+import { fetchCrimes, toOffenseSummary } from '@/lib/api'
 import { BarangayData } from '@/constants/dummy'
 import { useMapContext } from '@/context/MapContext'
 import { useTimeRangeData } from './useTimeRangeData'
@@ -35,8 +35,7 @@ export function useBarangayData(barangayName: string | null) {
         }
         const crimes = recent.sort((a, b) => +new Date(b.dateCommitted) - +new Date(a.dateCommitted)).slice(0, 5)
 
-        // Transform crimes to incidents
-        const incidents = crimes.map(transformCrimeToIncident)
+        const offenses = crimes.map(toOffenseSummary)
 
         // Calculate active patrols based on active cases
         const activePatrols = Math.max(1, Math.floor(stats.activeCases / 10))
@@ -57,10 +56,10 @@ export function useBarangayData(barangayName: string | null) {
             risk
           },
           activity: stats.activity,
-          incidents,
+          offenses,
           analysis: {
             safetyPerformance: stats.activeCases > 20 ? "Critical Zone" : "Stable Output",
-            description: `Real-time security metrics for ${barangayName!}. Current threat assessment based on active incidents and resolution rates.`,
+            description: `Real-time security metrics for ${barangayName!}. Current threat assessment based on active offenses and resolution rates.`,
             distribution: stats.crimesByType.slice(0, 3).map(crime => ({
               label: crime.type,
               val: crime.count

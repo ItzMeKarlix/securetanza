@@ -50,7 +50,7 @@ export default function HoverStatsPanel() {
 	}
 
 	const totalOffenses = stats.totalOffenses;
-	const threatLevel = getThreatLevelFromCount(stats.totalIncidents, thresholds);
+	const threatLevel = getThreatLevelFromCount(totalOffenses, thresholds);
 	const riskLevel = threatLevel.charAt(0).toUpperCase() + threatLevel.slice(1);
 	const riskColor =
 		threatLevel === "critical"
@@ -82,9 +82,9 @@ export default function HoverStatsPanel() {
 					<div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5">
 						<div className="flex items-center gap-2 mb-1">
 							<Activity className="h-3 w-3 text-indigo-500 dark:text-indigo-400" />
-							<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Incidents</span>
+							<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Offenses</span>
 						</div>
-						<p className="text-lg font-black text-slate-900 dark:text-white">{stats.totalIncidents}</p>
+						<p className="text-lg font-black text-slate-900 dark:text-white">{totalOffenses}</p>
 					</div>
 					<div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5">
 						<div className="flex items-center gap-2 mb-1">
@@ -95,7 +95,7 @@ export default function HoverStatsPanel() {
 					</div>
 				</div>
 
-				<p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{totalOffenses} offenses · One incident may include multiple offenses.</p>
+				<p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{totalOffenses} offense{totalOffenses === 1 ? "" : "s"} in this barangay</p>
 
 				{/* Crime Types */}
 				<div className="space-y-3">

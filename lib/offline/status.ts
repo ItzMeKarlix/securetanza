@@ -10,9 +10,11 @@ export interface OfflineStatus {
   serverReachable: boolean;
   /** Oldest saved copy currently on screen, or null when everything shown is live. */
   staleSince: number | null;
+  /** This page lost its connection at some point (so "Back online" is true). */
+  wentOffline: boolean;
 }
 
-const ONLINE: OfflineStatus = { browserOnline: true, serverReachable: true, staleSince: null };
+const ONLINE: OfflineStatus = { browserOnline: true, serverReachable: true, staleSince: null, wentOffline: false };
 
 let status: OfflineStatus = ONLINE;
 /** URL → when the copy being shown for it was saved. */
@@ -22,10 +24,12 @@ let watchingBrowser = false;
 
 function update(next: Partial<OfflineStatus>) {
   const merged = { ...status, ...next };
+  if (!merged.browserOnline || !merged.serverReachable) merged.wentOffline = true;
   if (
     merged.browserOnline === status.browserOnline &&
     merged.serverReachable === status.serverReachable &&
-    merged.staleSince === status.staleSince
+    merged.staleSince === status.staleSince &&
+    merged.wentOffline === status.wentOffline
   ) return;
   status = merged;
   listeners.forEach((listener) => listener());

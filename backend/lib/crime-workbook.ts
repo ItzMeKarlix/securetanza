@@ -22,10 +22,10 @@ export function parseCrimeWorkbookRow(
     !normalizedRow.barangay ||
     !normalizedRow.date_reported ||
     !normalizedRow.date_committed ||
-    !normalizedRow.incident_type
+    !normalizedRow.offense
   ) {
     throw new Error(
-      "Missing required fields (barangay, date_reported, date_committed, or incident_type)",
+      "Missing required fields (barangay, date_reported, date_committed, or offense)",
     );
   }
 
@@ -73,8 +73,8 @@ export function parseCrimeWorkbookRow(
   const latitude = parseNumericField(normalizedRow.lat, "latitude");
   const longitude = parseNumericField(normalizedRow.lng, "longitude");
 
-  if (!cleanImportedText(normalizedRow.incident_type) || !barangayName) {
-    throw new Error("Missing required fields (barangay or incident_type)");
+  if (!cleanImportedText(normalizedRow.offense) || !barangayName) {
+    throw new Error("Missing required fields (barangay or offense)");
   }
 
   const candidateData = {
@@ -99,7 +99,6 @@ export function parseCrimeWorkbookRow(
     timeReported,
     dateCommitted,
     timeCommitted,
-    incidentType: cleanImportedText(normalizedRow.incident_type),
     isCrime,
     modeReporting: nullableText(normalizedRow.mode_reporting),
     stageOfFelony: nullableText(normalizedRow.stage_of_felony),
@@ -113,7 +112,6 @@ export function parseCrimeWorkbookRow(
     sensational,
     threatGrp,
     grpAffiliation: nullableText(normalizedRow.grp_affiliation),
-    incidentTypeThreatGrp: nullableText(normalizedRow.incident_type_threat_grp),
     mrs: nullableText(normalizedRow.mrs),
     suspectIsEGO,
     suspectEGOPosition: nullableText(normalizedRow.suspect_ego_position),

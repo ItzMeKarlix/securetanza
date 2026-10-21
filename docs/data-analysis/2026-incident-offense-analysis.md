@@ -1,3 +1,5 @@
+> **Superseded (2026-10-21):** the system no longer groups offenses into incidents. See `docs/offense-only-model.md`. The steps below (including `scripts/recover-crime-workbook.ts`, now removed) no longer apply.
+
 # SecureTanza incident workbook analysis
 
 Analyzed: 2026-10-12. Source: `data/incidentrep_20160100448_2026-01-01-2026-09-29.xlsx`, Sheet1, A1:CN425 (92 columns; one header row). The committed-date range actually present is 2026-01-01 through 2026-09-27. All rows identify Tanza PS and have iscime=YES.

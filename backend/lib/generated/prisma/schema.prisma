@@ -11,11 +11,10 @@ datasource db {
   provider = "postgresql"
 }
 
-model CrimeIncident {
+/// One recorded offense with its stage of felony. Offenses are never grouped:
+/// a blotter that lists several offenses is several independent records.
+model Offense {
   id                  String            @id @default(cuid())
-  // This existing record table is the explicit incident ↔ offense association.
-  incidentId          String            @map("incident_id")
-  incident            Incident          @relation(fields: [incidentId], references: [id])
   offenseDefinitionId String            @map("offense_definition_id")
   offenseDefinition   OffenseDefinition @relation(fields: [offenseDefinitionId], references: [id])
   importKey           String?           @unique @map("import_key")
@@ -43,16 +42,15 @@ model CrimeIncident {
   street    String?
 
   // Location Details
-  typeOfPlace String? @map("type_of_place") // Type of place where incident occurred
+  typeOfPlace String? @map("type_of_place") // Type of place where the offense occurred
 
   // Reporting Information
   dateReported DateTime @map("date_reported")
   timeReported String   @map("time_reported") // HH:MM:SS format
 
-  // Incident Information
+  // When the offense was committed
   dateCommitted DateTime @map("date_committed")
   timeCommitted String   @map("time_committed") // HH:MM:SS format
-  incidentType  String   @map("incident_type") // Type of incident
   isCrime       Boolean  @default(true) @map("is_crime") // YES/NO from iscime column
 
   // Process Information
@@ -74,10 +72,9 @@ model CrimeIncident {
   sensational Boolean @default(false) // Is crime sensational
 
   // Threat Group Information
-  threatGrp             Boolean @default(false) @map("threat_grp") // Threat group involvement
-  grpAffiliation        String? @map("grp_affiliation") // Group affiliation details
-  incidentTypeThreatGrp String? @map("incident_type_threat_grp") // Incident type threat group
-  mrs                   String? // MRS field
+  threatGrp      Boolean @default(false) @map("threat_grp") // Threat group involvement
+  grpAffiliation String? @map("grp_affiliation") // Group affiliation details
+  mrs            String? // MRS field
 
   // Suspect Information
   suspectIsEGO       Boolean  @default(false) @map("suspect_is_ego") // Is suspect elected/government official
@@ -107,8 +104,6 @@ model CrimeIncident {
 
   @@index([barangay])
   @@index([dateCommitted])
-  @@index([incidentType])
-  @@index([incidentId])
   @@index([offenseDefinitionId])
   @@index([crimeType, felonyStage])
   @@index([region, province, municipal])
@@ -117,28 +112,14 @@ model CrimeIncident {
   @@index([caseStatus])
   @@index([heinous])
   @@index([sensational])
-  @@map("crime_incidents")
-}
-
-model Incident {
-  id                  String          @id @default(cuid())
-  key                 String          @unique
-  blotterNo           String?         @map("blotter_no")
-  station             String?
-  hasMultipleOffenses Boolean         @default(false) @map("has_multiple_offenses")
-  offenseCount        Int             @default(0) @map("offense_count")
-  offenses            CrimeIncident[]
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-
-  @@map("incidents")
+  @@map("offenses")
 }
 
 model OffenseDefinition {
-  id      String          @id @default(cuid())
-  code    String          @unique
+  id      String    @id @default(cuid())
+  code    String    @unique
   label   String
-  records CrimeIncident[]
+  records Offense[]
 
   @@map("offense_definitions")
 }
@@ -222,6 +203,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Soft delete: set when an administrator deletes the account. It can't sign
+  // in, and it's restorable until the worker purges it 30 days later.
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy String?   @map("deleted_by") // account number of the admin who deleted it
+
   // Relations
   permissions     UserPermission[]
   exportSchedules ExportSchedule[]
@@ -230,6 +216,7 @@ model User {
   trustedDevices  TrustedDevice[]
 
   @@index([accountNumber])
+  @@index([deletedAt])
   @@map("users")
 }
 
@@ -260,33 +247,43 @@ model AuthToken {
  * an .xlsx snapshot of the register, or a generated PDF report.
  */
 model Backup {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   kind        String // "crime_data" | "report" | "scheduled_export"
-  fileName    String   @map("file_name")
-  mimeType    String   @map("mime_type")
-  sizeBytes   Int      @map("size_bytes")
+  fileName    String    @map("file_name")
+  mimeType    String    @map("mime_type")
+  sizeBytes   Int       @map("size_bytes")
   content     Bytes // the file itself
   label       String? // human summary, e.g. "All Barangays"
   barangay    String? // scope, when the snapshot is narrowed
-  periodLabel String?  @map("period_label") // e.g. "Year 2026", "Q1 2026"
-  rowCount    Int?     @map("row_count") // incidents captured, for data snapshots
-  createdBy   String   @map("created_by") // account number, or "system" for cron
-  createdAt   DateTime @default(now()) @map("created_at")
+  periodLabel String?   @map("period_label") // e.g. "Year 2026", "Q1 2026"
+  rowCount    Int?      @map("row_count") // offenses captured, for data snapshots
+  createdBy   String    @map("created_by") // account number, or "system" for cron
+  createdAt   DateTime  @default(now()) @map("created_at")
+  // Soft delete: hidden and restorable for 30 days, then purged by the worker.
+  deletedAt   DateTime? @map("deleted_at")
+  deletedBy   String?   @map("deleted_by") // account number, or "system" for retention
 
   @@index([kind])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("backups")
 }
 
 model ExportSchedule {
-  id         String  @id @default(cuid())
-  userId     Int     @map("user_id")
-  enabled    Boolean @default(false)
-  frequency  String  @default("weekly") // "daily", "weekly", "monthly"
-  dayOfWeek  String? @map("day_of_week") // e.g., "Monday"
-  dayOfMonth String? @map("day_of_month") // e.g., "1"
-  monthlyOn  String? @map("monthly_on") // Day of year for annually if needed
-  timeOfDay  String? @map("time_of_day") // e.g. "14:30"
+  id            String    @id @default(cuid())
+  userId        Int       @map("user_id")
+  enabled       Boolean   @default(false)
+  frequency     String    @default("weekly") // "daily", "weekly", "monthly"
+  dayOfWeek     String?   @map("day_of_week") // e.g., "Monday"
+  dayOfMonth    String?   @map("day_of_month") // e.g., "1"
+  monthlyOn     String?   @map("monthly_on") // Day of year for annually if needed
+  timeOfDay     String?   @map("time_of_day") // e.g. "14:30", station time (UTC+8)
+  // Run bookkeeping (backend/cron/worker.ts). Occurrences before savedAt never
+  // run, so saving a schedule doesn't fire one immediately for a time already passed.
+  savedAt       DateTime? @map("saved_at")
+  lastRunAt     DateTime? @map("last_run_at") // last successful export
+  lastAttemptAt DateTime? @map("last_attempt_at") // last start, successful or not
+  lastRunError  String?   @map("last_run_error")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

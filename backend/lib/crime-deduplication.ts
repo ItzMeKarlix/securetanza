@@ -1,7 +1,6 @@
 /**
- * Crime Incident Deduplication Engine
- * Provides deterministic fingerprinting and batch deduplication checks
- * for Excel/CSV uploads and incident creation.
+ * Offense deduplication: a deterministic fingerprint per offense record, so an
+ * Excel upload that repeats rows already in the register doesn't add them again.
  */
 
 import type { PrismaClient } from './generated/prisma';
@@ -14,7 +13,6 @@ export interface CrimeRecordForFingerprint {
   barangay: string;
   dateCommitted: Date | string;
   timeCommitted: string;
-  incidentType: string;
   offense?: string | null;
   stageOfFelony?: string | null;
   section?: string | null;
@@ -72,22 +70,21 @@ export function normalizeCrimeTime(val: string | null | undefined): string {
 }
 
 /**
- * Generates a unique, deterministic fingerprint for a crime incident.
- * - If blotterNo is present, returns a blotter-keyed fingerprint.
- * - If blotterNo is absent, returns a composite key of the incident's core attributes.
+ * Where an offense was recorded: its station-scoped blotter number, or — when
+ * there is no blotter — the place and times it was committed and reported.
  */
-export function generateIncidentKey(record: CrimeRecordForFingerprint): string {
+export function offenseSourceKey(record: CrimeRecordForFingerprint): string {
   const blotter = normalizeCrimeText(record.blotterNo);
   if (blotter && blotter !== '-' && blotter !== 'n/a' && blotter !== 'none' && blotter !== 'null') {
     const station = normalizeCrimeText(record.stn) || normalizeCrimeText(record.municipal) || 'unknown-station';
     return `blotter:${station}|${blotter}`;
   }
-  // Without a blotter there is insufficient evidence to link different offenses.
-  return `comp:${normalizeCrimeText(record.stn)}|${normalizeCrimeText(record.barangay)}|${normalizeCrimeDate(record.dateCommitted)}|${normalizeCrimeTime(record.timeCommitted)}|${normalizeCrimeText(record.incidentType)}|${normalizeCrimeText(record.offense)}|${normalizeCrimeDate(record.dateReported)}|${normalizeCrimeTime(record.timeReported)}`;
+  return `comp:${normalizeCrimeText(record.stn)}|${normalizeCrimeText(record.barangay)}|${normalizeCrimeDate(record.dateCommitted)}|${normalizeCrimeTime(record.timeCommitted)}|${normalizeCrimeText(record.offense)}|${normalizeCrimeDate(record.dateReported)}|${normalizeCrimeTime(record.timeReported)}`;
 }
 
+/** One offense: where it was recorded, which offense, at what stage, under which section. */
 export function generateCrimeFingerprint(record: CrimeRecordForFingerprint): string {
-  return JSON.stringify([generateIncidentKey(record), normalizeCrimeText(record.offense) || `unclassified:${normalizeCrimeText(record.incidentType)}`, normalizeFelonyStage(record.stageOfFelony), normalizeCrimeText(record.section)]);
+  return JSON.stringify([offenseSourceKey(record), normalizeCrimeText(record.offense) || 'unclassified', normalizeFelonyStage(record.stageOfFelony), normalizeCrimeText(record.section)]);
 }
 
 /**
@@ -150,7 +147,7 @@ export async function findExistingCrimeFingerprints(
     return existingFingerprints;
   }
 
-  const existingInDb = await prisma.crimeIncident.findMany({
+  const existingInDb = await prisma.offense.findMany({
     where: {
       OR: orConditions,
     },
@@ -161,7 +158,6 @@ export async function findExistingCrimeFingerprints(
       barangay: true,
       dateCommitted: true,
       timeCommitted: true,
-      incidentType: true,
       offense: true,
       stageOfFelony: true,
       section: true,

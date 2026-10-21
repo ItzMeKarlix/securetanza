@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
-import { loadIncidentWorkbook } from "./fixtures/incident-workbook";
+import { loadOffenseWorkbook } from "./fixtures/offense-workbook";
 import { parseCrimeWorkbookRow } from "../backend/lib/crime-workbook";
 import { offenseImportKey } from "../backend/lib/crime-records";
-import { generateIncidentKey } from "../backend/lib/crime-deduplication";
+import { offenseSourceKey } from "../backend/lib/crime-deduplication";
 
 test("HTTP uploads and workbook recovery preserve all source offenses and provenance", () => {
-  const workbook = loadIncidentWorkbook();
+  const workbook = loadOffenseWorkbook();
   const sheet = workbook.SheetNames[0];
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
     workbook.Sheets[sheet],
@@ -21,7 +21,9 @@ test("HTTP uploads and workbook recovery preserve all source offenses and proven
   );
   assert.equal(records.length, 424);
   assert.equal(new Set(records.map(offenseImportKey)).size, 424);
-  assert.equal(new Set(records.map(generateIncidentKey)).size, 363);
+  // 424 offenses on 363 blotters; each offense is still its own record.
+  assert.equal(new Set(records.map(offenseSourceKey)).size, 363);
+  assert.ok(records.every((row) => !("incidentType" in row)), "Incident Type is no longer imported");
   assert.equal(
     records.filter((row) => row.stageOfFelony === "FRUSTRATED").length,
     9,

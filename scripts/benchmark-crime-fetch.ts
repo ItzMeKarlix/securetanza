@@ -22,7 +22,6 @@ for (const path of [
         elapsedMs: Math.round(performance.now() - start),
         bytes: Buffer.byteLength(body),
         rows: Array.isArray(result.data) ? result.data.length : undefined,
-        incidents: result.data?.totalIncidents,
         offenses: result.data?.totalOffenses,
       }),
     );

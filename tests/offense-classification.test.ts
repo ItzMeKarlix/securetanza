@@ -1,17 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  classifyOffense,
-  normalizeFelonyStage,
-  uniqueIncidentRecords,
-} from "../lib/offense-classification";
+import { classifyOffense, normalizeFelonyStage } from "../lib/offense-classification";
 
 test("a stabbing is classified by its recorded homicide offense and stage", () => {
   assert.equal(
     classifyOffense(
       "HOMICIDE - RPC ART. 249",
       "FRUSTRATED",
-      "(Incident) Stabbing",
     ).crimeType,
     "Frustrated Homicide",
   );
@@ -33,21 +28,18 @@ test("missing and unrecognized stages do not become consummated", () => {
     "Unknown Stage · Murder",
   );
 });
-test("broad drug statute is not guessed to be sale or possession from its incident label", () => {
+test("broad drug statute is not narrowed to sale or possession", () => {
   assert.equal(
     classifyOffense(
       "COMPREHENSIVE DANGEROUS DRUGS ACT OF 2002 - RA 9165",
       "CONSUMMATED",
-      "(Operation) Buy Bust",
     ).crimeType,
     "Dangerous Drugs Law (RA 9165)",
   );
 });
-test("multiple offense records collapse to one parent for incident metrics", () => {
-  const rows = [
-    { id: "a", incidentId: "one" },
-    { id: "b", incidentId: "one" },
-    { id: "c", incidentId: "two" },
-  ];
-  assert.equal(uniqueIncidentRecords(rows).length, 2);
+test("an offense with no recorded offense text is Unclassified, not guessed", () => {
+  const result = classifyOffense("", "CONSUMMATED");
+  assert.equal(result.crimeType, "Unclassified");
+  assert.equal(result.code, "unclassified");
+  assert.equal(result.classificationNeedsReview, true);
 });

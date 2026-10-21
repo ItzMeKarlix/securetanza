@@ -1,14 +1,12 @@
-import { config } from 'dotenv';
-// Load .env.local first (standard for Next.js), then fallback to .env
-config({ path: '.env.local' });
-config({ path: '.env' });
+import './load-env';
 
 import cron from 'node-cron';
 import * as fs from 'fs/promises';
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { prisma, disconnectPrisma } from '../lib/prisma';
-import { BackupService, XLSX_MIME } from '../services/backup.service';
+import { runDueExports } from '../services/scheduled-export.service';
+import { purgeCutoff } from '../../lib/soft-delete';
 
 console.log("🕒 Starting Scheduled Data Exports background worker...");
 
@@ -47,31 +45,46 @@ async function cleanOldExports(): Promise<void> {
 }
 
 /**
- * Age out scheduled snapshots from the archive. Backups an officer made by hand are
- * left alone — they were kept deliberately, and only they can decide to drop one.
+ * Daily housekeeping. Scheduled reports older than RETENTION_DAYS move to
+ * Recently deleted (they were also emailed); backups made by hand are left
+ * alone. Accounts and backups deleted more than 30 days ago are removed for good.
  */
-async function pruneScheduledBackups(): Promise<void> {
+async function housekeeping(): Promise<void> {
   try {
-    const cutoff = new Date(Date.now() - RETENTION_MS);
-    const { count } = await prisma.backup.deleteMany({
-      where: { kind: 'scheduled_export', createdAt: { lt: cutoff } },
+    const now = new Date();
+    const retired = await prisma.backup.updateMany({
+      where: { kind: 'scheduled_export', deletedAt: null, createdAt: { lt: new Date(now.getTime() - RETENTION_MS) } },
+      data: { deletedAt: now, deletedBy: 'system' },
     });
-    if (count > 0) {
-      console.log(`[CLEANUP] Removed ${count} expired scheduled backup(s)`);
+    const cutoff = purgeCutoff(now.getTime());
+    const purgedBackups = await prisma.backup.deleteMany({ where: { deletedAt: { lt: cutoff } } });
+    const purgedUsers = await prisma.user.findMany({ where: { deletedAt: { lt: cutoff } }, select: { id: true, accountNumber: true } });
+    if (purgedUsers.length) await prisma.user.deleteMany({ where: { id: { in: purgedUsers.map((u) => u.id) } } });
+
+    if (retired.count || purgedBackups.count || purgedUsers.length) {
+      const details = [
+        retired.count && `moved ${retired.count} scheduled report(s) older than ${RETENTION_DAYS} days to Recently deleted`,
+        purgedBackups.count && `permanently removed ${purgedBackups.count} backup(s) deleted over 30 days ago`,
+        purgedUsers.length && `permanently removed account(s) ${purgedUsers.map((u) => u.accountNumber).join(', ')} deleted over 30 days ago`,
+      ].filter(Boolean).join('; ');
+      console.log(`[CLEANUP] ${details}`);
+      await prisma.auditLog.create({
+        data: { action: 'Settings', user: 'system', ip: 'server', resource: 'Retention', details: `Retention: ${details}`, severity: 'medium', outcome: 'success' },
+      });
     }
   } catch (error) {
-    console.error('[CLEANUP] Error pruning scheduled backups:', error);
+    console.error('[CLEANUP] Housekeeping failed:', error);
   }
 }
 
 // Initial cleanup on worker boot
 cleanOldExports();
-pruneScheduledBackups();
+housekeeping();
 
 // Schedule daily cleanup at 03:00 AM
 const cleanupTask = cron.schedule('0 3 * * *', () => {
   cleanOldExports();
-  pruneScheduledBackups();
+  housekeeping();
 });
 
 let isRunning = false;
@@ -85,68 +98,8 @@ const task = cron.schedule('* * * * *', async () => {
 
   isRunning = true;
   try {
-    const now = new Date();
-    const dayOfWeek = now.toLocaleString('en-US', { weekday: 'long' });
-    const dayOfMonth = now.getDate().toString();
-    const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
-
-    // Fetch enabled schedules
-    const schedules = await prisma.exportSchedule.findMany({
-      where: { enabled: true },
-      include: { user: true },
-    });
-
-    if (schedules.length === 0) {
-      return;
-    }
-
-    for (const schedule of schedules) {
-      let shouldRun = false;
-      const targetTime = schedule.timeOfDay || '00:00';
-
-      // Only run if the current hour and minute matches the scheduled time
-      if (currentTime !== targetTime) {
-        continue;
-      }
-
-      if (schedule.frequency === 'daily') {
-        shouldRun = true;
-      } else if (schedule.frequency === 'weekly' && schedule.dayOfWeek === dayOfWeek) {
-        shouldRun = true;
-      } else if (schedule.frequency === 'monthly' && schedule.dayOfMonth === dayOfMonth) {
-        shouldRun = true;
-      }
-
-      if (!shouldRun) {
-        continue;
-      }
-
-      try {
-        console.log(`[CRON] Generating export for user ${schedule.user.accountNumber} (Frequency: ${schedule.frequency})`);
-
-        // The same snapshot the Backups tab produces: the full cleaned register plus
-        // the aggregates, kept in the database so it outlives this container.
-        const snapshot = await BackupService.buildCrimeDataWorkbook();
-        const stamp = new Date().toISOString().split('T')[0];
-
-        const backup = await BackupService.create({
-          kind: 'scheduled_export',
-          fileName: `Scheduled-Export-${stamp}-${schedule.user.accountNumber}.xlsx`,
-          mimeType: XLSX_MIME,
-          content: snapshot.buffer,
-          label: `${schedule.frequency} export`,
-          periodLabel: snapshot.periodLabel,
-          rowCount: snapshot.rowCount,
-          createdBy: schedule.user.accountNumber,
-        });
-
-        console.log(
-          `[CRON] Archived export ${backup.fileName} (${snapshot.rowCount} incidents, ${backup.sizeBytes} bytes)`
-        );
-      } catch (scheduleError) {
-        console.error(`[CRON] Error processing schedule for user ${schedule.userId}:`, scheduleError);
-      }
-    }
+    // Due runs, including one catch-up for a run missed while the worker was off.
+    await runDueExports(new Date());
   } catch (error) {
     console.error('Error running cron job:', error);
   } finally {

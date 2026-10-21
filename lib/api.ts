@@ -1,18 +1,19 @@
 // API utility functions for fetching data from backend
 import { readJson } from "./read-json";
 
-export interface CrimeIncident {
+/**
+ * One recorded offense. Offenses are independent: two offenses on the same
+ * blotter are two records, never merged.
+ */
+export interface OffenseRecord {
   id: string;
-  incidentId?: string;
+  /** Base offense family, e.g. "Murder". */
   offenseCategory?: string;
   offenseDefinitionId?: string;
-  crimeType?: string;
-  sourceIncidentType?: string;
+  /** Stage-qualified analytical type, e.g. "Frustrated Murder". */
+  crimeType: string;
+  /** The stage exactly as the workbook recorded it; stageOfFelony is the normalised one. */
   sourceStageOfFelony?: string | null;
-  offenseCount?: number;
-  hasMultipleOffenses?: boolean;
-  incidentCleared?: boolean;
-  incidentResolved?: boolean;
   blotterNo?: string;
   dateEncoded?: string;
   pro?: string;
@@ -29,9 +30,9 @@ export interface CrimeIncident {
   timeReported: string;
   dateCommitted: string;
   timeCommitted: string;
-  incidentType: string;
   isCrime: boolean;
   modeReporting?: string;
+  /** CONSUMMATED, FRUSTRATED, ATTEMPTED or UNKNOWN. */
   stageOfFelony?: string;
   offense?: string;
   offenseType?: string;
@@ -43,7 +44,6 @@ export interface CrimeIncident {
   sensational?: boolean;
   threatGrp?: boolean;
   grpAffiliation?: string;
-  incidentTypeThreatGrp?: string;
   mrs?: string;
   suspectIsEGO?: boolean;
   suspectEGOPosition?: string;
@@ -63,11 +63,9 @@ export interface CrimeIncident {
   updatedAt: string;
 }
 
+/** Every count is a count of offenses (backend/lib/crime-analytics.ts). */
 export interface CrimeStats {
-  totalCrimes: number;
-  totalIncidents: number;
   totalOffenses: number;
-  multipleOffenseIncidents: number;
   offensesByCategory: Array<{ category: string; count: number }>;
   offensesByBarangay: Array<{ barangay: string; count: number }>;
   crimesByStage: Array<{ stage: string; count: number }>;
@@ -76,7 +74,6 @@ export interface CrimeStats {
   recentCrimes: number;
   safetyIndex: string;
   crimesByType: Array<{ type: string; count: number }>;
-  crimesByBarangay: Array<{ barangay: string; count: number }>;
   monthlyStats: Array<{ month: number; count: number }>;
   activity: number[];
 }
@@ -98,23 +95,25 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-// Fetch crime incidents
+// Fetch offense records
 export async function fetchCrimes(params?: {
   barangay?: string;
+  /** Exact blotter number: every offense recorded on that blotter. */
+  blotterNo?: string;
+  stn?: string;
   limit?: number;
   view?: "analysis";
   caseStatus?: string;
   hour?: number;
-  incidentType?: string;
+  crimeType?: string;
   offenseCategory?: string;
-  incidentId?: string;
   stageOfFelony?: string;
   startDateCommitted?: string;
   endDateCommitted?: string;
   startHour?: number;
   endHour?: number;
   year?: number;
-}): Promise<CrimeIncident[]> {
+}): Promise<OffenseRecord[]> {
   try {
     const searchParams = new URLSearchParams();
     if (params?.view) searchParams.set("view", params.view);
@@ -122,12 +121,13 @@ export async function fetchCrimes(params?: {
     if (params?.hour !== undefined)
       searchParams.set("hour", String(params.hour));
     if (params?.barangay) searchParams.set("barangay", params.barangay);
+    if (params?.blotterNo) searchParams.set("blotterNo", params.blotterNo);
+    if (params?.stn) searchParams.set("stn", params.stn);
     if (params?.limit) searchParams.set("limit", params.limit.toString());
     if (params?.offenseCategory)
       searchParams.set("offenseCategory", params.offenseCategory);
-    if (params?.incidentId) searchParams.set("incidentId", params.incidentId);
-    if (params?.incidentType)
-      searchParams.set("incidentType", params.incidentType);
+    if (params?.crimeType)
+      searchParams.set("crimeType", params.crimeType);
     if (params?.stageOfFelony)
       searchParams.set("stageOfFelony", params.stageOfFelony);
     if (params?.startDateCommitted)
@@ -139,11 +139,11 @@ export async function fetchCrimes(params?: {
     // Analytical consumers need the complete scope; explicit limits remain bounded.
     const pageSize = Math.min(Math.max(params?.limit || 2000, 1), 2000);
     searchParams.set("limit", String(pageSize));
-    let crimes: CrimeIncident[] = [];
+    let crimes: OffenseRecord[] = [];
     let offset = 0;
     while (true) {
       searchParams.set("offset", String(offset));
-      const result = await readJson<ApiResponse<CrimeIncident[]>>(
+      const result = await readJson<ApiResponse<OffenseRecord[]>>(
         `/api/crimes?${searchParams}`,
       );
       if (!result.success)
@@ -176,7 +176,7 @@ export async function fetchCrimeStats(params?: {
   startDate?: string;
   endDate?: string;
   year?: number;
-  incidentType?: string;
+  crimeType?: string;
   offenseCategory?: string;
   stageOfFelony?: string;
 }): Promise<CrimeStats | null> {
@@ -188,8 +188,8 @@ export async function fetchCrimeStats(params?: {
     if (params?.year) searchParams.set("year", params.year.toString());
     if (params?.offenseCategory)
       searchParams.set("offenseCategory", params.offenseCategory);
-    if (params?.incidentType)
-      searchParams.set("incidentType", params.incidentType);
+    if (params?.crimeType)
+      searchParams.set("crimeType", params.crimeType);
     if (params?.stageOfFelony)
       searchParams.set("stageOfFelony", params.stageOfFelony);
 
@@ -231,10 +231,11 @@ export async function fetchBarangays(search?: string): Promise<Barangay[]> {
   }
 }
 
-// Transform crime incident to match frontend Incident interface
-export function transformCrimeToIncident(crime: CrimeIncident): {
+/** The compact shape the dashboard lists show for one offense. */
+export function toOffenseSummary(crime: OffenseRecord): {
   id: string;
   type: string;
+  stage?: string;
   date: string;
   status:
     | "Cleared"
@@ -281,7 +282,7 @@ export function transformCrimeToIncident(crime: CrimeIncident): {
     }
   }
 
-  // Determine severity based on incident type and heinous flag
+  // Severity from the heinous flag, then the offense's crime type
   let severity: "High" | "Medium" | "Low" = "Medium";
 
   // Check heinous flag first
@@ -304,11 +305,11 @@ export function transformCrimeToIncident(crime: CrimeIncident): {
       "alarm",
     ];
 
-    const incidentTypeLower = crime.incidentType.toLowerCase();
-    if (highSeverityTypes.some((type) => incidentTypeLower.includes(type))) {
+    const crimeTypeLower = crime.crimeType.toLowerCase();
+    if (highSeverityTypes.some((type) => crimeTypeLower.includes(type))) {
       severity = "High";
     } else if (
-      lowSeverityTypes.some((type) => incidentTypeLower.includes(type))
+      lowSeverityTypes.some((type) => crimeTypeLower.includes(type))
     ) {
       severity = "Low";
     }
@@ -334,7 +335,8 @@ export function transformCrimeToIncident(crime: CrimeIncident): {
 
   return {
     id: crime.id,
-    type: crime.incidentType,
+    type: crime.crimeType,
+    stage: crime.stageOfFelony,
     date: dateString,
     status,
     severity,

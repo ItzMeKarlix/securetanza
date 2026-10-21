@@ -18,7 +18,6 @@ async function runTests() {
     barangay: 'Daang Amaya I',
     dateCommitted: new Date('2026-03-15T00:00:00Z'),
     timeCommitted: '14:30:00',
-    incidentType: '(Incident) Theft',
     offense: 'Theft - RPC Art. 308',
     dateReported: new Date('2026-03-15T00:00:00Z'),
     timeReported: '15:00:00',
@@ -28,7 +27,6 @@ async function runTests() {
     barangay: 'DAANG AMAYA I',
     dateCommitted: '2026-03-15',
     timeCommitted: '14:30:00',
-    incidentType: '(INCIDENT) THEFT',
     offense: 'theft - rpc art. 308',
     dateReported: '2026-03-15',
     timeReported: '15:00:00',
@@ -49,7 +47,6 @@ async function runTests() {
     barangay: 'Bagtas',
     dateCommitted: new Date('2026-02-10T00:00:00Z'),
     timeCommitted: '08:00:00',
-    incidentType: '(Incident) Robbery',
     offense: 'Robbery',
     dateReported: new Date('2026-02-10T00:00:00Z'),
     timeReported: '09:00:00',
@@ -59,7 +56,6 @@ async function runTests() {
     barangay: 'bagtas',
     dateCommitted: '2026-02-10',
     timeCommitted: '8:00',
-    incidentType: '(incident) robbery',
     offense: 'robbery',
     dateReported: '2026-02-10',
     timeReported: '9:00',
@@ -74,7 +70,7 @@ async function runTests() {
 
   // Test 3: In-Database duplicate detection against live PostgreSQL
   console.log('\nTest 3: Testing database duplicate pre-query against existing records...');
-  const existingRecord = await prisma.crimeIncident.findFirst();
+  const existingRecord = await prisma.offense.findFirst();
   if (existingRecord) {
     console.log(`Found live existing DB record ID: ${existingRecord.id} (Barangay: ${existingRecord.barangay})`);
     const dbFingerprints = await findExistingCrimeFingerprints([existingRecord], prisma);
@@ -88,16 +84,15 @@ async function runTests() {
     console.log('ℹ️ No records in DB to test against live records.');
   }
 
-  // Test 4: CrimeService.createIncident duplicate rejection
-  console.log('\nTest 4: Testing CrimeService.createIncident duplicate rejection...');
+  // Test 4: CrimeService.createOffense duplicate rejection
+  console.log('\nTest 4: Testing CrimeService.createOffense duplicate rejection...');
   if (existingRecord) {
     try {
-      await CrimeService.createIncident({
+      await CrimeService.createOffense({
         blotterNo: existingRecord.blotterNo,
         barangay: existingRecord.barangay,
         dateCommitted: existingRecord.dateCommitted,
         timeCommitted: existingRecord.timeCommitted,
-        incidentType: existingRecord.incidentType,
         offense: existingRecord.offense,
         stageOfFelony: existingRecord.stageOfFelony,
         section: existingRecord.section,
@@ -106,7 +101,7 @@ async function runTests() {
         dateReported: existingRecord.dateReported,
         timeReported: existingRecord.timeReported,
       });
-      throw new Error('FAILED: CrimeService.createIncident allowed duplicate record creation!');
+      throw new Error('FAILED: CrimeService.createOffense allowed duplicate record creation!');
     } catch (err: any) {
       if (err.message.includes('already exists in the crime register')) {
         console.log(`✅ CrimeService correctly blocked duplicate creation: "${err.message}"`);

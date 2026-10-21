@@ -440,7 +440,7 @@ export default function AuthCacheServiceView({
             <div>
               <span className="font-semibold text-white block">Excel Ingestion & Mutation-Driven Purging</span>
               <span className="text-slate-400 text-[12px] block mt-0.5">
-                Uploading blotters, creating incidents, or modifying records immediately dispatches <code className="text-slate-300 font-mono">deleteByPattern(&quot;app:crimes:*&quot;)</code> so dashboard analytics always reflect current truth.
+                Uploading blotters, recording offenses, or modifying records immediately dispatches <code className="text-slate-300 font-mono">deleteByPattern(&quot;app:crimes:*&quot;)</code> so dashboard analytics always reflect current truth.
               </span>
             </div>
             <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-slate-800 text-rose-400 border border-rose-500/20 shrink-0">

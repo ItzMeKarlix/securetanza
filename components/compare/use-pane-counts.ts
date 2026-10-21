@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "@/hooks/useTimeRangeData";
-import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { toCrimeTypeParam } from "@/lib/crime-groups";
 import { readJson } from "@/lib/read-json";
 import { countKey, type PaneStatus } from "./compare-data";
 
@@ -16,7 +16,7 @@ interface PaneResult {
 }
 
 /**
- * Incidents per barangay for one side of the compare view: that side's period
+ * Offenses per barangay for one side of the compare view: that side's period
  * (every range in it, summed) and crime type, read from its own MapProvider.
  * A superseded request is aborted, so a slow answer for an old period can never
  * overwrite the current one. While a new period loads, the last counts stay up.
@@ -44,7 +44,7 @@ export function usePaneCounts() {
           endDateCommitted: end.toISOString(),
         });
         if (selectedCrimeType)
-          params.set("offenseCategory", toIncidentTypeParam(selectedCrimeType));
+          params.set("offenseCategory", toCrimeTypeParam(selectedCrimeType));
 
         if (selectedFelonyStage)
           params.set("stageOfFelony", selectedFelonyStage);

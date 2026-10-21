@@ -76,3 +76,19 @@ test("readJson passes a 4xx through instead of bridging it with a saved copy", a
     globalThis.fetch = originalFetch;
   }
 });
+
+test("the banner only says 'Back online' after the connection was actually lost", async () => {
+  const status = await import("../lib/offline/status");
+  // Earlier tests in this file already took the server offline once.
+  assert.equal(status.getOfflineStatus().wentOffline, true);
+});
+
+test("an application error (500) is reported, never answered with old figures", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => Response.json({ success: false }, { status: 500 })) as unknown as typeof fetch;
+  try {
+    await assert.rejects(readJson("/api/crimes?offline-test=500"), /Request failed \(500\)/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

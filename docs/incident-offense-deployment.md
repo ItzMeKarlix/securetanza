@@ -1,3 +1,5 @@
+> **Superseded (2026-10-21):** the system no longer groups offenses into incidents. See `docs/offense-only-model.md`. The steps below (including `scripts/recover-crime-workbook.ts`, now removed) no longer apply.
+
 # Deploying incident and offense counting
 
 The schema now adds `incidents` and `offense_definitions`. Existing `crime_incidents` rows are the explicit association between those tables, retaining their IDs and original `incident_type`, `offense`, and `stage_of_felony` values. `crime_type` and `felony_stage` hold the analytical classification. Each parent has `offense_count` and a boolean `has_multiple_offenses` (exported as 1/0).

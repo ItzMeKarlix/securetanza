@@ -13,8 +13,8 @@ export function useCrimeTypeByBarangay() {
   const queries = buildMapQueries(scope, dateRanges, "barangay-counts");
   const { results, loading, hasLoaded } = useMapStatistics("barangay-counts", queries, Boolean(scope.selectedCrimeType));
   return {
+    /** Offenses of the selected crime type, per barangay. */
     crimeTypeCounts: results ? mergeBarangayCounts(results) : {},
-    crimeTypeOffenseCounts: results ? mergeBarangayCounts(results, true) : {},
     loading,
     hasLoaded,
   };

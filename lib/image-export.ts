@@ -385,7 +385,7 @@ export class ImageExporter {
     const W = 1600;
     const H = 900;
     const { canvas, ctx } = newCanvas(W, H);
-    const bodyY = drawHeader(ctx, W, { kicker: 'Trend Analysis', title: 'Incidents by Month', subtitle: this.scopeSubtitle(data) });
+    const bodyY = drawHeader(ctx, W, { kicker: 'Trend Analysis', title: 'Offenses by Month', subtitle: this.scopeSubtitle(data) });
 
     const monthly = data.analyticsData.crimesByMonth.filter((m) => m.month >= 1 && m.month <= 12);
     if (!monthly.length || monthly.every((m) => m.count === 0)) {
@@ -407,7 +407,7 @@ export class ImageExporter {
     const W = 1600;
     const H = 900;
     const { canvas, ctx } = newCanvas(W, H);
-    const bodyY = drawHeader(ctx, W, { kicker: 'Temporal Analysis', title: 'Incidents by Hour of Day', subtitle: this.scopeSubtitle(data) });
+    const bodyY = drawHeader(ctx, W, { kicker: 'Temporal Analysis', title: 'Offenses by Hour of Day', subtitle: this.scopeSubtitle(data) });
 
     const { hourlyDistribution, peakHour } = data.analyticsData.timePatterns;
     const hours = hourlyDistribution ?? [];
@@ -420,7 +420,7 @@ export class ImageExporter {
         { x: PAD, y: bodyY, w: W - PAD * 2, h: H - bodyY - 100 },
         { highlight: peakHour }
       );
-      text(ctx, `Peak activity: ${hourBand(peakHour)} (${hours[peakHour] ?? 0} incidents)`, PAD, H - 30, { size: 22, color: INK_SOFT });
+      text(ctx, `Peak activity: ${hourBand(peakHour)} (${hours[peakHour] ?? 0} offenses)`, PAD, H - 30, { size: 22, color: INK_SOFT });
     }
 
     return { name: 'time-of-day-chart', blob: await canvasToBlob(canvas) };
@@ -434,7 +434,7 @@ export class ImageExporter {
     const bodyY = drawHeader(ctx, W, { kicker: 'Offense Classification', title: 'Leading Offenses', subtitle: this.scopeSubtitle(data) });
 
     if (!byType.length) {
-      text(ctx, 'No incident data was recorded for this period.', PAD, bodyY + 40, { size: 24, color: INK_SOFT });
+      text(ctx, 'No offense data was recorded for this period.', PAD, bodyY + 40, { size: 24, color: INK_SOFT });
     } else {
       drawHorizontalBars(
         ctx,
@@ -533,7 +533,7 @@ export class ImageExporter {
 
     const capY = bodyY + mapSize + 50;
     rule(ctx, PAD, capY, W - PAD * 2, HAIR, 1.5);
-    text(ctx, `${count.toLocaleString()} incident${count === 1 ? '' : 's'} recorded`, PAD, capY + 40, { size: 26, weight: 'bold', color: INK });
+    text(ctx, `${count.toLocaleString()} offense${count === 1 ? '' : 's'} recorded`, PAD, capY + 40, { size: 26, weight: 'bold', color: INK });
     ctx.fillStyle = rgbToCss(THREAT_RGB[level]);
     ctx.fillRect(W - PAD - 160, capY + 16, 20, 20);
     text(ctx, level.charAt(0).toUpperCase() + level.slice(1) + ' risk band', W - PAD - 130, capY + 33, { size: 24, color: INK_MID });
@@ -584,7 +584,7 @@ export class ImageExporter {
         drawBarangayMap(ctx, hotspot.feature, level, hotspot.count, { x, y, w: cardSize, h: cardSize - 60 });
         rule(ctx, x, y + cardSize - 50, cardSize, HAIR, 1.5);
         text(ctx, hotspot.feature.name, x, y + cardSize - 18, { size: 24, weight: 'bold', color: INK });
-        text(ctx, `${hotspot.count.toLocaleString()} incidents · ${level.charAt(0).toUpperCase() + level.slice(1)}`, x, y + cardSize + 12, {
+        text(ctx, `${hotspot.count.toLocaleString()} offenses · ${level.charAt(0).toUpperCase() + level.slice(1)}`, x, y + cardSize + 12, {
           size: 20,
           color: INK_SOFT,
         });

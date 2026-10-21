@@ -58,7 +58,7 @@ honoApp.get('/crimes/barangay-counts', async (c) => {
   const endDateCommitted = c.req.query('endDateCommitted');
   const hour = c.req.query('hour');
   const year = c.req.query('year');
-  const incidentType = c.req.query('incidentType');
+  const crimeType = c.req.query('crimeType');
   const barangay = c.req.query('barangay');
 
   const result = await CrimeService.getBarangayCounts({
@@ -66,7 +66,7 @@ honoApp.get('/crimes/barangay-counts', async (c) => {
     endDateCommitted,
     hour,
     year,
-    incidentType,
+    crimeType,
     barangay,
   });
 
@@ -79,7 +79,7 @@ honoApp.get('/crimes/barangay-counts', async (c) => {
 honoApp.get('/crimes/hourly-timeline', async (c) => {
   const result = await CrimeService.getHourlyTimeline({
     year: c.req.query('year'),
-    incidentType: c.req.query('incidentType'),
+    crimeType: c.req.query('crimeType'),
     barangay: c.req.query('barangay'),
   });
 

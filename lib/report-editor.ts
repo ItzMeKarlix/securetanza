@@ -33,7 +33,7 @@ export const DEFAULT_REPORT_EDITS: ReportEditOptions = {
   fontFamily: 'helvetica',
   fontSize: 9.5,
   lineSpacing: 1,
-  title: 'Incident Pattern and Trend Report',
+  title: 'Offense Pattern and Trend Report',
   subtitle: '',
   paragraphOverrides: {},
 };

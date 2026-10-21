@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MapHeader from "@/components/layout/map-header";
-import IncidentsTab from "@/components/dashboard/incidents-tab";
+import OffensesTab from "@/components/dashboard/offenses-tab";
 import DashboardBarangaySelector from "@/components/dashboard/dashboard-barangay-selector";
 import DashboardCrimeTypeSelector from "@/components/dashboard/dashboard-crime-type-selector";
 import TimeSelector from "@/components/layout/time-selector";
@@ -79,8 +79,8 @@ function CasesContent() {
           theme === "dark" ? "text-slate-500" : "text-slate-400"
         }`}>
           {barangayName === "General Dashboard" 
-            ? "All crime cases across Tanza, Cavite" 
-            : `Crime cases in Brgy. ${barangayName}`}
+            ? "All recorded offenses across Tanza, Cavite" 
+            : `Recorded offenses in Brgy. ${barangayName}`}
         </span>
       </div>
 
@@ -88,7 +88,7 @@ function CasesContent() {
         theme === "dark" ? "bg-[#0f172a]" : "bg-[#f1f5f9]"
       }`}>
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar scroll-smooth">
-          {rangeReady && <IncidentsTab barangayName={barangayName} />}
+          {rangeReady && <OffensesTab barangayName={barangayName} />}
         </div>
       </main>
     </div>

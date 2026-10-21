@@ -62,7 +62,7 @@ function OverviewContent() {
 				<div className={`hidden h-5 w-px sm:block ${theme === "dark" ? "bg-white/10" : "bg-slate-200"}`} />
 				<span className={`hidden text-sm font-medium sm:inline ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}>
 					{barangayName === "General Dashboard"
-						? "Viewing all crime incidents across Tanza, Cavite"
+						? "Viewing all offenses across Tanza, Cavite"
 						: `Viewing crime data for Brgy. ${barangayName}`}
 				</span>
 			</div>

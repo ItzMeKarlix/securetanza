@@ -168,7 +168,7 @@ export default function DashboardBarangaySelector({ currentBarangay }: Dashboard
               <div className={`text-xs font-normal mt-0.5 ${
                 theme === "dark" ? "text-slate-500" : "text-slate-400"
               }`}>
-                All crime incidents across Tanza
+                All offenses across Tanza
               </div>
             </div>
           </button>

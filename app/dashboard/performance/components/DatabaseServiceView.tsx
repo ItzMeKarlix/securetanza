@@ -33,7 +33,7 @@ interface Props {
     };
     database: {
       tables: {
-        crimeIncidents: number;
+        offenses: number;
         users: number;
         auditLogs: number;
         exportSchedules: number;
@@ -60,10 +60,10 @@ export default function DatabaseServiceView({
 
   const tables = [
     {
-      name: "crime_incidents",
-      label: "Crime Incidents",
-      count: database.tables.crimeIncidents,
-      description: "Police blotters, crime categories, geospatial coordinates, and case statuses.",
+      name: "offenses",
+      label: "Offenses",
+      count: database.tables.offenses,
+      description: "Recorded offenses with their stage of felony, location, coordinates and case status.",
     },
     {
       name: "audit_logs",

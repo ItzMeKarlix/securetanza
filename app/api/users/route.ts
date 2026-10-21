@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { personNameField } from '@/lib/input-sanitize';
 import { randomBytes } from 'crypto';
 import { unusablePasswordHash } from '@/lib/auth-tokens';
-import { accountStatus, emailField, emailTaken, sendInvite } from '@/lib/account-emails';
+import { accountStatus, emailConflict, emailField, sendInvite } from '@/lib/account-emails';
 
 // Validation schema for user creation/update
 const userSchema = z.object({
@@ -43,7 +43,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // ?deleted=1 lists the soft-deleted accounts that can still be restored.
+    const deleted = request.nextUrl.searchParams.get('deleted') === '1';
     const users = await prisma.user.findMany({
+      where: { deletedAt: deleted ? { not: null } : null },
       relationLoadStrategy: 'join',
       include: {
         permissions: {
@@ -74,6 +77,7 @@ export async function GET(request: NextRequest) {
       updatedAt: user.updatedAt,
       lockedAt: user.lockedAt,
       failedLoginAttempts: user.failedLoginAttempts,
+      ...(deleted ? { deletedAt: user.deletedAt, deletedBy: user.deletedBy } : {}),
     }));
 
     return NextResponse.json({
@@ -104,8 +108,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = userSchema.parse(body);
 
-    if (await emailTaken(validatedData.email)) {
-      return NextResponse.json({ error: 'Another account already uses that email address' }, { status: 409 });
+    const conflict = await emailConflict(validatedData.email);
+    if (conflict) {
+      return NextResponse.json({ error: conflict }, { status: 409 });
     }
 
     const selected = await prisma.permission.findMany({

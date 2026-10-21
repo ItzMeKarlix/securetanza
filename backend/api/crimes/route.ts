@@ -6,15 +6,14 @@ import { getSession, canOperateSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { intParam } from '@/lib/input-sanitize';
 
-// Validation schema for crime incident
-const crimeIncidentSchema = z.object({
+// Validation schema for offense
+const offenseSchema = z.object({
   // Required fields
   barangay: z.string().min(1, 'Barangay is required'),
   dateReported: z.string().datetime('Invalid date reported format'),
   timeReported: z.string().min(1, 'Time reported is required'),
   dateCommitted: z.string().datetime('Invalid date committed format'),
   timeCommitted: z.string().min(1, 'Time committed is required'),
-  incidentType: z.string().min(1, 'Incident type is required'),
   
   // Optional fields
   blotterNo: z.string().optional(),
@@ -38,19 +37,20 @@ const crimeIncidentSchema = z.object({
   longitude: z.number().optional(),
 });
 
-// GET /api/crimes - Fetch all crime incidents with optional filters (Cached)
+// GET /api/crimes - Fetch all offenses with optional filters (Cached)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit');
 
     const crimes = await CrimeService.getCrimes({
-      incidentId: searchParams.get('incidentId'),
       barangay: searchParams.get('barangay'),
+      blotterNo: searchParams.get('blotterNo'),
+      stn: searchParams.get('stn'),
       region: searchParams.get('region'),
       province: searchParams.get('province'),
       municipal: searchParams.get('municipal'),
-      incidentType: searchParams.get('incidentType'),
+      crimeType: searchParams.get('crimeType'),
       startDateReported: searchParams.get('startDateReported'),
       endDateReported: searchParams.get('endDateReported'),
       startDateCommitted: searchParams.get('startDateCommitted'),
@@ -83,10 +83,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/crimes - Create a new crime incident (with cache invalidation)
+// POST /api/crimes - Create a new offense (with cache invalidation)
 export async function POST(request: NextRequest) {
   try {
-    // Verify administrative authorization for crime incident creation
+    // Verify administrative authorization for offense creation
     const session = await getSession();
     if (!canOperateSession(session)) {
       return NextResponse.json(
@@ -96,16 +96,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const validatedData = crimeIncidentSchema.parse(body);
+    const validatedData = offenseSchema.parse(body);
 
-    const crime = await CrimeService.createIncident({
+    const crime = await CrimeService.createOffense({
       blotterNo: validatedData.blotterNo,
       barangay: validatedData.barangay,
       dateReported: new Date(validatedData.dateReported),
       timeReported: validatedData.timeReported,
       dateCommitted: new Date(validatedData.dateCommitted),
       timeCommitted: validatedData.timeCommitted,
-      incidentType: validatedData.incidentType,
       ppo: validatedData.ppo,
       stn: validatedData.stn,
       pcp: validatedData.pcp,
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         action: 'Import',
-        details: `Created single crime incident in ${validatedData.barangay}`,
+        details: `Created single offense in ${validatedData.barangay}`,
         user: session.fullName || session.accountNumber,
         resource: `CrimeData:${crime.id}`,
         ip: getClientIp(request) || 'unknown',
@@ -142,7 +141,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: crime,
-      message: 'Crime incident created successfully',
+      message: 'Offense created successfully',
     }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -158,7 +157,7 @@ export async function POST(request: NextRequest) {
 
     console.error('Error creating crime:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error && error.message.includes('already exists') ? error.message : 'Failed to create crime incident' },
+      { success: false, error: error instanceof Error && error.message.includes('already exists') ? error.message : 'Failed to create offense' },
       { status: error instanceof Error && error.message.includes('already exists') ? 409 : 500 }
     );
   }

@@ -59,7 +59,7 @@ interface TelemetryPayload {
     };
     database: {
       tables: {
-        crimeIncidents: number;
+        offenses: number;
         users: number;
         auditLogs: number;
         exportSchedules: number;

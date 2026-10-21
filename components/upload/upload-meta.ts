@@ -29,7 +29,6 @@ export const EXPECTED_COLUMNS = [
   "time_reported",
   "date_committed",
   "time_committed",
-  "incident_type",
   "is_crime",
   "mode_reporting",
   "stage_of_felony",
@@ -43,7 +42,6 @@ export const EXPECTED_COLUMNS = [
   "sensational",
   "threat_grp",
   "grp_affiliation",
-  "incident_type_threat_grp",
   "mrs",
   "suspect_is_ego",
   "suspect_ego_position",
@@ -64,7 +62,7 @@ export const EXPECTED_COLUMNS = [
 /**
  * Required headers keep rows usable on the map and in temporal analytics.
  * The row-level backend check requires barangay, date_reported, date_committed
- * and incident_type; time headers are checked here for the upload preview.
+ * and offense; time and stage headers are checked here for the upload preview.
  */
 export const REQUIRED_COLUMNS = [
   "barangay",
@@ -72,7 +70,8 @@ export const REQUIRED_COLUMNS = [
   "time_reported",
   "date_committed",
   "time_committed",
-  "incident_type",
+  "offense",
+  "stage_of_felony",
 ];
 
 const REQUIRED_SET = new Set(REQUIRED_COLUMNS);
@@ -134,7 +133,7 @@ function compactHeader(raw: unknown): string {
 }
 
 /**
- * Headers in the PNP incident export that no amount of reformatting turns into a
+ * Headers in the PNP blotter export that no amount of reformatting turns into a
  * register column — abbreviations, and one misspelling the export has always had.
  */
 const HEADER_ALIASES: Record<string, string> = {

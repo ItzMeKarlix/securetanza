@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CrimeService } from '@/backend/services/crime.service';
 
-// GET /api/crimes/hourly-timeline - Date x hour incident histogram in one aggregate query
+// GET /api/crimes/hourly-timeline - Date x hour offense histogram in one aggregate query
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
     const result = await CrimeService.getHourlyTimeline({
       year: searchParams.get('year'),
-      incidentType: searchParams.get('incidentType'),
+      crimeType: searchParams.get('crimeType'),
       barangay: searchParams.get('barangay'),
       offenseCategory: searchParams.get('offenseCategory'),
       stageOfFelony: searchParams.get('stageOfFelony'),

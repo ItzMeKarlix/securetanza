@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const endDateCommitted = searchParams.get('endDateCommitted');
     const hour = searchParams.get('hour');
     const year = searchParams.get('year');
-    const incidentType = searchParams.get('incidentType');
+    const crimeType = searchParams.get('crimeType');
     const barangay = searchParams.get('barangay');
 
     const result = await CrimeService.getBarangayCounts({
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       endDateCommitted,
       hour,
       year,
-      incidentType,
+      crimeType,
       barangay,
       offenseCategory: searchParams.get('offenseCategory'),
       stageOfFelony: searchParams.get('stageOfFelony'),

@@ -36,9 +36,14 @@ export function DocsUpload() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
-                <td className="py-2 px-3 font-mono font-medium text-slate-900 dark:text-white">incident_type / Crime Type</td>
+                <td className="py-2 px-3 font-mono font-medium text-slate-900 dark:text-white">offense</td>
                 <td className="py-2 px-3 text-red-600 dark:text-red-400 font-medium">Required</td>
-                <td className="py-2 px-3">THEFT, ROBBERY, PHYSICAL INJURY</td>
+                <td className="py-2 px-3">THEFT - RPC Art. 308, ANTI-RAPE LAW OF 1997 - RA 8353</td>
+              </tr>
+              <tr>
+                <td className="py-2 px-3 font-mono font-medium text-slate-900 dark:text-white">stage_of_felony</td>
+                <td className="py-2 px-3 text-red-600 dark:text-red-400 font-medium">Required column</td>
+                <td className="py-2 px-3">CONSUMMATED, FRUSTRATED, ATTEMPTED (blank reads as Unknown)</td>
               </tr>
               <tr>
                 <td className="py-2 px-3 font-mono font-medium text-slate-900 dark:text-white">barangay</td>

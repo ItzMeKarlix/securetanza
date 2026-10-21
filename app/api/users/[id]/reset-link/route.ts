@@ -33,7 +33,7 @@ export async function POST(
       where: { id: userId },
       include: { _count: { select: { authTokens: { where: { purpose: 'invite' } } } } },
     });
-    if (!user) {
+    if (!user || user.deletedAt) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

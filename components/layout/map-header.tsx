@@ -19,7 +19,7 @@ const navItems = [
   { id: "map", label: "Map", href: "/", permission: "privileged_map_view" },
   { id: "compare", label: "Compare", path: "/compare", permission: "privileged_map_view" },
   { id: "overview", label: "Overview", path: "/dashboard/overview", permission: "privileged_map_view" },
-  { id: "incidents", label: "Cases", path: "/dashboard/cases", permission: "privileged_cases_view" },
+  { id: "cases", label: "Cases", path: "/dashboard/cases", permission: "privileged_cases_view" },
   { id: "analytics", label: "Analytics", path: "/dashboard/analytics", permission: "privileged_analytics_view" },
   { id: "reports", label: "Reports", path: "/dashboard/reports", permission: "privileged_analytics_view" },
 ];

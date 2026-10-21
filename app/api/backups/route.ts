@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const kind = request.nextUrl.searchParams.get('kind');
-    const backups = await BackupService.list(kind);
+    const kind = queryText(request.nextUrl.searchParams.get('kind'), 40);
+    const backups = await BackupService.list(kind, request.nextUrl.searchParams.get('deleted') === '1');
 
     return NextResponse.json({
       success: true,

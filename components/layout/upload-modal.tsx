@@ -657,7 +657,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
                   {receipt.inserted === 0
                     ? receipt.duplicatesSkipped && receipt.duplicatesSkipped > 0
                       ? `No rows written. All ${receipt.duplicatesSkipped.toLocaleString("en-US")} rows are duplicates already recorded in the register.`
-                      : "No rows could be written. Every row was missing a barangay, a date or an incident type."
+                      : "No rows could be written. Every row was missing a barangay, a date or an offense."
                     : receipt.skipped > 0
                       ? `${receipt.skipped.toLocaleString("en-US")} row${
                           receipt.skipped === 1 ? " was" : "s were"

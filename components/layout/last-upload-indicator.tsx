@@ -7,7 +7,7 @@ import { OVERLAY_SURFACE } from "@/lib/map-overlay";
 import { readJson } from "@/lib/read-json";
 
 interface LastUploadData {
-  latestIncident: {
+  latestOffense: {
     dateCommitted: string;
   } | null;
   lastUpload: {
@@ -99,7 +99,7 @@ export default function LastUploadIndicator() {
     }
   };
 
-  // The calendar month of the most recent incident on record — the period the
+  // The calendar month of the most recent offense on record — the period the
   // dataset actually covers, not when it was imported.
   const formatAsOfMonth = (dateString?: string) => {
     if (!dateString) return null;
@@ -114,7 +114,7 @@ export default function LastUploadIndicator() {
   };
 
   const lastUpload = data?.lastUpload;
-  const asOfMonth = formatAsOfMonth(data?.latestIncident?.dateCommitted);
+  const asOfMonth = formatAsOfMonth(data?.latestOffense?.dateCommitted);
 
   const tooltip = lastUpload
     ? [
