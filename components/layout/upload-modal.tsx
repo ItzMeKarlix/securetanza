@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, FileSpreadsheet, Loader2, X } from "lucide-react";
 import * as XLSX from "xlsx";
+import { useOfflineStatus } from "@/lib/offline/status";
 import {
   Dialog,
   DialogContent,
@@ -122,6 +123,8 @@ function ColumnDisclosure({
 }
 
 export default function UploadModal({ open, onOpenChange, onUploaded }: UploadModalProps) {
+  // Imports write to the register, so they wait for the connection instead of queueing.
+  const { offline } = useOfflineStatus();
   const [phase, setPhase] = useState<Phase>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [sheet, setSheet] = useState<SheetFacts | null>(null);
@@ -336,9 +339,11 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
             ? "Entry filed."
             : check && !check.isValid
               ? "Correct the header row in Excel, then choose the file again."
-              : check && sheet
-                ? `${sheet.rowCount.toLocaleString("en-US")} rows ready to import.`
-                : "";
+              : offline && phase === "staged"
+                ? "You're offline. Import once the connection is back."
+                : check && sheet
+                  ? `${sheet.rowCount.toLocaleString("en-US")} rows ready to import.`
+                  : "";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -759,7 +764,7 @@ export default function UploadModal({ open, onOpenChange, onUploaded }: UploadMo
                   <button
                     type="button"
                     onClick={beginImportCountdown}
-                    disabled={phase !== "staged" || !check?.isValid}
+                    disabled={phase !== "staged" || !check?.isValid || offline}
                     className={`${PRIMARY} ${FOCUS}`}
                   >
                     {phase === "importing" && (

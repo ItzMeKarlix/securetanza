@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { useTimeRangeData } from "@/hooks/useTimeRangeData";
 import { toIncidentTypeParam } from "@/lib/crime-groups";
+import { readJson } from "@/lib/read-json";
 import { countKey, type PaneStatus } from "./compare-data";
 
 interface PaneResult {
@@ -47,18 +48,20 @@ export function usePaneCounts() {
 
         if (selectedFelonyStage)
           params.set("stageOfFelony", selectedFelonyStage);
-        const res = await fetch(`/api/crimes/barangay-counts?${params}`, {
-          signal: controller.signal,
-        });
-        const body = await res.json();
-        if (!res.ok || !body?.success)
-          throw new Error(
-            body?.error || `Counts request failed (${res.status})`,
-          );
-        return (body.data?.barangayCounts ?? {}) as Record<string, number>;
+        // readJson shares the GET and falls back to the offline copy; the
+        // abort below only stops this pane from publishing an old answer.
+        const body = await readJson<{
+          success?: boolean;
+          error?: string;
+          data?: { barangayCounts?: Record<string, number> };
+        }>(`/api/crimes/barangay-counts?${params}`);
+        if (!body?.success)
+          throw new Error(body?.error || "Counts request failed");
+        return body.data?.barangayCounts ?? {};
       }),
     )
       .then((results) => {
+        if (controller.signal.aborted) return;
         const counts: Record<string, number> = {};
         let total = 0;
         results.forEach((counted) =>

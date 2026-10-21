@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { AccessibilityProvider } from "@/context/AccessibilityContext";
 import { TourProvider } from "@/context/TourContext";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineBanner } from "@/components/layout/offline-banner";
+import { ServiceWorkerRegistrar } from "@/components/layout/service-worker-registrar";
 
 const inter = Inter({
 	variable: "--font-inter",
@@ -77,10 +79,12 @@ export default function RootLayout({
 				<AccessibilityProvider>
 					<AuthProvider>
 					<TourProvider>{children}</TourProvider>
+					<OfflineBanner />
 				</AuthProvider>
 				</AccessibilityProvider>
 				</ThemeProvider>
 				<Toaster />
+				<ServiceWorkerRegistrar />
 			</body>
 		</html>
 	);

@@ -99,6 +99,8 @@ export default function TanzaMapRoot() {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution={MAP_ATTR}
+          // CORS tiles can be kept by the service worker for offline use.
+          crossOrigin="anonymous"
         />
 
         <MapBoundsController bounds={bounds} />

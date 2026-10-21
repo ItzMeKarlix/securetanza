@@ -5,11 +5,27 @@ import { usePathname } from "next/navigation";
 import { IdleSessionTimer, idleTimeoutMs, isIdleProtectedPath, isPublicPage, onceAsync } from "@/lib/idle-session";
 import { IdleLogoutWarning } from "@/components/layout/idle-logout-warning";
 import { toast } from "sonner";
+import { reportServerReachable } from "@/lib/offline/status";
+import {
+  OFFLINE_SESSION_GRACE_MS,
+  clearOfflineData,
+  loadOfflineSession,
+  rememberVerifiedUser,
+} from "@/lib/offline/session-snapshot";
 
 const SESSION_CHECK_TIMEOUT_MS = 10_000;
 const RETRY_MIN_MS = 2_000;
 const RETRY_MAX_MS = 30_000;
 const CONNECTION_TOAST_ID = "session-connection";
+/** Sign-out shouldn't hang on a stuck IndexedDB; the copies are wiped next sign-in. */
+const CLEAR_OFFLINE_TIMEOUT_MS = 2_000;
+
+function clearOfflineDataQuickly() {
+  return Promise.race([
+    clearOfflineData().catch(() => {}),
+    new Promise<void>((resolve) => window.setTimeout(resolve, CLEAR_OFFLINE_TIMEOUT_MS)),
+  ]);
+}
 
 interface User {
   id: number;
@@ -49,10 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // All logout triggers share one terminal request. In-flight session checks cannot
   // restore the user after logout begins.
-  const logoutForReason = useMemo(() => onceAsync(async (reason?: "idle" | "tab") => {
+  const logoutForReason = useMemo(() => onceAsync(async (reason?: "idle" | "tab" | "offline") => {
     loggingOutRef.current = true;
     setLoggingOut(true);
     idleTimerRef.current?.dispose();
+    // Saved data and pages go with the session, even if the server can't hear
+    // about the sign-out right now.
+    await clearOfflineDataQuickly();
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch (error) {
@@ -71,6 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Track if user was ever loaded in this browser session
   const userRef = useRef<User | null>(null);
   userRef.current = user;
+  /** When the server last confirmed this session (ms), or null if it never has here. */
+  const verifiedAtRef = useRef<number | null>(null);
 
   // Connection trouble is not a sign-out. While the server can't confirm the
   // session (offline, 5xx, timeout) we keep the current user, tell them we're
@@ -83,12 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const markConnectionLost = useCallback(() => {
     if (!connectionLostRef.current) {
+      // The offline banner says so from here on.
       connectionLostRef.current = true;
-      toast.warning("Can't reach the server. Reconnecting…", {
-        id: CONNECTION_TOAST_ID,
-        description: "You're still signed in — your session will resume when the connection is back.",
-        duration: Infinity,
-      });
+      reportServerReachable(false);
     }
     if (retryTimerRef.current !== null) return;
     const delay = retryDelayRef.current;
@@ -107,9 +125,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (connectionLostRef.current) {
       connectionLostRef.current = false;
+      reportServerReachable(true);
       toast.success("Reconnected", { id: CONNECTION_TOAST_ID, description: undefined, duration: 2500 });
     }
   }, []);
+
+  // The server can't be asked. Someone already signed in here keeps going from
+  // the last confirmed snapshot, but only for OFFLINE_SESSION_GRACE_MS after
+  // the server last confirmed them. Signing in afresh always needs the server.
+  const continueOffline = useCallback(async (): Promise<User | null> => {
+    markConnectionLost();
+    if (loggingOutRef.current) return null;
+    if (!userRef.current) {
+      const saved = await loadOfflineSession<User>().catch(() => null);
+      if (saved && !loggingOutRef.current && !userRef.current) {
+        verifiedAtRef.current = saved.verifiedAt;
+        userRef.current = saved.user;
+        setUser(saved.user);
+        setLoading(false);
+      }
+    } else if (verifiedAtRef.current !== null && Date.now() - verifiedAtRef.current > OFFLINE_SESSION_GRACE_MS) {
+      void logoutForReason("offline");
+      return null;
+    }
+    return userRef.current;
+  }, [markConnectionLost, logoutForReason]);
 
   const checkSession = useCallback(async (): Promise<User | null> => {
     if (loggingOutRef.current) return null;
@@ -125,29 +165,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data = await response.json().catch(() => ({}));
     } catch {
       // Offline, DNS failure, timeout… the session itself is unknown, not invalid.
-      if (!loggingOutRef.current) markConnectionLost();
-      return userRef.current;
+      return continueOffline();
     }
 
     if (loggingOutRef.current) return null;
 
     // Server couldn't decide (503 from a database blip, 502 from a proxy, …).
     if (!response.ok || data.authenticated == null) {
-      markConnectionLost();
-      return userRef.current;
+      return continueOffline();
     }
 
     markConnectionOk();
     setLoading(false);
 
     if (data.authenticated && data.user && Array.isArray(data.user.permissions) && data.user.permissions.length > 0) {
+      verifiedAtRef.current = Date.now();
       setUser(data.user);
+      void rememberVerifiedUser(data.user).catch(() => {});
       return data.user;
     }
 
     // Definitively signed out (expired, revoked, password changed elsewhere, or never signed in).
     const hadPriorSession = userRef.current !== null;
+    verifiedAtRef.current = null;
     setUser(null);
+    await clearOfflineDataQuickly();
     if (typeof window !== "undefined") {
       const currentPath = window.location.pathname;
       if (!isPublicPage(currentPath) && (hadPriorSession || isIdleProtectedPath(currentPath))) {
@@ -157,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     return null;
-  }, [markConnectionLost, markConnectionOk]);
+  }, [continueOffline, markConnectionOk]);
 
   useEffect(() => {
     checkSessionRef.current = checkSession;

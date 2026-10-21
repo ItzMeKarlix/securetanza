@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Lock, Mail, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldOff } from "lucide-react";
+import { Clock, Lock, Mail, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldOff, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { ForceChangePasswordModal } from "@/components/modals/ForceChangePasswordModal";
@@ -12,7 +12,7 @@ import { getDefaultRouteForUser } from "@/lib/auth-routes";
 import { MfaChallenge, type SignInResult } from "@/components/auth/mfa-challenge";
 import { MfaEnroll } from "@/components/auth/mfa-enroll";
 
-type SignedOutReason = "idle" | "expired" | "tab";
+type SignedOutReason = "idle" | "expired" | "tab" | "offline";
 
 const SIGNED_OUT_COPY: Record<SignedOutReason, { title: string; message: string; icon: typeof Clock }> = {
   idle: {
@@ -29,6 +29,11 @@ const SIGNED_OUT_COPY: Record<SignedOutReason, { title: string; message: string;
     title: "Signed out",
     message: "This account was opened in another tab, which ended your session here. Please sign in again.",
     icon: ShieldOff,
+  },
+  offline: {
+    title: "Signed out",
+    message: "This device couldn't reach the server for 12 hours, so we signed you out. Sign in again once you're back online.",
+    icon: WifiOff,
   },
 };
 
@@ -57,7 +62,7 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     const reason = params.get("reason");
     let scrub = false;
-    if (reason === "idle" || reason === "expired" || reason === "tab") {
+    if (reason === "idle" || reason === "expired" || reason === "tab" || reason === "offline") {
       setSignedOutReason(reason);
       params.delete("reason");
       scrub = true;
@@ -148,7 +153,11 @@ export default function LoginPage() {
       await finishSignIn(data);
     } catch (error) {
       console.error("Login error:", error);
-      setError("An error occurred. Please try again.");
+      setError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "You're offline. Signing in needs an internet connection."
+          : "Couldn't reach the server. Check your connection and try again."
+      );
       setLoading(false);
     }
   };

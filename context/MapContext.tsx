@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import L from "leaflet";
 import type { FelonyStage } from "@/lib/offense-classification";
+import { readJson } from "@/lib/read-json";
 import {
   BARANGAY_NAMES,
   generateBarangayData,
@@ -207,15 +208,10 @@ export function MapProvider({
 
   // Fetch available years from database
   useEffect(() => {
-    fetch("/api/crimes/years")
-      .then(async (r) => {
-        if (!r.ok) return null;
-        try {
-          return await r.json();
-        } catch {
-          return null;
-        }
-      })
+    // Through readJson so the offline copy can stand in: without the years,
+    // no period is chosen and nothing else on the page loads.
+    readJson<{ years: number[] }>("/api/crimes/years")
+      .catch(() => null)
       .then((data) => {
         if (data?.years && data.years.length > 0) {
           setAvailableYears(data.years);

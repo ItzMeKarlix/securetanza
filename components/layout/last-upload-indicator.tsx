@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, CalendarClock } from "lucide-react";
 import { OVERLAY_SURFACE } from "@/lib/map-overlay";
+import { readJson } from "@/lib/read-json";
 
 interface LastUploadData {
   latestIncident: {
@@ -30,12 +31,9 @@ export default function LastUploadIndicator() {
   const fetchLastUpload = useCallback(async (showRefreshingState = false) => {
     if (showRefreshingState) setRefreshing(true);
     try {
-      const res = await fetch("/api/crimes/latest");
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          setData(json.data);
-        }
+      const json = await readJson<{ success?: boolean; data?: LastUploadData }>("/api/crimes/latest");
+      if (json.success && json.data) {
+        setData(json.data);
       }
     } catch (err) {
       console.error("Error fetching last upload data:", err);
