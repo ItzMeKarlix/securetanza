@@ -7,6 +7,7 @@ import { Monitor, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Section, Rows, Row, btnOutline, btnPrimary, btnGhost, inputBase } from "./settings-ui";
 import { Modal } from "./settings-modal";
 import { BackupCodesPanel } from "@/components/auth/backup-codes-panel";
+import { CodeInput } from "@/components/auth/code-input";
 import { cn } from "@/lib/utils";
 
 interface Device {
@@ -282,18 +283,19 @@ function StepUpDialog({
 				className="space-y-4"
 			>
 				<p className="text-[0.8125rem] leading-relaxed text-slate-600 dark:text-slate-300">{copy.body}</p>
-				<input
-					autoFocus
-					aria-label={method === "totp" ? "Authenticator code" : "Backup code"}
-					inputMode={method === "totp" ? "numeric" : "text"}
-					autoComplete="one-time-code"
-					value={code}
-					onChange={(e) =>
-						setCode(method === "totp" ? e.target.value.replace(/\D/g, "").slice(0, 6) : e.target.value.toUpperCase().slice(0, 9))
-					}
-					placeholder={method === "totp" ? "000000" : "XXXX-XXXX"}
-					className={cn(inputBase, "h-11 text-center font-mono text-lg tracking-[0.35em]")}
-				/>
+				{method === "totp" ? (
+					<CodeInput value={code} onChange={setCode} label="Authenticator code" disabled={busy} />
+				) : (
+					<input
+						autoFocus
+						aria-label="Backup code"
+						autoComplete="one-time-code"
+						value={code}
+						onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 9))}
+						placeholder="XXXX-XXXX"
+						className={cn(inputBase, "h-11 text-center font-mono text-lg tracking-[0.35em]")}
+					/>
+				)}
 				{error && <p className="text-[0.8125rem] text-red-600 dark:text-red-400">{error}</p>}
 				<button
 					type="button"
@@ -364,16 +366,7 @@ function ReplaceAppDialog({
 				<p className="text-center font-mono text-[0.75rem] tracking-wider text-slate-500 dark:text-slate-400 break-all">
 					{setup.manualKey}
 				</p>
-				<input
-					autoFocus
-					aria-label="Code from the new app"
-					inputMode="numeric"
-					autoComplete="one-time-code"
-					value={code}
-					onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-					placeholder="000000"
-					className={cn(inputBase, "h-11 text-center font-mono text-lg tracking-[0.35em]")}
-				/>
+				<CodeInput value={code} onChange={setCode} label="Code from the new app" disabled={busy} />
 				{error && <p className="text-[0.8125rem] text-red-600 dark:text-red-400">{error}</p>}
 				<div className="flex justify-end gap-2">
 					<button type="button" onClick={onClose} className={btnOutline}>
