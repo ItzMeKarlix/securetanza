@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { allowRequest } from '@/lib/rate-limit';
 import { accountStatus, sendInvite } from '@/lib/account-emails';
 import { idParam } from '@/lib/input-sanitize';
 
@@ -35,6 +36,10 @@ export async function POST(
         { error: 'This account has already accepted its invite.' },
         { status: 400 }
       );
+    }
+
+    if (!(await allowRequest(`user-email:${userId}`, 5, 60 * 60))) {
+      return NextResponse.json({ error: 'Too many emails sent to this account recently. Try again later.' }, { status: 429 });
     }
 
     const emailSent = await sendInvite(user, session.userId);

@@ -5,6 +5,7 @@ import { sendMail } from '@/lib/email/mailer';
 import { passwordChangedEmail } from '@/lib/email/templates';
 import { appUrl } from '@/lib/app-url';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { allowRequest } from '@/lib/rate-limit';
 import { validateNewPassword } from '@/lib/password-policy.server';
 import { z } from 'zod';
 import { MAX_PASSWORD_LENGTH } from '@/lib/input-sanitize';
@@ -23,6 +24,10 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!(await allowRequest(`update-password:${session.userId}`, 5, 60 * 60))) {
+      return NextResponse.json({ error: 'Too many password changes. Try again later.' }, { status: 429 });
     }
 
     const body = await request.json();

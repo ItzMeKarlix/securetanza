@@ -3,6 +3,7 @@ import { prisma } from "@/backend/lib/prisma";
 import * as XLSX from "xlsx";
 import { getSession, canOperateSession } from "@/lib/auth";
 import { getClientIp, getUserAgent } from "@/lib/request-context";
+import { allowRequest } from "@/lib/rate-limit";
 import { cacheService, CacheKeys } from "@/backend/cache";
 import {
   generateCrimeFingerprint,
@@ -27,6 +28,16 @@ export async function POST(request: NextRequest) {
           error: "Unauthorized - Administrative access required",
         },
         { status: 403 },
+      );
+    }
+
+    if (!(await allowRequest(`upload:${session.userId}`, 5, 15 * 60))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many uploads. Wait a few minutes and try again.",
+        },
+        { status: 429 },
       );
     }
 

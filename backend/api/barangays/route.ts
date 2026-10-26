@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BarangayService } from '@/backend/services/barangay.service';
+import { getSession, canOperateSession } from '@/lib/auth';
 
 const barangaySchema = z.object({
   name: z.string().min(1, 'Barangay name is required'),
@@ -34,6 +35,14 @@ export async function GET(request: NextRequest) {
 // POST /api/barangays - Create a new barangay (with cache invalidation)
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!canOperateSession(session)) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Administrative access required' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = barangaySchema.parse(body);
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, invalidateSessionCache } from '@/lib/auth';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
+import { allowRequest } from '@/lib/rate-limit';
 import { resetMfa } from '@/lib/mfa/reset';
 import { sendMail } from '@/lib/email/mailer';
 import { mfaChangedEmail } from '@/lib/email/templates';
@@ -27,6 +28,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.deletedAt) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    if (!(await allowRequest(`user-email:${userId}`, 5, 60 * 60))) {
+      return NextResponse.json({ error: 'Too many emails sent to this account recently. Try again later.' }, { status: 429 });
+    }
 
     await resetMfa(userId);
     invalidateSessionCache(userId);

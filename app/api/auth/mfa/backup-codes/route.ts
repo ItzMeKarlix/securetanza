@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStepUp, signedInUser } from '@/lib/mfa/actor';
 import { regenerateBackupCodes } from '@/lib/mfa/backup-codes';
+import { allowRequest } from '@/lib/rate-limit';
 import { auditAuth } from '@/lib/mfa/sign-in';
 import { sendMail } from '@/lib/email/mailer';
 import { mfaChangedEmail } from '@/lib/email/templates';
@@ -13,6 +14,10 @@ export async function POST(request: NextRequest) {
     const { user } = signed;
     if (!user.totpEnabledAt) {
       return NextResponse.json({ error: 'Set up two-factor authentication first.' }, { status: 400 });
+    }
+
+    if (!(await allowRequest(`mfa-backup-codes:${user.id}`, 5, 60 * 60))) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
     }
 
     const body = await request.json().catch(() => ({}));

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
 import { getSession, canOperateSession } from '@/lib/auth';
+import { allowRequest } from '@/lib/rate-limit';
 import { produceScheduledExport } from '@/backend/services/scheduled-export.service';
-
-/** One manual export per person per minute: each one builds a workbook and sends an email. */
-const lastManualRun = new Map<number, number>();
-const COOLDOWN_MS = 60_000;
 
 // POST /api/exports/run — produce the report for the latest complete period now,
 // with the frequency of the person's saved schedule (weekly if they have none).
+// One manual export per person per minute: each one builds a workbook and sends an email.
 export async function POST() {
   try {
     const session = await getSession();
@@ -16,10 +14,9 @@ export async function POST() {
     if (!canOperateSession(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const now = Date.now();
-    if (now - (lastManualRun.get(session.userId) ?? 0) < COOLDOWN_MS) {
+    if (!(await allowRequest(`export-run:${session.userId}`, 1, 60))) {
       return NextResponse.json({ error: 'An export was just made. Try again in a minute.' }, { status: 429 });
     }
-    lastManualRun.set(session.userId, now);
 
     const [user, schedule] = await Promise.all([
       prisma.user.findFirst({

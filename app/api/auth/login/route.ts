@@ -9,6 +9,7 @@ import { emailCodeRefusal } from '@/lib/mfa/second-factor';
 import { getClientIp, getUserAgent } from '@/lib/request-context';
 import { normalizeEmail } from '@/lib/email-address';
 import { MAX_PASSWORD_LENGTH, cleanText } from '@/lib/input-sanitize';
+import { allowRequest } from '@/lib/rate-limit';
 
 /** Consecutive wrong passwords tolerated before the account is locked. */
 const MAX_FAILED_ATTEMPTS = 3;
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest) {
     const identifier = typeof rawIdentifier === 'string' && rawIdentifier.length <= 320 ? cleanText(rawIdentifier) : '';
     const ip = getClientIp(request) || 'unknown';
     const userAgent = getUserAgent(request);
+
+    if (!(await allowRequest(`login:${ip}`, 30, 15 * 60))) {
+      return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    }
 
     // Validate input
     if (!identifier || typeof password !== 'string' || !password || password.length > MAX_PASSWORD_LENGTH) {
