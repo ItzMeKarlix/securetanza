@@ -207,12 +207,29 @@ function ZoomControls({ bounds, theme }: { bounds: L.LatLngBounds | null; theme:
   );
 }
 
+/**
+ * react-leaflet reads scrollWheelZoom only on mount, and the map stays mounted
+ * when the dialog toggles full screen, so the handler is switched here. Off in
+ * the compact view so the wheel scrolls the dialog instead.
+ */
+function WheelZoom({ enabled }: { enabled: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (enabled) map.scrollWheelZoom.enable();
+    else map.scrollWheelZoom.disable();
+  }, [map, enabled]);
+  return null;
+}
+
 export default function SliceMiniMapInner({
   offenses,
   theme,
+  fill = false,
 }: {
   offenses: OffenseRecord[];
   theme: string;
+  /** Fill the parent's height (full-screen view) instead of the compact 220px, and allow wheel zoom. */
+  fill?: boolean;
 }) {
   const { palette, colorful, ramp } = useDataColors();
   const [geo, setGeo] = useState<any>(null);
@@ -306,8 +323,10 @@ export default function SliceMiniMapInner({
     <MapContainer
       center={TANZA_CENTER}
       zoom={12}
-      style={{ height: 220, width: "100%" }}
-      scrollWheelZoom={false}
+      // react-leaflet reads style once on mount, so the size can't switch
+      // here: the map always fills its positioned wrapper, which sets the height.
+      style={{ position: "absolute", inset: 0 }}
+      scrollWheelZoom={fill}
       attributionControl={false}
     >
       <TileLayer url={TILE_URL} attribution={MAP_ATTR} />
@@ -324,7 +343,7 @@ export default function SliceMiniMapInner({
         <CircleMarker
           key={c.id ?? i}
           center={[c.latitude as number, c.longitude as number]}
-          radius={5}
+          radius={fill ? 7 : 5}
           // markerPane (z 600) sits above overlayPane (z 400) where the
           // polygons live — without this the GeoJSON layer re-adds itself on
           // every restyle and buries the pins underneath it.
@@ -339,6 +358,7 @@ export default function SliceMiniMapInner({
       <TanzaOutline geo={geo} theme={theme} />
       <FrameMap bounds={bounds} />
       <ZoomControls bounds={bounds} theme={theme} />
+      <WheelZoom enabled={fill} />
     </MapContainer>
   );
 }

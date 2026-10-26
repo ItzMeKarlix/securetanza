@@ -10,8 +10,7 @@ const SliceMiniMapInner = dynamic(() => import("./slice-mini-map-inner"), {
   ssr: false,
   loading: () => (
     <div
-      className="rounded-lg animate-pulse bg-slate-200/60 dark:bg-white/[0.04]"
-      style={{ height: 220 }}
+      className="h-full animate-pulse bg-slate-200/60 dark:bg-white/[0.04]"
     />
   ),
 });
@@ -19,18 +18,23 @@ const SliceMiniMapInner = dynamic(() => import("./slice-mini-map-inner"), {
 export default function SliceMiniMap({
   offenses,
   theme,
+  fill = false,
 }: {
   offenses: OffenseRecord[];
   theme: string;
+  /** Stretch to the parent's height (full-screen view). */
+  fill?: boolean;
 }) {
   const withCoords = offenses.filter(
     (c) => typeof c.latitude === "number" && typeof c.longitude === "number"
   ).length;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-white/[0.06]">
-        <SliceMiniMapInner offenses={offenses} theme={theme} />
+    <div className={`flex flex-col gap-1.5 ${fill ? "h-full min-h-0" : ""}`}>
+      <div
+        className={`relative rounded-lg overflow-hidden border border-slate-200 dark:border-white/[0.06] ${fill ? "flex-1 min-h-0" : "h-[220px]"}`}
+      >
+        <SliceMiniMapInner offenses={offenses} theme={theme} fill={fill} />
       </div>
       <p className={`text-[0.68rem] ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}>
         {withCoords > 0

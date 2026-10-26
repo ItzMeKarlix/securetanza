@@ -14,6 +14,7 @@ import {
 import { useDataColors } from "@/hooks/useDataColors";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useThreatLevels } from "@/hooks/useThreatLevels";
+import { formatRangeYears, useTimeRangeData } from "@/hooks/useTimeRangeData";
 import { SectionHeader, Panel } from "./section-primitives";
 import { useChartTooltip } from "./analytics/chart-tooltip";
 import { cleanLabel } from "@/lib/analytics-slice";
@@ -158,6 +159,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
   const dark = theme === "dark";
   const { stats, activity, crimesByType, crimesByStage, offenses, loading } = useDashboardData(barangayName);
   const { barangayCrimeCounts } = useThreatLevels();
+  const rangeYears = formatRangeYears(useTimeRangeData());
   const router = useRouter();
   const { tooltip, bind, hide } = useChartTooltip(theme);
   // Hover focus: the hovered bar / row stays sharp while the rest recede.
@@ -333,7 +335,7 @@ export default function OverviewTab({ barangayName }: OverviewTabProps) {
             <Panel
               theme={theme}
               title="Crime Trend"
-              subtitle="Monthly offense activity"
+              subtitle={`${rangeYears ? `${rangeYears} ` : ""}Monthly offense activity`}
               className="flex-1"
               footer={
                 <>

@@ -18,6 +18,7 @@ import { useDataColors } from "@/hooks/useDataColors";
 import type { DataChartKind } from "@/lib/data-colors";
 import { useAnalyticsData } from "@/hooks/useAnalyticsData";
 import { useCrimeMatrix } from "@/hooks/useCrimeMatrix";
+import { formatRangeYears, useTimeRangeData } from "@/hooks/useTimeRangeData";
 import { useModusAndPlace } from "@/hooks/useModusAndPlace";
 import CrimeMatrixChart from "./crime-matrix-chart";
 import { SectionHeader, Panel } from "./section-primitives";
@@ -592,6 +593,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
     error,
   } = useAnalyticsData(barangayName);
 
+  const rangeYears = formatRangeYears(useTimeRangeData());
   const { matrixData, loading: matrixLoading } = useCrimeMatrix(barangayName);
   const {
     modusList,
@@ -1104,7 +1106,7 @@ export default function AnalyticsTab({ barangayName }: AnalyticsTabProps) {
           <Panel
             theme={theme}
             title="Monthly Trend"
-            subtitle={`Offenses per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
+            subtitle={`${rangeYears ? `${rangeYears} ` : ""}Offenses per month, ${isGeneralDashboard ? "all barangays" : barangayName}`}
             className="min-w-0"
             bodyClassName="justify-center"
             footer={

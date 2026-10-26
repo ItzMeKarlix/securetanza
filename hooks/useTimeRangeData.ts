@@ -100,3 +100,15 @@ export function getDateRangesFromTimeRange(timeRange: TimeRange): DateRange[] {
   
   return dateRanges;
 }
+
+/** Years the selected ranges touch, e.g. "2025", "2024–2025" or "2023, 2025"; "" when no range is set. */
+export function formatRangeYears(ranges: DateRange[]): string {
+  const years = [...new Set(ranges.flatMap(({ start, end }) => {
+    const first = start.getFullYear();
+    return Array.from({ length: end.getFullYear() - first + 1 }, (_, i) => first + i);
+  }))].sort((a, b) => a - b);
+  if (years.length === 0) return "";
+  if (years.length === 1) return String(years[0]);
+  const consecutive = years.every((y, i) => i === 0 || y === years[i - 1] + 1);
+  return consecutive ? `${years[0]}–${years[years.length - 1]}` : years.join(", ");
+}
